@@ -3,7 +3,7 @@
 [![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-blue?logo=google-chrome&logoColor=white)](https://chrome.google.com/webstore)  
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-Tiện ích Chrome giúp cải thiện trải nghiệm xem bảng điểm trên [FAP FPT University](https://fap.fpt.edu.vn/Grade/StudentTranscript.aspx).
+Tiện ích Chrome giúp cải thiện trải nghiệm xem bảng điểm trên [FAP FPT University].
 
 ---
 
