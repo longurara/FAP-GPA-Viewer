@@ -70,11 +70,6 @@ FAP_EXCLUDED_CODES
 
 ---
 
-## 📷 Screenshot
-> _Chèn screenshot minh họa ở đây (Viewer & Overlay)_
-
----
-
 ## 📌 Changelog
 
 ### v1.5.0
