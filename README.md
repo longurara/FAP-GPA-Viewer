@@ -38,7 +38,7 @@ Tiện ích Chrome giúp cải thiện trải nghiệm xem bảng điểm trên 
 ---
 
 ## 🛠 Cài đặt
-1. Tải file ZIP mới nhất: **`fap-beautifier-vanilla-exclude-overlay.zip`**
+1. Tải file ZIP mới nhất: **`fap-gpa-viewer.zip`**
 2. Giải nén ra thư mục
 3. Mở `chrome://extensions`
 4. Bật **Developer mode**
