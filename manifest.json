@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "FAP Transcript Beautifier",
+  "version": "1.5.0",
+  "description": "GPA calculator.",
+  "icons": {
+    "128": "icon128.png"
+  },
+  "permissions": [],
+  "host_permissions": ["https://fap.fpt.edu.vn/Grade/StudentTranscript.aspx*"],
+  "content_scripts": [
+    {
+      "matches": ["https://fap.fpt.edu.vn/Grade/StudentTranscript.aspx*"],
+      "js": ["contentScript.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["viewer.html", "viewer.js", "viewer.css", "icon128.png"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>FAP GPA Viewer</title>
+    <link rel="stylesheet" href="viewer.css" />
+  </head>
+  <body>
+    <div class="container">
+      <header class="header">
+        <h1>📄 FAP GPA Viewer</h1>
+        <div class="actions">
+          <button id="btnExportReal">FAP</button
+          ><button id="btnCSV">Export CSV</button
+          ><button id="btnCopy">Copy GPA</button
+          ><button id="btnExclude">Loại trừ môn</button
+          ><label class="toggle"
+            ><input type="checkbox" id="toggleTheme" /><span>🌙</span></label
+          >
+        </div>
+      </header>
+      <section class="cards">
+        <div class="card">
+          <div class="label">GPA (10)</div>
+          <div id="gpa10" class="value">--</div>
+        </div>
+        <div class="card">
+          <div class="label">GPA (4)</div>
+          <div id="gpa4" class="value">--</div>
+        </div>
+        <div class="card">
+          <div class="label">Tổng tín chỉ</div>
+          <div id="credits" class="value">--</div>
+        </div>
+      </section>
+      <section class="chart-section">
+        <h2>📊 GPA theo kỳ</h2>
+        <svg id="chart" viewBox="0 0 800 300" preserveAspectRatio="none"></svg>
+      </section>
+      <section class="table-section">
+        <div class="table-head">
+          <div class="title">Danh sách môn</div>
+          <input id="search" placeholder="Tìm môn..." />
+        </div>
+        <table id="tbl">
+          <thead>
+            <tr>
+              <th>Code</th>
+              <th>Tên môn</th>
+              <th class="right">TC</th>
+              <th class="right">Điểm</th>
+              <th>Trạng thái</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </section>
+    </div>
+    <div id="modal" class="modal hidden">
+      <div class="modal-inner">
+        <div class="modal-head">
+          <h3>Chọn môn bỏ qua (theo SUBJECT CODE)</h3>
+          <button id="btnClose">✕</button>
+        </div>
+        <div id="modalBody" class="modal-body"></div>
+        <div class="modal-actions">
+          <button id="btnReset">Reset mặc định</button>
+          <div style="flex: 1"></div>
+          <button id="btnCancel">Hủy</button
+          ><button id="btnSave" class="primary">Lưu</button>
+        </div>
+      </div>
+    </div>
+    <script src="viewer.js"></script>
+  </body>
+</html>
