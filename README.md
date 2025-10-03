@@ -155,4 +155,4 @@
 ---
 
 ## Giấy phép
-Phát hành theo giấy phép **MIT**. Xem file `LICENSE` (nếu chưa có, tạo file mới với nội dung MIT).
+Phát hành theo giấy phép **MIT**. Xem file `LICENSE` .
