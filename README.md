@@ -49,8 +49,7 @@
 
 ---
 
-## Ảnh minh họa
-> (Thay bằng hình thực tế của bạn — đặt trong thư mục `assets/`)
+## Ảnh minh hoạ
 
 - `assets/screen-gpa.png` — tab GPA  
 - `assets/screen-attendance.png` — tab Điểm danh  
