@@ -1,158 +1,157 @@
-# FAP Dashboard — Chrome Extension
+# FAP GPA Viewer – Dashboard (Chrome Extension)
 
-> Trợ lý học tập cho sinh viên FPT: xem **GPA**, **điểm danh**, **lịch học** theo tuần & nhận **thông báo “Môn XXX đã được điểm danh”** — nhanh, gọn, chính xác.
+A modern, lightweight Chrome Extension that makes FPT University’s FAP easier to use. It adds **beautiful GPA summaries**, **weekly schedule parsing**, **attendance reminders**, and a brand‑new **Bookmark** tab for quick access to LMS / FAP / IT portals — all in one popup.
 
-[![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-4285F4?logo=googlechrome&logoColor=white)](#)
-[![Manifest v3](https://img.shields.io/badge/Manifest-v3-000000.svg)](#)
-[![Status](https://img.shields.io/badge/status-active-brightgreen)](#)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow)](#)
+> Manifest V3 • Zero server • Works entirely in your browser
 
----
-
-## Mục lục
-- [Tính năng](#tính-năng)
-- [Ảnh minh họa](#ảnh-minh-họa)
-- [Cài đặt](#cài-đặt)
-- [Sử dụng nhanh](#sử-dụng-nhanh)
-- [Cài đặt (Settings)](#cài-đặt-settings)
-- [Cách hoạt động](#cách-hoạt-động)
-- [Quyền truy cập & Bảo mật](#quyền-truy-cập--bảo-mật)
-- [Khắc phục sự cố](#khắc-phục-sự-cố)
-- [Cấu trúc thư mục](#cấu-trúc-thư-mục)
-- [Đóng góp](#đóng-góp)
-- [Lộ trình](#lộ-trình)
-- [Giấy phép](#giấy-phép)
+<p align="center">
+  <img src="icon128.png" alt="Logo" width="72" height="72">
+</p>
 
 ---
 
-## Tính năng
+## ✨ Features
 
-### GPA / Bảng điểm
-- Tự động lấy Transcript, **tính GPA thang 10 & 4**, và tổng tín chỉ.
-- **Cache 24 giờ**: nếu đã có dữ liệu thì **không fetch lại**, sau 24h tự cập nhật.
-- Tìm kiếm theo **mã môn / tên môn**.
+- **GPA (10 & 4)**: Parse transcript and calculate GPA with total credits. Cache results and refresh on demand.
+- **Weekly Schedule (ScheduleOfWeek)**: Fetch & normalize to a clean table (Day → Slot → Time → Course → Room → Note).
+- **Attendance Reminders**: Optional background check with randomized delay (10–30 min) after teachers update attendance.
+- **Bookmark Tab**: One‑click open to
+  - `https://lms-hcm.fpt.edu.vn/` (LMS HCM)
+  - `https://fap.fpt.edu.vn/` (FAP)
+  - `https://it-hcm.fpt.edu.vn/` (IT HCM)
+- **Nice UI**: Dark, card‑based popup with tabs and a settings screen.
+- **Respectful Defaults**: Everything is local, adjustable, and transparent.
 
-### Điểm danh (Attendance)
-- Đọc **Schedule Of Week** và trích **attended / absent / not yet**.
-- **Thông báo thông minh**: phát hiện môn mới chuyển sang *attended* → gửi thông báo:
-  - `Môn XXX đã được điểm danh`  
-  - Nhiều môn: `Các môn AAA, BBB… đã được điểm danh`.
-- Chạy theo **khung giờ hoạt động** và **độ trễ ngẫu nhiên** (tránh spam, giống hành vi tự nhiên).
-
-### Lịch học (Cả tuần)
-- Parse linh hoạt bảng tuần của FAP (MON→SUN + `dd/mm`), **lọc sạch ô rỗng/“-”**.
-- Hiển thị **cả tuần** theo thứ tự: **Thứ → Slot → Giờ → Môn → Phòng → Ghi chú**.
-
-### Trải nghiệm
-- Nút **Làm mới**: xoá cache và tải lại tức thì.
-- Nếu bị đá về `Default.aspx` (chưa đăng nhập) → **mở trang `https://fap.fpt.edu.vn/`** để bạn đăng nhập rồi quay lại nhấn **Làm mới**.
+> **Note:** The extension never stores or sends your credentials anywhere. It only reads the already logged‑in pages that you open.
 
 ---
 
-## Ảnh minh hoạ
+## 📦 Installation (Developer Mode)
 
-- `assets/screen-gpa.png` — tab GPA  
-- `assets/screen-attendance.png` — tab Điểm danh  
-- `assets/screen-schedule-week.png` — tab Lịch (cả tuần)
+1. Download the latest ZIP (or this repository) and extract it.
+2. Open `chrome://extensions` → enable **Developer mode** (top right).
+3. Click **Load unpacked** and select the extracted folder (where `manifest.json` lives).
+4. Pin the extension to your toolbar and click the icon to open the popup.
 
----
-
-## Cài đặt
-1. Tải bản phát hành ZIP tại **Releases** hoặc file `FAP-Dashboard-fixed.zip`.
-2. Giải nén ZIP ra một thư mục.
-3. Mở **Chrome/Edge (Chromium)** → `chrome://extensions`  
-   Bật **Developer mode** → **Load unpacked** → chọn thư mục vừa giải nén.
-
-> Edge: `edge://extensions` thao tác tương tự.
+> Works on Chrome 110+ and Chromium‑based browsers that support Manifest V3 (Edge, Brave… may vary).
 
 ---
 
-## Sử dụng nhanh
-1. Mở **FAP Dashboard** từ thanh Extensions.  
-2. **GPA**: xem GPA (10/4), tổng tín chỉ, danh sách môn (có ô tìm kiếm).  
-3. **Điểm danh**: xem tỷ lệ, lọc theo ngày/keyword.  
-4. **Lịch**: xem **lịch cả tuần**; đã sắp xếp theo Thứ → Slot → Giờ.  
-5. **Làm mới** để cập nhật ngay sau khi bạn đăng nhập FAP.
+## 🧭 Usage
+
+### GPA Tab
+- Click **Trang Transcript** to open FAP’s transcript page.
+- Press **Làm mới** to re‑parse; otherwise data comes from local cache.
+- **Copy GPA** quickly copies both 10‑point and 4‑point scales.
+
+### Schedule Tab
+- Click **Trang Schedule** to open the official weekly schedule.
+- Press **Làm mới** to fetch and re‑render the entire week into a clean table.
+- The extension detects redirects to the login page and will prompt you to log in.
+
+### Bookmark Tab
+- Three instant buttons: **LMS HCM**, **FAP**, **IT HCM**.
+- You can extend this easily by adding more buttons in `popup.html` and handlers in `popup.js`.
+
+### Settings
+- Configure polling window (e.g., 07:00–17:40) and randomized notify delay (10–30 min).
+- Click **Test thông báo** to verify notifications.
 
 ---
 
-## Cài đặt (Settings)
-- **Khung giờ hoạt động**: mặc định `07:00 → 17:40`.
-- **Độ trễ thông báo**: mặc định ngẫu nhiên `10–30` phút.
-- **Tần suất kiểm tra** (`pollEvery`): mặc định `15` phút.
+## 🔐 Permissions & Why
 
-> Nhấn **Lưu cài đặt** để background reschedule theo cấu hình mới.
+The extension uses a minimal, transparent set of permissions:
 
----
+| Permission                 | Why it’s needed |
+|---                         |---|
+| `storage`                  | Save cached GPA, schedule, and user settings locally. |
+| `activeTab`                | Open related FAP/LMS/IT pages in new tabs when you click buttons. |
+| `scripting` (MV3)          | Run the content script on transcript pages to read the table you are viewing. |
+| `alarms`                   | Schedule attendance reminder checks at the times you configure. |
+| `notifications`            | Show local reminders after attendance updates are detected. |
 
-## Cách hoạt động
-
-- **GPA**  
-  - Lấy bảng Transcript, parse các trường `code/name/credit/grade/status`.  
-  - Lưu **cache 24h** trong `chrome.storage.local`.
-
-- **Điểm danh & Thông báo**  
-  - Background định kỳ tải `ScheduleOfWeek.aspx`.  
-  - So sánh với snapshot trước → phát hiện môn **vừa được attended**.  
-  - Lên lịch gửi **notification** với câu chữ chuẩn, có **delay ngẫu nhiên**.  
-
-- **Lịch cả tuần**  
-  - Heuristic chọn đúng bảng (có MON–SUN + `dd/mm` + nhiều hàng “Slot x”).  
-  - Chỉ ghi nhận dòng **có mã môn** (`[A-Z]{2,4}\d{3}`) → tránh “môn = Slot 1/2/…”.
-
-- **Đăng nhập**  
-  - Nếu phát hiện redirect `Default.aspx` → mở **`https://fap.fpt.edu.vn/`** cho bạn đăng nhập.  
-  - Background giới hạn nhắc đăng nhập **≤ 1 lần/giờ**.
+> No external servers. No analytics. No credential capture.
 
 ---
 
-## Quyền truy cập & Bảo mật
-- **Host permissions**: `https://fap.fpt.edu.vn/*` để đọc dữ liệu GPA/lịch/điểm danh.
-- Dữ liệu chỉ lưu **cục bộ** qua `chrome.storage.local`.
-- Không thu thập hay gửi dữ liệu ra bên ngoài; không dùng khóa API.
+## 🧩 Project Structure
 
----
-
-## Khắc phục sự cố
-- **Không thấy dữ liệu**  
-  - Hãy chắc bạn đã **đăng nhập FAP** (extension sẽ mở trang FAP nếu phát hiện chưa đăng nhập).  
-  - Nhấn **Làm mới** để xoá cache và tải lại.
-- **Không có thông báo**  
-  - Kiểm tra **khung giờ hoạt động** và quyền **Notifications** của trình duyệt.  
-- **Lịch có dòng rác (Slot 1/2/…)**  
-  - Đã xử lý bằng parser mới. Nếu vẫn gặp, vui lòng tạo Issue kèm **ảnh bảng tuần/HTML snippet**.
-
----
-
-## Cấu trúc thư mục
+```
 .
-├─ manifest.json
-├─ background.js # Poll lịch/điểm danh; thông báo; xử lý login → fap.fpt.edu.vn
-├─ contentScript.js # (để dành overlay nếu cần)
-├─ popup.html / popup.css / popup.js
-│ ├─ GPA tab # cache 24h, tính GPA 10/4, search
-│ ├─ Attendance tab # tỷ lệ hiện diện, lọc theo ngày
-│ └─ Schedule tab # lịch cả tuần; sắp xếp Thứ→Slot→Giờ
-├─ viewer.html/.css/.js # (tuỳ chọn; hiện không còn nút mở)
-└─ icon128.png
-
+├── manifest.json
+├── popup.html / popup.css / popup.js      # Popup UI (tabs: GPA / Schedule / Bookmark / Settings)
+├── contentScript.js                       # Runs on Transcript page to read GPA table
+├── background.js                          # Service worker: alarms, notifications, update checks
+├── viewer.html / viewer.css / viewer.js   # Optional “beautiful viewer” page
+└── icon128.png
+```
 
 ---
 
-## Đóng góp
-- **Bug report**: mô tả chi tiết + ảnh/snip HTML bảng FAP + log console (nếu có).  
-- **Tính năng**: mô tả use-case, mock UI nếu thuận tiện.  
-- **Code style**: JavaScript thuần, MV3, async/await, xử lý lỗi rõ ràng.
+## 🛠️ Building / Packaging
+
+This is a plain MV3 extension — no build step is required. To ship:
+- **Zip** the folder contents (keeping `manifest.json` at the root) and upload to the Chrome Web Store.
+- Or share the ZIP for developer‑mode installation.
+
+A ready‑to‑load ZIP may be provided in releases.
 
 ---
 
-## Lộ trình
-- [ ] Bộ lọc **tuần** trong popup (đọc YEAR/WEEK của FAP).  
-- [ ] **Copy/Export** GPA (CSV/Markdown).  
-- [ ] Tô màu trạng thái lịch (attended/absent).  
-- [ ] Export **CSV** lịch/điểm danh.
+## 🔄 Check for Updates (Optional)
+
+If you want in‑app update checks against GitHub Releases:
+- Add a small routine in `background.js` to ping `https://api.github.com/repos/<owner>/<repo>/releases/latest`,
+- Compare against the `version` in `manifest.json`,
+- Show a notification with a button that opens the latest release page.
+> This repository ships without automatic network calls by default; opt‑in is recommended.
 
 ---
 
-## Giấy phép
-Phát hành theo giấy phép **MIT**. Xem file `LICENSE` .
+## 🧪 Troubleshooting
+
+- **Popup shows empty tables** → Make sure you are **logged in** to FAP in a normal tab first, then press **Làm mới**. Redirects to `Default.aspx` indicate login required.
+- **Data looks outdated** → Click **Làm mới**; cached data is preferred to keep FAP fast.
+- **Schedule day mismatch** → Ensure the page is the week you expect on FAP; then refresh again from the Schedule tab.
+- **Notifications not appearing** → Check Chrome site permissions: `chrome://settings/content/notifications` and ensure they are allowed for the browser.
+
+---
+
+## 🗺️ Roadmap
+
+- Custom bookmarks (add/remove links from the UI)
+- Per‑course filters and export (CSV/Excel)
+- GPA breakdown by term
+- Smarter login detection & helpers
+
+---
+
+## 🤝 Contributing
+
+1. Fork the repo & create a feature branch: `git checkout -b feat/my-feature`
+2. Make changes, keep code clean.
+3. Open a PR with a clear description and screenshots.
+
+Bug reports and feature requests are welcome in Issues.
+
+---
+
+## 📝 License
+
+This project is licensed under a **Non-Commercial MIT License**.
+
+You are free to:
+- ✅ Use the code
+- ✅ Modify it for your own needs
+- ✅ Distribute or share it with attribution
+
+But you **may not**:
+- ❌ Use it for commercial purposes (no selling, bundling in paid products, or monetization)
+
+---
+
+**TL;DR:** You’re free to use, modify, and distribute with attribution — but **not for commercial use**.
+
+
+---
