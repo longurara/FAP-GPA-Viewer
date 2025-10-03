@@ -4,9 +4,7 @@ A modern, lightweight Chrome Extension that makes FPT University’s FAP easier 
 
 > Manifest V3 • Zero server • Works entirely in your browser
 
-<p align="center">
-  <img src="icon128.png" alt="Logo" width="72" height="72">
-</p>
+![Logo](icon128.png "Logo")
 
 ---
 
@@ -99,13 +97,18 @@ A ready‑to‑load ZIP may be provided in releases.
 
 ---
 
-## 🔄 Check for Updates (Optional)
+## 🔄 Check for Updates
 
-If you want in‑app update checks against GitHub Releases:
-- Add a small routine in `background.js` to ping `https://api.github.com/repos/<owner>/<repo>/releases/latest`,
-- Compare against the `version` in `manifest.json`,
-- Show a notification with a button that opens the latest release page.
-> This repository ships without automatic network calls by default; opt‑in is recommended.
+This extension already includes an **in-app update checker**:
+
+- It queries the GitHub Releases API at  
+  `[https://github.com/longurara/FAP-GPA-Viewer/releases/]`.
+- It compares the latest release tag with the current `version` in `manifest.json`.
+- If a newer version is found, the popup will show a **“Cập nhật”** button that links directly to the latest release page.
+
+You can force a manual check by clicking **Check update** in the popup.  
+All requests are lightweight and cached to avoid spamming the GitHub API.
+
 
 ---
 
