@@ -1,0 +1,55 @@
+:root{
+  --bg:#0b1220; --card:#0f172a; --text:#e5e7eb;
+  --muted:#94a3b8; --accent:#60a5fa; --border:#1f2937;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,Segoe UI,Inter,Arial,sans-serif;min-width:780px}
+.wrap{padding:14px}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.brand{display:flex;gap:10px;align-items:center}
+.brand img{width:28px;height:28px;border-radius:8px}
+.brand h1{font-size:18px;margin:0}
+.top-actions button{border:1px solid var(--border);background:var(--card);color:var(--text);padding:6px 10px;border-radius:8px;cursor:pointer}
+.tabs{display:flex;gap:6px;margin-bottom:10px}
+.tabs button{background:var(--card);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:10px;cursor:pointer}
+.tabs button.active,.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.tab{display:none}
+.tab.active{display:block}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:12px}
+.card .label{color:var(--muted);font-size:12px;margin-bottom:4px}
+.card .value{font-size:26px;font-weight:700}
+.actions{display:flex;gap:8px;margin:6px 0 10px}
+.actions button{background:var(--card);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:8px;cursor:pointer}
+.table{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden}
+.table-head{display:flex;justify-content:space-between;align-items:center;padding:10px;border-bottom:1px solid var(--border)}
+.table-head input{padding:6px 8px;border:1px solid var(--border);border-radius:8px;background:#0b1220;color:var(--text)}
+table{width:100%;border-collapse:collapse}
+th,td{padding:8px;border-bottom:1px solid var(--border)}
+th.r, td.r{text-align:right}
+.form .row{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+.form input{background:#0b1220;border:1px solid var(--border);color:var(--text);border-radius:8px;padding:6px 8px}
+.hint{color:var(--muted);font-size:12px}
+
+select#filterDay{padding:6px 8px;border:1px solid var(--border);border-radius:8px;background:#0b1220;color:var(--text)}
+
+
+
+
+/* --- Bookmark grid --- */
+.book-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:10px;
+  padding:10px;
+}
+.book-grid button{
+  background:var(--card);
+  border:1px solid var(--border);
+  color:var(--text);
+  padding:12px 10px;
+  border-radius:12px;
+  cursor:pointer;
+  font-weight:600;
+}
+.book-grid button:hover{ border-color: var(--accent); }

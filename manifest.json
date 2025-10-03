@@ -1,13 +1,21 @@
 {
   "manifest_version": 3,
   "name": "FAP Transcript Beautifier",
-  "version": "1.5.0",
-  "description": "GPA calculator.",
+  "version": "2.2.6",
+  "description": "GPA + Attendance + Schedule dashboard for FAP",
   "icons": {
     "128": "icon128.png"
   },
-  "permissions": [],
-  "host_permissions": ["https://fap.fpt.edu.vn/Grade/StudentTranscript.aspx*"],
+  "action": {
+    "default_title": "FAP Dashboard",
+    "default_popup": "popup.html"
+  },
+  "permissions": ["storage", "notifications", "alarms"],
+  "host_permissions": ["https://api.github.com/*", "https://fap.fpt.edu.vn/*"],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
   "content_scripts": [
     {
       "matches": ["https://fap.fpt.edu.vn/Grade/StudentTranscript.aspx*"],
