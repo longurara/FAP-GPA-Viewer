@@ -375,6 +375,7 @@ async function loadGPA(){
     const doc = await fetchHTML(DEFAULT_URLS.transcript);
     rows = parseTranscriptDoc(doc);
     await cacheSet('cache_transcript', {rows});
+    await STORAGE.set({ cache_transcript_flat: rows });
   }
   const excluded = (await STORAGE.get(EXCLUDED_KEY, EXCLUDED_DEFAULT));
   renderTranscript(rows, excluded);
@@ -384,6 +385,7 @@ async function refreshAttendance(){
   const doc = await fetchHTML(DEFAULT_URLS.scheduleOfWeek);
   const parsed = parseScheduleOfWeek(doc);
   await cacheSet('cache_attendance', parsed);
+  await STORAGE.set({ cache_attendance_flat: (parsed && parsed.entries) ? parsed.entries : [] });
   renderAttendance(parsed.entries);
   renderScheduleWeek(parsed.entries);
 }
@@ -519,3 +521,74 @@ function renderScheduleWeek(entries){
     tbody.appendChild(tr);
   });
 }
+
+// ===== Export All to PDF =====
+async function exportAllPDF(){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const today = new Date().toLocaleDateString("vi-VN");
+  function addHeaderFooter() {
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(10);
+      doc.setTextColor(100);
+      doc.text(`FAP GPA Viewer – Dashboard | Xuất ngày: ${today}`, 14, 10);
+      doc.text(`Trang ${i} / ${pageCount}`, doc.internal.pageSize.getWidth() - 40, doc.internal.pageSize.getHeight() - 10);
+    }
+  }
+  const logo = await fetch(chrome.runtime.getURL("icon128.png"))
+    .then(r=>r.blob())
+    .then(b=>new Promise(res=>{
+      const reader=new FileReader();
+      reader.onload=()=>res(reader.result);
+      reader.readAsDataURL(b);
+    }));
+  doc.addImage(logo, "PNG", 15, 20, 30, 30);
+  doc.setFontSize(18);
+  doc.text("FAP GPA Viewer – Dashboard", 55, 30);
+  doc.setFontSize(12);
+  doc.text("Một Chrome Extension giúp sinh viên FPT University theo dõi GPA, lịch học, điểm danh và nhắc nhở tự động.", 15, 60);
+  doc.addPage();
+  const transcript = await STORAGE.get("cache_transcript", null);
+  if(transcript?.rows?.length){
+    doc.setFontSize(16);
+    doc.text("Transcript", 14, 20);
+    doc.autoTable({ startY: 25, head: [["Code","Name","Credit","Grade","Status"]],
+      body: transcript.rows.map(r=>[r.code,r.name,r.credit,r.grade,r.status]) });
+    doc.addPage();
+  }
+  const att = await STORAGE.get("cache_attendance", null);
+  if(att?.entries?.length){
+    doc.setFontSize(16);
+    doc.text("Attendance", 14, 20);
+    doc.autoTable({ startY: 25, head: [["Date","Day","Slot","Course","Status"]],
+      body: att.entries.map(e=>[e.date,e.day,e.slot,e.course,e.status]) });
+    doc.addPage();
+    doc.setFontSize(16);
+    doc.text("Schedule (Week)", 14, 20);
+    doc.autoTable({ startY: 25, head: [["Day","Date","Slot","Time","Course","Room","Status"]],
+      body: att.entries.map(e=>[e.day,e.date,e.slot,e.time||"",e.course,e.room||"",e.status||""]) });
+    doc.addPage();
+  }
+  const cfg = await STORAGE.get("cfg", {});
+  doc.setFontSize(16);
+  doc.text("Settings", 14, 20);
+  doc.autoTable({ startY: 25, head: [["Key","Value"]],
+    body: Object.entries(cfg).map(([k,v])=>[k,String(v)]) });
+  addHeaderFooter();
+  doc.save("fap_dashboard_all.pdf");
+}
+
+// Gắn vào nút Export PDF nếu có
+const btnExportPDF = document.getElementById("btnExportPDF");
+if (btnExportPDF) btnExportPDF.onclick = exportAllPDF;
+
+
+// === Export PDF via printable report page (no external libs needed) ===
+(function(){
+  const btn = document.getElementById('btnExportPDF');
+  if(btn){
+    btn.onclick = ()=> chrome.tabs.create({ url: chrome.runtime.getURL('report.html') });
+  }
+})();

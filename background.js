@@ -7,6 +7,57 @@ const STORAGE = {
 
 const SCHEDULE_OF_WEEK = 'https://fap.fpt.edu.vn/Report/ScheduleOfWeek.aspx';
 
+const TRANSCRIPT_URL = 'https://fap.fpt.edu.vn/Grade/StudentTranscript.aspx';
+
+function toNum(txt){ const m = String(txt||'').match(/-?\d+(?:[.,]\d+)?/); return m?parseFloat(m[0].replace(',', '.')):NaN; }
+function NORM_TXT(s){ return (s||'').replace(/\s+/g,' ').trim().toUpperCase(); }
+
+function parseTranscriptDoc(html){
+  try{
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const tables = [...doc.querySelectorAll('table')];
+    for(const t of tables){
+      const trs = [...t.querySelectorAll('tr')];
+      for(const tr of trs){
+        const labels = [...tr.children].map(td => NORM_TXT(td.textContent));
+        if(labels.includes('CREDIT') && labels.includes('GRADE')){
+          const header = [...tr.children].map(x => NORM_TXT(x.textContent));
+          const idx = {
+            term: header.findIndex(v => v === 'TERM'),
+            semester: header.findIndex(v => v === 'SEMESTER'),
+            code: header.findIndex(v => v.includes('SUBJECT CODE')),
+            name: header.findIndex(v => v.includes('SUBJECT NAME') || v.includes('SUBJECT')),
+            credit: header.indexOf('CREDIT'),
+            grade: header.indexOf('GRADE'),
+            status: header.findIndex(v => v === 'STATUS'),
+          };
+          const all = [...t.querySelectorAll('tr')];
+          const start = all.indexOf(tr) + 1;
+          const rows = [];
+          for(const r of all.slice(start)){
+            const tds = [...r.querySelectorAll('td')];
+            if(!tds.length) continue;
+            const row = {
+              term: idx.term>=0 ? tds[idx.term]?.textContent.trim() : "",
+              semester: idx.semester>=0 ? tds[idx.semester]?.textContent.trim() : "",
+              code: idx.code>=0 ? tds[idx.code]?.textContent.trim() : "",
+              name: idx.name>=0 ? tds[idx.name]?.textContent.trim() : "",
+              credit: idx.credit>=0 ? toNum(tds[idx.credit]?.textContent) : NaN,
+              grade: idx.grade>=0 ? toNum(tds[idx.grade]?.textContent) : NaN,
+              status: idx.status>=0 ? tds[idx.status]?.textContent.trim() : "",
+            };
+            if(!row.code && !row.name && !Number.isFinite(row.credit)) continue;
+            rows.push(row);
+          }
+          return rows;
+        }
+      }
+    }
+  }catch(e){}
+  return [];
+}
+
+
 function nowHm(){const d=new Date(); return d.toTimeString().slice(0,5);} // "HH:MM"
 function within(activeFrom, activeTo){
   const n = nowHm();
@@ -165,6 +216,39 @@ chrome.alarms.onAlarm.addListener(async (alarm)=>{
 });
 
 chrome.runtime.onMessage.addListener(async (msg, _sender, sendResponse)=>{
+  if(msg.action === 'getAllData'){
+    (async ()=>{
+      const tcache = await STORAGE.get('cache_transcript', null);
+const acache = await STORAGE.get('cache_attendance', null);
+let transcriptRows = (tcache?.rows) || (tcache?.data?.rows) || null;
+let attendanceEntries = (acache?.entries) || (acache?.data?.entries) || null;
+
+      // If missing, try to fetch now
+      try{
+        if(!attendanceEntries){
+          const docHtml = await fetchHtml(SCHEDULE_OF_WEEK);
+          const entries = parseScheduleOfWeek(docHtml);
+          await STORAGE.set({'cache_attendance': {ts: Date.now(), data: {entries, todayRows: []}}});
+          attendanceEntries = entries;
+        }
+      }catch(e){}
+
+      try{
+        if(!transcriptRows){
+          const html = await fetchHtml(TRANSCRIPT_URL);
+          const rows = parseTranscriptDoc(html);
+          await STORAGE.set({'cache_transcript': {ts: Date.now(), data: {rows}}});
+          transcriptRows = rows;
+        }
+      }catch(e){}
+
+      const cfg = await STORAGE.get('cfg', {activeFrom:'07:00',activeTo:'17:40',delayMin:10,delayMax:30,pollEvery:15});
+      try{ await STORAGE.set({ cache_transcript_flat: transcriptRows||[], cache_attendance_flat: attendanceEntries||[] }); }catch(e){}
+      sendResponse({ ok:true, transcript: transcriptRows||[], attendance: attendanceEntries||[], schedule: attendanceEntries||[], settings: cfg });
+    })();
+    return true;
+  }
+
   if(msg.type === 'CFG_UPDATED'){
     await schedulePollAlarm();
     sendResponse({ok:true});
@@ -226,4 +310,19 @@ chrome.runtime.onInstalled.addListener(()=>{ scheduleUpdateAlarm(); setTimeout(c
 
 chrome.alarms.onAlarm.addListener(a=>{
   if(a.name==='UPDATE_CHECK'){ checkUpdateAndNotify(); }
+});
+
+
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  if (msg && msg.action === 'getAllData_fallback') {
+    (async () => {
+      const tcache = await STORAGE.get('cache_transcript', null);
+      const acache = await STORAGE.get('cache_attendance', null);
+      const cfg    = await STORAGE.get('cfg', {activeFrom:'07:00',activeTo:'17:40',delayMin:10,delayMax:30,pollEvery:15});
+      const transcriptRows = (tcache?.rows) || (tcache?.data?.rows) || [];
+      const attendance     = (acache?.entries) || (acache?.data?.entries) || [];
+      sendResponse({ ok:true, transcript: transcriptRows, attendance, schedule: attendance, settings: cfg });
+    })();
+    return true;
+  }
 });
