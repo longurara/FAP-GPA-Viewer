@@ -1,5 +1,3 @@
-Rất tốt 👏
-Dưới đây là **file `TERMS.md` hoàn chỉnh** – ngắn gọn, đúng chuẩn để đăng trên **GitHub và Chrome Web Store**, giúp bạn có đủ cơ sở pháp lý và tránh hiểu lầm với FPT University.
 
 ---
 
