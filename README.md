@@ -202,7 +202,6 @@ Nếu bạn thấy tiện ích này hữu ích, hãy ⭐ dự án trên GitHub n
 
 ---
 
-````md
 <p align="center">
   <img src="icon128.png" alt="FAP GPA Viewer Logo" width="100" height="100">
 </p>
