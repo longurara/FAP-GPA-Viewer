@@ -17,7 +17,7 @@ Chrome Extension giúp sinh viên FPT University theo dõi GPA, điểm danh, l�
 
 **Cách 1: Tải trực tiếp**
 1. Truy cập [GitHub Repository](https://github.com/longurara/FAP-GPA-Viewer)
-2. Click nút **Code** hoặc **Release** → **Download ZIP**
+2. Click nút **Release** → **Download ZIP**
 3. Giải nén file ZIP vào thư mục bất kỳ
 
 **Cách 2: Clone qua Git**
