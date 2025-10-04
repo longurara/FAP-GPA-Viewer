@@ -75,10 +75,10 @@ Giúp bạn **xem GPA, điểm danh, lịch học, nhận thông báo tự độ
 3. Giải nén file ZIP vào thư mục bất kỳ
 
 #### Cách 2 – Clone qua Git
-```bash
+bash```
 git clone https://github.com/longurara/FAP-GPA-Viewer.git
 cd FAP-GPA-Viewer
-
+```
 
 #### Cách 3 – Cài vào Chrome
 
