@@ -9,6 +9,7 @@ const STORAGE = {
 const DEFAULT_URLS = {
   transcript: "https://fap.fpt.edu.vn/Grade/StudentTranscript.aspx",
   scheduleOfWeek: "https://fap.fpt.edu.vn/Report/ScheduleOfWeek.aspx",
+  examSchedule: "https://fap.fpt.edu.vn/Exam/ScheduleExams.aspx",
 };
 
 function $(sel) {
@@ -204,97 +205,181 @@ function parseScheduleOfWeek(doc) {
   const result = { entries: [], todayRows: [] };
   const N = (s) => (s || "").replace(/\s+/g, " ").trim();
 
-  // Tìm table chính - table có tbody chứa các slot rows
+  console.log("=== Bắt đầu parse ScheduleOfWeek ===");
+
+  // BƯỚC 1: Tìm table chính với validation chặt chẽ
   const tables = [...doc.querySelectorAll("table")];
   let mainTable = null;
 
-  for (const table of tables) {
-    const tbody = table.querySelector("tbody");
-    if (!tbody) continue;
+  console.log(`Tìm thấy ${tables.length} tables`);
 
-    const firstRow = tbody.querySelector("tr");
-    if (firstRow && /Slot\s+\d+/i.test(firstRow.textContent)) {
-      mainTable = table;
-      break;
+  for (const table of tables) {
+    // Phải có cả thead và tbody
+    const thead = table.querySelector("thead");
+    const tbody = table.querySelector("tbody");
+
+    if (!thead || !tbody) {
+      console.log("Bỏ qua table: thiếu thead hoặc tbody");
+      continue;
     }
+
+    // Kiểm tra thead có chứa các ngày trong tuần
+    const theadText = N(thead.textContent).toUpperCase();
+    const hasWeekdays =
+      /MON/.test(theadText) &&
+      /TUE/.test(theadText) &&
+      /WED/.test(theadText) &&
+      /THU/.test(theadText) &&
+      /FRI/.test(theadText);
+
+    if (!hasWeekdays) {
+      console.log("Bỏ qua table: không có đầy đủ thứ trong tuần");
+      continue;
+    }
+
+    // Kiểm tra tbody phải có ít nhất 5 rows (slots)
+    const bodyRows = [...tbody.querySelectorAll("tr")];
+    if (bodyRows.length < 5) {
+      console.log(`Bỏ qua table: chỉ có ${bodyRows.length} rows`);
+      continue;
+    }
+
+    // QUAN TRỌNG: Row đầu tiên phải bắt đầu bằng "Slot X"
+    const firstCell = bodyRows[0]?.querySelector("td");
+    if (!firstCell) {
+      console.log("Bỏ qua table: row đầu không có cell");
+      continue;
+    }
+
+    const firstCellText = N(firstCell.textContent);
+    if (!/^Slot\s*\d+$/i.test(firstCellText)) {
+      console.log(`Bỏ qua table: cell đầu không phải Slot (${firstCellText})`);
+      continue;
+    }
+
+    // Kiểm tra table không chứa text "Activities" (tránh nhầm với table hoạt động)
+    const tableText = N(table.textContent);
+    if (
+      tableText.includes("ACTIVITIES FOR") ||
+      tableText.includes("CLUB ACTIVITIES")
+    ) {
+      console.log("Bỏ qua table: là bảng Activities");
+      continue;
+    }
+
+    // ĐÃ TÌM THẤY TABLE ĐÚNG
+    console.log("✓ Tìm thấy table schedule hợp lệ");
+    mainTable = table;
+    break;
   }
 
-  if (!mainTable) return result;
+  if (!mainTable) {
+    console.error("❌ Không tìm thấy bảng lịch học hợp lệ");
+    return result;
+  }
 
-  // Lấy thông tin ngày từ header (trong thead > tr thứ 2)
-  const dateHeaders = [""]; // Index 0 trống cho cột Slot
-  const dayHeaders = [""]; // Index 0 trống cho cột Slot
+  // BƯỚC 2: Parse header để lấy thông tin ngày
+  const dateHeaders = [""]; // Index 0 cho cột Slot
+  const dayHeaders = [""];
 
   const theadRows = [...mainTable.querySelectorAll("thead tr")];
+  console.log(`Thead có ${theadRows.length} rows`);
 
-  // Row đầu chứa tên thứ (MON, TUE, WED...)
+  // Row 1: Các thứ (MON, TUE, WED...)
   if (theadRows.length > 0) {
     const dayRow = theadRows[0];
-    const dayCells = [...dayRow.querySelectorAll("th")];
+    const dayCells = [...dayRow.querySelectorAll("th, td")];
+
     dayCells.forEach((cell) => {
       const text = N(cell.textContent).toUpperCase();
-      if (/MON|TUE|WED|THU|FRI|SAT|SUN/.test(text)) {
-        const dayMatch = text.match(/(MON|TUE|WED|THU|FRI|SAT|SUN)/);
-        if (dayMatch) {
-          dayHeaders.push(dayMatch[1]);
-        }
+      const match = text.match(/(MON|TUE|WED|THU|FRI|SAT|SUN)/);
+      if (match) {
+        dayHeaders.push(match[1]);
       }
     });
   }
 
-  // Row thứ 2 chứa ngày (dd/mm)
+  // Row 2: Các ngày (dd/mm)
   if (theadRows.length > 1) {
     const dateRow = theadRows[1];
-    const dateCells = [...dateRow.querySelectorAll("th")];
+    const dateCells = [...dateRow.querySelectorAll("th, td")];
+
     dateCells.forEach((cell) => {
-      const dateMatch = cell.textContent.match(/(\d{2}\/\d{2})/);
-      if (dateMatch) {
-        dateHeaders.push(dateMatch[1]);
+      const match = cell.textContent.match(/(\d{2}\/\d{2})/);
+      if (match) {
+        dateHeaders.push(match[1]);
       }
     });
   }
 
-  // Parse các slot rows trong tbody
-  const tbody = mainTable.querySelector("tbody");
-  if (!tbody) return result;
+  console.log("Day headers:", dayHeaders);
+  console.log("Date headers:", dateHeaders);
 
+  // BƯỚC 3: Parse tbody - CHỈ lấy từng cell riêng biệt
+  const tbody = mainTable.querySelector("tbody");
   const slotRows = [...tbody.querySelectorAll("tr")];
 
-  slotRows.forEach((row) => {
+  console.log(`Parsing ${slotRows.length} slot rows`);
+
+  slotRows.forEach((row, rowIdx) => {
     const cells = [...row.querySelectorAll("td")];
-    if (cells.length < 2) return;
 
-    const slotName = N(cells[0].textContent); // "Slot 3", "Slot 4"...
-    if (!/Slot\s+\d+/i.test(slotName)) return;
+    if (cells.length < 2) {
+      console.log(`Row ${rowIdx}: bỏ qua (chỉ có ${cells.length} cells)`);
+      return;
+    }
 
-    // Duyệt qua các ô từ cột 1 đến 7 (MON-SUN)
+    // Cell đầu tiên là slot name
+    const slotName = N(cells[0].textContent);
+
+    if (!/^Slot\s*\d+$/i.test(slotName)) {
+      console.log(`Row ${rowIdx}: bỏ qua (không phải slot: ${slotName})`);
+      return;
+    }
+
+    console.log(`Parsing ${slotName}...`);
+
+    // Parse từng cell tương ứng với từng ngày (MON-SUN)
     for (let colIdx = 1; colIdx < cells.length && colIdx <= 7; colIdx++) {
       const cell = cells[colIdx];
-      const cellHTML = cell.innerHTML;
+
+      // LẤY RIÊNG textContent và innerHTML của TỪNG CELL
       const cellText = N(cell.textContent);
+      const cellHTML = cell.innerHTML;
 
       // Skip ô trống
-      if (cellText === "-" || !cellText) continue;
+      if (!cellText || cellText === "-") continue;
 
-      // Extract course code (MAD101, OSG202, PRO192, NWC204...)
-      const codeMatch = cellText.match(/([A-Z]{3}\d{3})/);
-      if (!codeMatch) continue;
+      // Extract course code (MAD101, PRO192...)
+      const codeMatch = cellText.match(/\b([A-Z]{2,4}\d{3})\b/);
+      if (!codeMatch) {
+        console.log(`  Col ${colIdx}: bỏ qua (không có mã môn)`);
+        continue;
+      }
+
       const courseCode = codeMatch[1];
 
-      // Extract room (P.112, P.215, P.226...)
-      const roomMatch = cellText.match(/at\s+(P\.\d+|[A-Z]\.\d+|NVH\d+)/i);
+      // Extract room (P.112, NVH...)
+      const roomMatch = cellText.match(/at\s+(P\.\d+|[A-Z]+\d+|NVH\d+)/i);
       const room = roomMatch ? roomMatch[1] : "";
 
       // Extract time (12:30-14:45)
       const timeMatch = cellText.match(/\((\d{2}:\d{2}-\d{2}:\d{2})\)/);
       const time = timeMatch ? timeMatch[1] : "";
 
-      // Extract status từ HTML
+      // Extract status từ HTML attributes
       let status = "not yet";
-      if (cellHTML.includes("color=Green") || /attended/i.test(cellText)) {
+      const htmlLower = cellHTML.toLowerCase();
+
+      if (
+        htmlLower.includes("color=green") ||
+        htmlLower.includes("color: green") ||
+        /attended/i.test(cellText)
+      ) {
         status = "attended";
       } else if (
-        cellHTML.includes("color=red") ||
+        htmlLower.includes("color=red") ||
+        htmlLower.includes("color: red") ||
         /absent|vắng/i.test(cellText)
       ) {
         status = "absent";
@@ -302,26 +387,27 @@ function parseScheduleOfWeek(doc) {
         status = "not yet";
       }
 
-      // Lấy date và day từ header
-      const date = dateHeaders[colIdx] || "";
-      const day = dayHeaders[colIdx] || "";
-
       const entry = {
-        day: day,
-        date: date,
+        day: dayHeaders[colIdx] || "",
+        date: dateHeaders[colIdx] || "",
         slot: slotName,
         time: time,
         course: courseCode,
         room: room,
         status: status,
-        key: `${date || day}|${slotName}|${courseCode}`,
+        key: `${
+          dateHeaders[colIdx] || dayHeaders[colIdx]
+        }|${slotName}|${courseCode}`,
       };
 
       result.entries.push(entry);
+      console.log(`  ✓ ${entry.day} ${entry.date} - ${courseCode} - ${status}`);
     }
   });
 
-  // Filter today's schedule
+  console.log(`=== Parse xong: ${result.entries.length} entries ===`);
+
+  // BƯỚC 4: Lọc lịch hôm nay
   const today = new Date();
   const dd = String(today.getDate()).padStart(2, "0");
   const mm = String(today.getMonth() + 1).padStart(2, "0");
@@ -335,6 +421,8 @@ function parseScheduleOfWeek(doc) {
       room: e.room,
       note: e.status,
     }));
+
+  console.log(`Hôm nay (${todayDate}): ${result.todayRows.length} tiết`);
 
   return result;
 }
@@ -397,136 +485,172 @@ function summarizeAttendance(entries) {
 }
 
 function renderAttendance(entries) {
-  // Clean và validate data
-  const validEntries = (entries || []).filter((e) => {
-    return e && e.course && /^[A-Z]{2,4}\d{3}$/.test(e.course);
-  });
+  console.log("=== renderAttendance ===");
+  console.log("Entries:", entries);
 
-  // Sort by date (newest first), then by slot
-  const sorted = validEntries.sort((a, b) => {
-    // Parse dates if available
-    if (a.date && b.date) {
-      const [dayA, monthA] = a.date.split("/").map(Number);
-      const [dayB, monthB] = b.date.split("/").map(Number);
-
-      // Compare month first, then day (descending - newest first)
-      if (monthA !== monthB) return monthB - monthA;
-      if (dayA !== dayB) return dayB - dayA;
+  try {
+    // Validate input
+    if (!Array.isArray(entries)) {
+      throw new Error("Entries không phải array");
     }
 
-    // Then sort by slot number
-    const slotA = parseInt((a.slot || "").replace(/\D/g, "") || "999");
-    const slotB = parseInt((b.slot || "").replace(/\D/g, "") || "999");
-    return slotA - slotB;
-  });
-
-  // Update filter dropdown
-  const filterSelect = document.getElementById("filterDay");
-  if (filterSelect) {
-    const existingOptions = new Set(
-      [...filterSelect.options].map((o) => o.value)
-    );
-
-    // Add date options
-    const uniqueDates = [...new Set(sorted.map((e) => e.date).filter(Boolean))];
-    uniqueDates.forEach((date) => {
-      if (!existingOptions.has(date)) {
-        const option = document.createElement("option");
-        option.value = date;
-        option.textContent = date;
-        filterSelect.appendChild(option);
-      }
+    // Clean và validate data
+    const validEntries = entries.filter((e) => {
+      if (!e || typeof e !== "object") return false;
+      if (!e.course || !/^[A-Z]{2,4}\d{3}$/.test(e.course)) return false;
+      return true;
     });
-  }
 
-  // Apply filter
-  const filterValue = filterSelect?.value || "ALL";
-  let filtered = sorted;
+    console.log(`Valid entries: ${validEntries.length}/${entries.length}`);
 
-  if (filterValue !== "ALL") {
-    if (/^\d{2}\/\d{2}$/.test(filterValue)) {
-      // Filter by date
-      filtered = sorted.filter((e) => e.date === filterValue);
-    } else if (/^(MON|TUE|WED|THU|FRI|SAT|SUN)$/.test(filterValue)) {
-      // Filter by day
-      filtered = sorted.filter((e) => e.day === filterValue);
-    }
-  }
-
-  // Calculate statistics
-  let attended = 0,
-    absent = 0,
-    late = 0,
-    notYet = 0;
-
-  filtered.forEach((e) => {
-    const s = (e.status || "").toLowerCase();
-    if (s.includes("attended")) attended++;
-    else if (s.includes("absent")) absent++;
-    else if (s.includes("late")) late++;
-    else if (s.includes("not yet")) notYet++;
-  });
-
-  const total = attended + absent; // Only count completed sessions
-  const attendanceRate = total > 0 ? Math.round((attended / total) * 100) : 0;
-
-  // Update statistics display
-  setValue("#attRate", attendanceRate + "%");
-  setValue("#attPresent", attended);
-  setValue("#attAbsentLate", `${absent}/${late}`);
-
-  // Apply search filter
-  const searchQuery = (
-    document.querySelector("#searchAtt")?.value || ""
-  ).toLowerCase();
-
-  if (searchQuery) {
-    filtered = filtered.filter(
-      (e) =>
-        e.course?.toLowerCase().includes(searchQuery) ||
-        e.status?.toLowerCase().includes(searchQuery) ||
-        e.room?.toLowerCase().includes(searchQuery)
-    );
-  }
-
-  // Render table
-  const tbody = document.querySelector("#tblAttendance tbody");
-  if (!tbody) return;
-
-  tbody.innerHTML = "";
-
-  filtered.forEach((entry) => {
-    const tr = document.createElement("tr");
-
-    // Format display
-    const dayDisplay = entry.date || entry.day || "";
-    const slotDisplay = entry.slot || "";
-    const courseDisplay = entry.course || "";
-    const statusDisplay = entry.status || "";
-
-    tr.innerHTML = `
-      <td>${dayDisplay}</td>
-      <td>${slotDisplay}</td>
-      <td>${courseDisplay}</td>
-      <td>${statusDisplay}</td>
-    `;
-
-    // Add color coding for status
-    if (statusDisplay.includes("attended")) {
-      tr.style.color = "#10b981";
-    } else if (statusDisplay.includes("absent")) {
-      tr.style.color = "#ef4444";
+    if (validEntries.length === 0) {
+      throw new Error("Không có entry hợp lệ nào");
     }
 
-    tbody.appendChild(tr);
-  });
+    // Sort by date (newest first)
+    const sorted = validEntries.sort((a, b) => {
+      if (a.date && b.date) {
+        const [dayA, monthA] = a.date.split("/").map(Number);
+        const [dayB, monthB] = b.date.split("/").map(Number);
 
-  // If no results
-  if (filtered.length === 0) {
-    const tr = document.createElement("tr");
-    tr.innerHTML =
-      '<td colspan="4" style="text-align: center">Không có dữ liệu</td>';
-    tbody.appendChild(tr);
+        if (monthA !== monthB) return monthB - monthA;
+        if (dayA !== dayB) return dayB - dayA;
+      }
+
+      const slotA = parseInt((a.slot || "").replace(/\D/g, "") || "999");
+      const slotB = parseInt((b.slot || "").replace(/\D/g, "") || "999");
+      return slotA - slotB;
+    });
+
+    // Update filter dropdown with dates
+    const filterSelect = document.getElementById("filterDay");
+    if (filterSelect) {
+      const existingOptions = new Set(
+        [...filterSelect.options].map((o) => o.value)
+      );
+
+      const uniqueDates = [
+        ...new Set(sorted.map((e) => e.date).filter(Boolean)),
+      ];
+      uniqueDates.forEach((date) => {
+        if (!existingOptions.has(date)) {
+          const option = document.createElement("option");
+          option.value = date;
+          option.textContent = date;
+          filterSelect.appendChild(option);
+        }
+      });
+    }
+
+    // Apply day/date filter
+    const filterValue = filterSelect?.value || "ALL";
+    let filtered = sorted;
+
+    if (filterValue !== "ALL") {
+      if (/^\d{2}\/\d{2}$/.test(filterValue)) {
+        filtered = sorted.filter((e) => e.date === filterValue);
+      } else if (/^(MON|TUE|WED|THU|FRI|SAT|SUN)$/.test(filterValue)) {
+        filtered = sorted.filter((e) => e.day === filterValue);
+      }
+    }
+
+    // Calculate statistics
+    let attended = 0,
+      absent = 0,
+      late = 0,
+      notYet = 0;
+
+    filtered.forEach((e) => {
+      const s = (e.status || "").toLowerCase();
+      if (s.includes("attended")) attended++;
+      else if (s.includes("absent")) absent++;
+      else if (s.includes("late")) late++;
+      else if (s.includes("not yet")) notYet++;
+    });
+
+    const total = attended + absent;
+    const attendanceRate = total > 0 ? Math.round((attended / total) * 100) : 0;
+
+    // Update stats display
+    setValue("#attRate", attendanceRate + "%");
+    setValue("#attPresent", attended);
+    setValue("#attAbsentLate", `${absent}/${late}`);
+
+    // Apply search filter
+    const searchQuery = (
+      document.querySelector("#searchAtt")?.value || ""
+    ).toLowerCase();
+
+    if (searchQuery) {
+      filtered = filtered.filter(
+        (e) =>
+          e.course?.toLowerCase().includes(searchQuery) ||
+          e.status?.toLowerCase().includes(searchQuery) ||
+          e.room?.toLowerCase().includes(searchQuery)
+      );
+    }
+
+    // Render table
+    const tbody = document.querySelector("#tblAttendance tbody");
+    if (!tbody) throw new Error("Không tìm thấy tbody");
+
+    tbody.innerHTML = "";
+
+    if (filtered.length === 0) {
+      const tr = document.createElement("tr");
+      tr.innerHTML =
+        '<td colspan="4" style="text-align: center; color: var(--muted)">Không có dữ liệu</td>';
+      tbody.appendChild(tr);
+      return;
+    }
+
+    filtered.forEach((entry) => {
+      const tr = document.createElement("tr");
+
+      const dayDisplay = entry.date || entry.day || "";
+      const slotDisplay = entry.slot || "";
+      const courseDisplay = entry.course || "";
+      const statusDisplay = entry.status || "";
+
+      tr.innerHTML = `
+        <td>${dayDisplay}</td>
+        <td>${slotDisplay}</td>
+        <td>${courseDisplay}</td>
+        <td>${statusDisplay}</td>
+      `;
+
+      // Color coding
+      if (statusDisplay.toLowerCase().includes("attended")) {
+        tr.style.color = "#10b981";
+      } else if (statusDisplay.toLowerCase().includes("absent")) {
+        tr.style.color = "#ef4444";
+      }
+
+      tbody.appendChild(tr);
+    });
+
+    console.log("✓ Render attendance thành công");
+  } catch (error) {
+    console.error("❌ Lỗi render attendance:", error);
+
+    // Hiển thị error message thay vì crash
+    const tbody = document.querySelector("#tblAttendance tbody");
+    if (tbody) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="4" style="text-align: center; color: #ef4444; padding: 20px;">
+            <strong>Lỗi hiển thị dữ liệu</strong><br>
+            <small>${error.message}</small><br>
+            <small style="color: var(--muted)">Vui lòng thử "Làm mới" hoặc kiểm tra Console (F12)</small>
+          </td>
+        </tr>
+      `;
+    }
+
+    // Reset stats
+    setValue("#attRate", "--");
+    setValue("#attPresent", "--");
+    setValue("#attAbsentLate", "--");
   }
 }
 
@@ -721,7 +845,12 @@ document.querySelectorAll(".tabs button").forEach((btn) => {
 });
 
 (async function init() {
-  await Promise.all([loadGPA(), loadAttendanceAndSchedule(), loadSettingsUI()]);
+  await Promise.all([
+    loadGPA(),
+    loadAttendanceAndSchedule(),
+    loadSettingsUI(),
+    loadExams(),
+  ]);
 
   try {
     await checkUpdate();
@@ -733,7 +862,8 @@ document.getElementById("btnRefreshAll").onclick = async function () {
   await handleRefreshWithLoading(this, async () => {
     await STORAGE.remove("cache_transcript");
     await STORAGE.remove("cache_attendance");
-    await Promise.all([loadGPA(), refreshAttendance()]);
+    await STORAGE.remove("cache_exams");
+    await Promise.all([loadGPA(), refreshAttendance(), loadExams()]);
   });
 };
 
@@ -766,7 +896,7 @@ function renderScheduleWeek(entries) {
   sorted.forEach((entry) => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td>${entry.day || ""}</td>
+      <td>${dayToVietnamese(entry.day) || ""}</td>
       <td>${entry.slot || ""}</td>
       <td>${entry.time || ""}</td>
       <td>${entry.course || ""}</td>
@@ -776,7 +906,6 @@ function renderScheduleWeek(entries) {
     tbody.appendChild(tr);
   });
 }
-
 // ===== Export All to PDF =====
 async function exportAllPDF() {
   const { jsPDF } = window.jspdf;
@@ -876,6 +1005,29 @@ async function exportAllPDF() {
 const btnExportPDF = document.getElementById("btnExportPDF");
 if (btnExportPDF) btnExportPDF.onclick = exportAllPDF;
 
+//exam btn
+document.getElementById("btnOpenExams").onclick = () =>
+  chrome.tabs.create({ url: DEFAULT_URLS.examSchedule });
+
+document.getElementById("btnRefreshExams").onclick = async function () {
+  await handleRefreshWithLoading(this, async () => {
+    await STORAGE.remove("cache_exams");
+    await loadExams();
+  });
+};
+
+function dayToVietnamese(day) {
+  const map = {
+    MON: "Thứ 2",
+    TUE: "Thứ 3",
+    WED: "Thứ 4",
+    THU: "Thứ 5",
+    FRI: "Thứ 6",
+    SAT: "Thứ 7",
+    SUN: "Chủ nhật",
+  };
+  return map[day] || day;
+}
 // === Export PDF via printable report page (no external libs needed) ===
 (function () {
   const btn = document.getElementById("btnExportPDF");
@@ -884,6 +1036,118 @@ if (btnExportPDF) btnExportPDF.onclick = exportAllPDF;
       chrome.tabs.create({ url: chrome.runtime.getURL("report.html") });
   }
 })();
+
+// ---------- Parse Exam Schedule ----------
+function parseExamScheduleDoc(doc) {
+  const exams = [];
+  const tables = [...doc.querySelectorAll("table")];
+  let examTable = null;
+
+  // 1. Tìm đúng bảng chứa lịch thi
+  for (const table of tables) {
+    const tableText = (table.textContent || "").toLowerCase();
+    if (
+      tableText.includes("subjectcode") &&
+      tableText.includes("date of publication")
+    ) {
+      examTable = table;
+      break;
+    }
+  }
+
+  if (!examTable) {
+    console.log("Không tìm thấy bảng lịch thi.");
+    return [];
+  }
+
+  // 2. Lấy tất cả các hàng, tìm hàng tiêu đề và chỉ xử lý các hàng dữ liệu sau đó
+  const allRows = [...examTable.querySelectorAll("tr")];
+  let headerRowIndex = -1;
+
+  // Tìm vị trí của hàng tiêu đề (hàng chứa "SubjectCode")
+  for (let i = 0; i < allRows.length; i++) {
+    const rowText = (allRows[i].textContent || "").toLowerCase();
+    if (rowText.includes("subjectcode")) {
+      headerRowIndex = i;
+      break;
+    }
+  }
+
+  // Nếu không tìm thấy header, không làm gì cả
+  if (headerRowIndex === -1) {
+    console.log("Không tìm thấy hàng tiêu đề trong bảng lịch thi.");
+    return [];
+  }
+
+  const dataRows = allRows.slice(headerRowIndex + 1); // Chỉ lấy các hàng sau hàng tiêu đề
+
+  // 3. Trích xuất dữ liệu từ các hàng đã lọc
+  for (const row of dataRows) {
+    const cells = [...row.querySelectorAll("td")];
+    if (cells.length < 9) continue; // Bỏ qua nếu hàng không đủ 9 cột như trên web
+
+    const examData = {
+      no: cells[0]?.textContent.trim() || "",
+      code: cells[1]?.textContent.trim() || "",
+      name: cells[2]?.textContent.trim() || "",
+      date: cells[3]?.textContent.trim() || "",
+      room: cells[4]?.textContent.trim() || "",
+      time: cells[5]?.textContent.trim() || "",
+      form: cells[6]?.textContent.trim() || "",
+      type: cells[7]?.textContent.trim() || "",
+      publishDate: cells[8]?.textContent.trim() || "",
+    };
+
+    // Chỉ thêm vào nếu có mã môn học
+    if (examData.code) {
+      exams.push(examData);
+    }
+  }
+  return exams;
+}
+
+// ---------- Renderer for Exam Schedule ----------
+function renderExamSchedule(exams) {
+  const tbody = document.querySelector("#tblExams tbody");
+  if (!tbody) return;
+
+  tbody.innerHTML = "";
+
+  if (!exams || exams.length === 0) {
+    const tr = document.createElement("tr");
+    tr.innerHTML =
+      '<td colspan="6" style="text-align: center; color: var(--muted)">Không có lịch thi.</td>';
+    tbody.appendChild(tr);
+    return;
+  }
+
+  exams.forEach((exam) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${exam.code}</td>
+      <td>${exam.name}</td>
+      <td>${exam.date}</td>
+      <td>${exam.time}</td>
+      <td>${exam.room}</td>
+      <td>${exam.form}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// ---------- Loader for Exams with caching ----------
+async function loadExams() {
+  const cache = await cacheGet("cache_exams", DAY_MS); // Cache 24h
+  let exams;
+  if (cache && Array.isArray(cache.exams)) {
+    exams = cache.exams;
+  } else {
+    const doc = await fetchHTML(DEFAULT_URLS.examSchedule);
+    exams = parseExamScheduleDoc(doc);
+    await cacheSet("cache_exams", { exams });
+  }
+  renderExamSchedule(exams);
+}
 
 // === Loading States cho Refresh Buttons ===
 const loadingStyles = `

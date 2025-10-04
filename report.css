@@ -1,19 +1,76 @@
-:root{
-  --bg:#ffffff; --text:#0f172a; --muted:#64748b; --accent:#0ea5e9; --border:#e5e7eb;
+:root {
+  --bg: #ffffff;
+  --text: #0f172a;
+  --muted: #64748b;
+  --accent: #0ea5e9;
+  --border: #e5e7eb;
 }
-*{box-sizing:border-box}
-html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:system-ui,Segoe UI,Inter,Arial,sans-serif}
-.page{page-break-after:always;padding:28px}
-.page:last-child{page-break-after:auto}
-h1,h2{margin:0 0 12px 0}
-h2{border-bottom:2px solid var(--border);padding-bottom:6px}
-table{width:100%;border-collapse:collapse;margin-top:10px}
-th,td{border-bottom:1px solid var(--border);padding:8px 10px;text-align:left;font-size:12px}
-th{background:#f8fafc}
-.cover{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:88vh;text-align:center}
-.cover img{width:96px;height:96px;border-radius:20px;margin-bottom:12px}
-.lead{max-width:680px;margin:8px auto 16px;line-height:1.5}
-.muted{color:var(--muted);font-size:13px}
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, Segoe UI, Inter, Arial, sans-serif;
+}
+.page {
+  page-break-after: always;
+  padding: 28px;
+}
+.page:last-child {
+  page-break-after: auto;
+}
+h1,
+h2 {
+  margin: 0 0 12px 0;
+}
+h2 {
+  border-bottom: 2px solid var(--border);
+  padding-bottom: 6px;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+th,
+td {
+  border-bottom: 1px solid var(--border);
+  padding: 8px 10px;
+  text-align: left;
+  font-size: 12px;
+}
+th {
+  background: #f8fafc;
+}
+.cover {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 88vh;
+  text-align: center;
+}
+.cover img {
+  width: 96px;
+  height: 96px;
+  border-radius: 20px;
+  margin-bottom: 12px;
+}
+.lead {
+  max-width: 680px;
+  margin: 8px auto 16px;
+  line-height: 1.5;
+}
+.muted {
+  color: var(--muted);
+  font-size: 13px;
+}
 @media print {
-  a[href]:after{content:""}
+  a[href]:after {
+    content: "";
+  }
 }

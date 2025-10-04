@@ -1,127 +1,208 @@
 <!DOCTYPE html>
 
 <html lang="vi">
-<head>
-<meta charset="utf-8"/>
-<meta content="width=device-width,initial-scale=1" name="viewport"/>
-<title>FAP Dashboard</title>
-<link href="popup.css" rel="stylesheet"/>
-</head>
-<body>
-<div class="wrap">
-<header class="top">
-<div class="brand">
-<img alt="icon" src="icon128.png"/>
-<h1>FAP Dashboard</h1>
-</div>
-<div class="top-actions">
-<span id="verBadge" style="opacity:.8;margin-right:8px"></span><button id="btnCheckUpdate" title="Kiểm tra cập nhật">Check update</button> <button id="btnOpenFAP" title="Mở FAP">Mở FAP</button>
-</div>
-</header>
-<nav class="tabs">
-<button class="active" data-tab="tab-gpa">GPA</button>
-<button data-tab="tab-att">Điểm danh</button>
-<button data-tab="tab-schedule">Lịch</button>
-<button data-tab="tab-bookmark">Bookmark</button><button data-tab="tab-settings">Cài đặt</button>
-</nav>
-<section class="tab active" id="tab-gpa">
-<div class="cards">
-<div class="card"><div class="label">GPA (10)</div><div class="value" id="gpa10">--</div></div>
-<div class="card"><div class="label">GPA (4)</div><div class="value" id="gpa4">--</div></div>
-<div class="card"><div class="label">Tổng tín chỉ</div><div class="value" id="credits">--</div></div>
-</div>
-<div class="actions">
-<button id="btnOpenTranscript">Trang Transcript</button>
-<button id="btnCopyGPA">Copy GPA</button>
-<button id="btnRefreshAll">Làm mới</button>
-</div>
-<div class="table">
-<div class="table-head">
-<div>Danh sách môn</div>
-<input id="searchCourse" placeholder="Tìm môn..."/>
-</div>
-<table id="tblCourses">
-<thead><tr>
-<th>Code</th><th>Tên môn</th><th class="r">TC</th><th class="r">Điểm</th><th>Trạng thái</th>
-</tr></thead>
-<tbody></tbody>
-</table>
-</div>
-</section>
-<section class="tab" id="tab-att">
-<div class="cards">
-<div class="card"><div class="label">% chuyên cần</div><div class="value" id="attRate">--</div></div>
-<div class="card"><div class="label">Có mặt</div><div class="value" id="attPresent">--</div></div>
-<div class="card"><div class="label">Vắng / Muộn</div><div class="value" id="attAbsentLate">--</div></div>
-</div>
-<div class="actions">
-<button id="btnOpenAttendance">Trang Attendance</button>
-<button class="primary" id="btnRefreshAttendance">Làm mới</button>
-</div>
-<div class="table">
-<div class="table-head">
-<div>Nhật ký điểm danh (gần nhất → xa)</div>
-<div style="display:flex; gap:8px; align-items:center;">
-<select id="filterDay">
-<option value="ALL">Tất cả ngày</option>
-<option value="MON">MON</option>
-<option value="TUE">TUE</option>
-<option value="WED">WED</option>
-<option value="THU">THU</option>
-<option value="FRI">FRI</option>
-<option value="SAT">SAT</option>
-<option value="SUN">SUN</option>
-</select>
-<input id="searchAtt" placeholder="Tìm theo môn / trạng thái..."/>
-</div>
-</div>
-<table id="tblAttendance">
-<thead><tr>
-<th>Ngày</th><th>Slot</th><th>Môn</th><th>Trạng thái</th>
-</tr></thead>
-<tbody></tbody>
-</table>
-</div>
-</section>
-<section class="tab" id="tab-schedule">
-<div class="actions">
-<button id="btnOpenSchedule">Trang Schedule</button>
-<button class="primary" id="btnRefreshSchedule">Làm mới</button>
-</div>
-<div class="table">
-<div class="table-head"><div>Lịch cả tuần</div></div>
-<table id="tblScheduleWeek">
-<thead><tr>
-<th>Thứ</th><th>Slot</th><th>Giờ</th><th>Môn</th><th>Phòng</th><th>Ghi chú</th>
-</tr></thead>
-<tbody></tbody>
-</table>
-</div>
-</section>
-<section class="tab" id="tab-bookmark"><div class="table"><div class="table-head"><div>Truy cập nhanh</div></div><div class="book-grid"><button id="btnOpenLMS">LMS HCM</button><button id="btnOpenFAP2">FAP</button><button id="btnOpenIT">IT HCM</button></div></div></section><section class="tab" id="tab-settings">
-<div class="form">
-<label class="row">
-<span>Giờ hoạt động (hh:mm-hh:mm)</span>
-<input id="setActiveFrom" value="07:00"/>
-<input id="setActiveTo" value="17:40"/>
-</label>
-<label class="row">
-<span>Trễ thông báo ngẫu nhiên (phút, min-max)</span>
-<input id="setDelayMin" min="0" type="number" value="10"/>
-<input id="setDelayMax" min="0" type="number" value="30"/>
-</label>
-<label class="row">
-<span>Tần suất kiểm tra cập nhật (phút)</span>
-<input id="setPollEvery" min="5" type="number" value="15"/>
-</label>
-<div class="row">
-<button class="primary" id="btnSaveSettings">Lưu cài đặt</button>
-<button id="btnTestNotify">Test thông báo</button>
-<button id="btnExportPDF">Export PDF</button>
-</div>
-</div>
-<p class="hint">Cài đặt này dùng cho service worker để tự kiểm tra cập nhật điểm danh và nhắc bạn sau khi hệ thống cập nhật.</p>
-</section>
-</div><script src="popup.js"></script>
-</body>
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width,initial-scale=1" name="viewport" />
+    <title>FAP Dashboard</title>
+    <link href="popup.css" rel="stylesheet" />
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="top">
+        <div class="brand">
+          <img alt="icon" src="icon128.png" />
+          <h1>FAP Dashboard</h1>
+        </div>
+        <div class="top-actions">
+          <span id="verBadge" style="opacity: 0.8; margin-right: 8px"></span
+          ><button id="btnCheckUpdate" title="Kiểm tra cập nhật">
+            Check update
+          </button>
+          <button id="btnOpenFAP" title="Mở FAP">Mở FAP</button>
+        </div>
+      </header>
+      <nav class="tabs">
+        <button class="active" data-tab="tab-gpa">GPA</button>
+        <button data-tab="tab-att">Điểm danh</button>
+        <button data-tab="tab-schedule">Lịch</button>
+        <button data-tab="tab-exam">Lịch thi</button>
+        <button data-tab="tab-bookmark">Bookmark</button
+        ><button data-tab="tab-settings">Cài đặt</button>
+      </nav>
+      <section class="tab active" id="tab-gpa">
+        <div class="cards">
+          <div class="card">
+            <div class="label">GPA (10)</div>
+            <div class="value" id="gpa10">--</div>
+          </div>
+          <div class="card">
+            <div class="label">GPA (4)</div>
+            <div class="value" id="gpa4">--</div>
+          </div>
+          <div class="card">
+            <div class="label">Tổng tín chỉ</div>
+            <div class="value" id="credits">--</div>
+          </div>
+        </div>
+        <div class="actions">
+          <button id="btnOpenTranscript">Trang Transcript</button>
+          <button id="btnCopyGPA">Copy GPA</button>
+          <button id="btnRefreshAll">Làm mới</button>
+        </div>
+        <div class="table">
+          <div class="table-head">
+            <div>Danh sách môn</div>
+            <input id="searchCourse" placeholder="Tìm môn..." />
+          </div>
+          <table id="tblCourses">
+            <thead>
+              <tr>
+                <th>Code</th>
+                <th>Tên môn</th>
+                <th class="r">TC</th>
+                <th class="r">Điểm</th>
+                <th>Trạng thái</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+      <section class="tab" id="tab-att">
+        <div class="cards">
+          <div class="card">
+            <div class="label">% chuyên cần</div>
+            <div class="value" id="attRate">--</div>
+          </div>
+          <div class="card">
+            <div class="label">Có mặt</div>
+            <div class="value" id="attPresent">--</div>
+          </div>
+          <div class="card">
+            <div class="label">Vắng / Muộn</div>
+            <div class="value" id="attAbsentLate">--</div>
+          </div>
+        </div>
+        <div class="actions">
+          <button id="btnOpenAttendance">Trang Attendance</button>
+          <button class="primary" id="btnRefreshAttendance">Làm mới</button>
+        </div>
+        <div class="table">
+          <div class="table-head">
+            <div>Nhật ký điểm danh (gần nhất → xa)</div>
+            <div style="display: flex; gap: 8px; align-items: center">
+              <select id="filterDay">
+                <option value="ALL">Tất cả ngày</option>
+                <option value="MON">Thứ 2</option>
+                <option value="TUE">Thứ 3</option>
+                <option value="WED">Thứ 4</option>
+                <option value="THU">Thứ 5</option>
+                <option value="FRI">Thứ 6</option>
+                <option value="SAT">Thứ 7</option>
+                <option value="SUN">Chủ nhật</option>
+              </select>
+              <input
+                id="searchAtt"
+                placeholder="Tìm theo môn / trạng thái..."
+              />
+            </div>
+          </div>
+          <table id="tblAttendance">
+            <thead>
+              <tr>
+                <th>Ngày</th>
+                <th>Slot</th>
+                <th>Môn</th>
+                <th>Trạng thái</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+      <section class="tab" id="tab-schedule">
+        <div class="actions">
+          <button id="btnOpenSchedule">Trang Schedule</button>
+          <button class="primary" id="btnRefreshSchedule">Làm mới</button>
+        </div>
+        <div class="table">
+          <div class="table-head"><div>Lịch cả tuần</div></div>
+          <table id="tblScheduleWeek">
+            <thead>
+              <tr>
+                <th>Thứ</th>
+                <th>Slot</th>
+                <th>Giờ</th>
+                <th>Môn</th>
+                <th>Phòng</th>
+                <th>Ghi chú</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+      <section class="tab" id="tab-exam">
+        <div class="actions">
+          <button id="btnOpenExams">Trang Lịch thi</button>
+          <button class="primary" id="btnRefreshExams">Làm mới</button>
+        </div>
+        <div class="table">
+          <div class="table-head"><div>Lịch thi các môn</div></div>
+          <table id="tblExams">
+            <thead>
+              <tr>
+                <th>Môn</th>
+                <th>Tên môn</th>
+                <th>Ngày thi</th>
+                <th>Giờ</th>
+                <th>Phòng</th>
+                <th>Hình thức</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+      <section class="tab" id="tab-bookmark">
+        <div class="table">
+          <div class="table-head"><div>Truy cập nhanh</div></div>
+          <div class="book-grid">
+            <button id="btnOpenLMS">LMS HCM</button
+            ><button id="btnOpenFAP2">FAP</button
+            ><button id="btnOpenIT">IT HCM</button>
+          </div>
+        </div>
+      </section>
+      <section class="tab" id="tab-settings">
+        <div class="form">
+          <label class="row">
+            <span>Giờ hoạt động (hh:mm-hh:mm)</span>
+            <input id="setActiveFrom" value="07:00" />
+            <input id="setActiveTo" value="17:40" />
+          </label>
+          <label class="row">
+            <span>Trễ thông báo ngẫu nhiên (phút, min-max)</span>
+            <input id="setDelayMin" min="0" type="number" value="10" />
+            <input id="setDelayMax" min="0" type="number" value="30" />
+          </label>
+          <label class="row">
+            <span>Tần suất kiểm tra cập nhật (phút)</span>
+            <input id="setPollEvery" min="5" type="number" value="15" />
+          </label>
+          <div class="row">
+            <button class="primary" id="btnSaveSettings">Lưu cài đặt</button>
+            <button id="btnTestNotify">Test thông báo</button>
+            <button id="btnExportPDF">Export PDF</button>
+          </div>
+        </div>
+        <p class="hint">
+          Cài đặt này dùng cho service worker để tự kiểm tra cập nhật điểm danh
+          và nhắc bạn sau khi hệ thống cập nhật.
+        </p>
+      </section>
+    </div>
+    <script src="popup.js"></script>
+  </body>
 </html>
