@@ -1,279 +1,229 @@
-# FAP GPA Viewer – Dashboard
 
-Chrome Extension giúp sinh viên FPT University theo dõi GPA, điểm danh, lịch học và nhận thông báo tự động khi có cập nhật.
+<p align="center">
+  <img src="icon128.png" alt="FAP GPA Viewer Logo" width="100" height="100">
+</p>
 
-## ✨ Tính năng
+<h1 align="center">🎓 FAP GPA Viewer – Dashboard</h1>
 
-- **📊 Xem GPA**: Tính toán GPA thang 10 và thang 4, tổng tín chỉ
-- **✅ Theo dõi điểm danh**: Xem lịch sử điểm danh, tỷ lệ chuyên cần
-- **📅 Lịch học**: Hiển thị lịch học trong tuần
-- **🔔 Thông báo tự động**: Nhận thông báo khi có điểm danh mới
-- **📄 Export PDF**: Xuất toàn bộ dữ liệu ra PDF
-- **🔄 Kiểm tra cập nhật**: Tự động thông báo khi có phiên bản mới
+<p align="center">
+  <b>Tiện ích Chrome giúp sinh viên FPT University theo dõi GPA, điểm danh, lịch học và nhận thông báo tự động.</b><br>
+  <i>Không thu thập dữ liệu • Không thương mại • Dành cho sinh viên FPT</i>
+</p>
 
-## 🚀 Cài đặt
+<p align="center">
+  <!-- License -->
+  <a href="LICENSE.md">
+    <img src="https://img.shields.io/badge/License-Non--Commercial%20MIT-blue.svg" alt="License: Non-Commercial MIT">
+  </a>
+  <!-- Privacy -->
+  <a href="PRIVACY.md">
+    <img src="https://img.shields.io/badge/Privacy-Local%20Only-green.svg" alt="Privacy: Local Only">
+  </a>
+  <!-- Terms -->
+  <a href="TERMS.md">
+    <img src="https://img.shields.io/badge/Terms-Clear-orange.svg" alt="Terms of Use">
+  </a>
+  <!-- Status -->
+  <img src="https://img.shields.io/badge/Status-Unofficial-lightgrey.svg" alt="Unofficial">
+  <!-- Stars -->
+  <a href="https://github.com/longurara/FAP-GPA-Viewer/stargazers">
+    <img src="https://img.shields.io/github/stars/longurara/FAP-GPA-Viewer?style=social" alt="GitHub Stars">
+  </a>
+</p>
 
-### Bước 1: Tải mã nguồn
+---
 
-**Cách 1: Tải trực tiếp**
-1. Truy cập [GitHub Repository](https://github.com/longurara/FAP-GPA-Viewer)
-2. Click nút **Release** → **Download ZIP**
+<p align="center">
+  🌐 <b>Ngôn ngữ:</b> 
+  <a href="#-tiếng-việt">🇻🇳 Tiếng Việt</a> | 
+  <a href="#-english">🇬🇧 English</a>
+</p>
+
+---
+
+## 🇻🇳 Tiếng Việt
+
+### 🧭 Giới thiệu
+
+**FAP GPA Viewer – Dashboard** là tiện ích mở rộng Chrome (Manifest V3) được phát triển bởi sinh viên FPT University.  
+Giúp bạn **xem GPA, điểm danh, lịch học, nhận thông báo tự động** và **xuất báo cáo PDF**, tất cả trong một giao diện gọn gàng, hiện đại.
+
+---
+
+### ✨ Tính năng chính
+
+- **📊 GPA (Điểm trung bình):**  
+  Tính GPA thang 10 và 4, tổng tín chỉ, hỗ trợ tìm kiếm môn học.  
+- **✅ Điểm danh:**  
+  Hiển thị tỷ lệ chuyên cần, buổi vắng, muộn, cập nhật tự động.  
+- **📅 Lịch học:**  
+  Lịch học cả tuần với Slot, thời gian, phòng học.  
+- **🔔 Thông báo tự động:**  
+  Gửi thông báo khi có cập nhật điểm danh mới (trễ ngẫu nhiên 10–30 phút).  
+- **📄 Xuất PDF:**  
+  Xuất toàn bộ dữ liệu GPA, điểm danh, lịch học ra file PDF.  
+- **🔄 Kiểm tra cập nhật:**  
+  Tự động phát hiện phiên bản mới trên GitHub.
+
+---
+
+### 🚀 Cài đặt
+
+#### Cách 1 – Tải trực tiếp
+1. Vào [GitHub Repository](https://github.com/longurara/FAP-GPA-Viewer)
+2. Chọn **Releases → Download ZIP**
 3. Giải nén file ZIP vào thư mục bất kỳ
 
-**Cách 2: Clone qua Git**
+#### Cách 2 – Clone qua Git
 ```bash
 git clone https://github.com/longurara/FAP-GPA-Viewer.git
 cd FAP-GPA-Viewer
-```
 
-### Bước 2: Mở Chrome Extensions
 
-1. Mở trình duyệt Chrome
-2. Truy cập `chrome://extensions/` hoặc:
-   - Menu (⋮) → **Extensions** → **Manage Extensions**
-3. Bật chế độ **Developer mode** (góc trên bên phải)
+#### Cách 3 – Cài vào Chrome
 
-### Bước 3: Load extension
-
-1. Click nút **Load unpacked** (Tải tiện ích đã giải nén)
-2. Chọn thư mục chứa mã nguồn extension (thư mục có file `manifest.json`)
-3. Extension sẽ xuất hiện trong danh sách
-
-### Bước 4: Ghim extension
-
-1. Click vào biểu tượng puzzle 🧩 (Extensions) trên thanh công cụ Chrome
-2. Tìm **FAP GPA Viewer – Dashboard**
-3. Click vào icon ghim 📌 để cố định extension trên thanh công cụ
-
-## 📖 Hướng dẫn sử dụng
-
-### Lần đầu sử dụng
-
-1. **Đăng nhập FAP**: 
-   - Truy cập trang của trường hoặc cứ mở extension là sẽ có thông báo chuyển hướng đến trang của trường
-   - Đăng nhập bằng tài khoản FEID của bạn
-
-2. **Mở extension**: 
-   - Click vào icon extension trên thanh công cụ
-
-3. **Làm mới dữ liệu**: 
-   - Click nút **"Làm mới"** để tải dữ liệu lần đầu
-   - Chờ vài giây để extension tải dữ liệu
-
-### 📊 Tab GPA
-
-- Hiển thị GPA thang 10, thang 4 và tổng tín chỉ
-- Danh sách tất cả môn học với điểm số
-- **Tìm kiếm**: Nhập tên môn hoặc mã môn vào ô tìm kiếm
-- **Copy GPA**: Click "Copy GPA" để sao chép thông tin GPA
-
-#### Các nút:
-- **Trang Transcript**: Mở trang điểm của FAP
-- **Copy GPA**: Copy GPA ra clipboard
-- **Làm mới**: Tải lại dữ liệu transcript
-
-### ✅ Tab Điểm danh
-
-- Hiển thị tỷ lệ chuyên cần (%)
-- Số buổi có mặt / vắng / muộn
-- Lịch sử điểm danh chi tiết (mới nhất → cũ nhất)
-
-#### Lọc và tìm kiếm:
-- **Lọc theo ngày**: Chọn thứ hoặc ngày cụ thể từ dropdown
-- **Tìm kiếm**: Tìm theo mã môn hoặc trạng thái
-
-#### Các nút:
-- **Trang Attendance**: Mở trang điểm danh FAP
-- **Làm mới**: Cập nhật dữ liệu điểm danh mới nhất
-
-### 📅 Tab Lịch
-
-- Hiển thị lịch học cả tuần
-- Thông tin chi tiết: Thứ, Slot, Giờ học, Phòng học
-
-#### Các nút:
-- **Trang Schedule**: Mở trang lịch học FAP
-- **Làm mới**: Cập nhật lịch học mới nhất
-
-### 🔖 Tab Bookmark
-
-Truy cập nhanh các trang thường dùng:
-- **LMS HCM**: Learning Management System
-- **FAP**: Trang FAP chính
-- **IT HCM**: Trang IT HCM
-
-### ⚙️ Tab Cài đặt
-
-#### Giờ hoạt động
-- Cấu hình khung giờ extension hoạt động
-- Mặc định: 07:00 - 17:40
-
-#### Trễ thông báo ngẫu nhiên
-- Thiết lập độ trễ ngẫu nhiên (phút) khi gửi thông báo
-- Mặc định: 10-30 phút
-- Giúp tránh bị phát hiện là bot
-
-#### Tần suất kiểm tra
-- Cài đặt tần suất kiểm tra cập nhật (phút)
-- Mặc định: 15 phút
-- Tối thiểu: 5 phút
-
-#### Các nút:
-- **Lưu cài đặt**: Lưu các thay đổi
-- **Test thông báo**: Kiểm tra thông báo có hoạt động không
-- **Export PDF**: Xuất toàn bộ dữ liệu ra file PDF
-
-## 📁 Cấu trúc thư mục
-
-```
-FAP-GPA-Viewer/
-├── manifest.json          # Cấu hình extension (Manifest V3)
-├── background.js          # Service worker (polling, notifications)
-├── popup.html            # Giao diện popup chính
-├── popup.js              # Logic xử lý popup
-├── popup.css             # Style cho popup
-├── report.html           # Trang hiển thị PDF
-├── report.js             # Logic xuất PDF
-├── report.css            # Style cho PDF
-├── icon128.png           # Icon extension (128x128)
-└── README.md             # File hướng dẫn này
-```
-
-## 🔧 Chi tiết kỹ thuật
-
-### Permissions
-Extension yêu cầu các quyền sau:
-- `storage`: Lưu trữ dữ liệu local
-- `tabs`: Mở tab mới
-- `notifications`: Hiển thị thông báo
-- `alarms`: Lên lịch kiểm tra định kỳ
-- `host_permissions`: Truy cập fap.fpt.edu.vn
-
-### Cache
-- Transcript: Cache 24 giờ
-- Attendance: Cache 10 phút
-- Update check: Cache 6 giờ
-
-### Service Worker
-- Tự động kiểm tra điểm danh mỗi 15 phút (có thể cấu hình)
-- Gửi thông báo khi có điểm danh mới
-- Kiểm tra cập nhật extension mỗi 6 giờ
-
-## ⚠️ Lưu ý quan trọng
-
-- Extension cần quyền truy cập `fap.fpt.edu.vn`
-- **Bạn phải đăng nhập FAP** trước khi sử dụng extension
-- Dữ liệu được cache để tối ưu hiệu suất
-- Thông báo chỉ hoạt động trong khung giờ cài đặt
-- Extension **không lưu mật khẩu** hay thông tin đăng nhập
-
-## 🐛 Khắc phục sự cố
-
-### Extension không tải được dữ liệu
-
-**Nguyên nhân**: Chưa đăng nhập FAP hoặc session hết hạn
-
-**Giải pháp**:
-1. Mở https://fap.fpt.edu.vn và đăng nhập
-2. Quay lại popup extension
-3. Click nút **"Làm mới"**
-
-### Không nhận được thông báo
-
-**Kiểm tra**:
-1. Vào `chrome://settings/content/notifications`
-2. Đảm bảo thông báo được bật
-3. Kiểm tra giờ hoạt động trong **Tab Cài đặt**
-4. Dùng nút **"Test thông báo"** để kiểm tra
-
-### Extension bị lỗi sau khi cập nhật
-
-**Giải pháp**:
-1. Vào `chrome://extensions/`
-2. Tìm **FAP GPA Viewer**
-3. Click nút **Reload** (biểu tượng 🔄)
-4. Nếu vẫn lỗi: Xóa và cài lại extension
-
-### Dữ liệu không chính xác
-
-**Giải pháp**:
-1. Click **"Làm mới"** trong từng tab
-2. Xóa cache: Vào `chrome://extensions/` → Click **"Remove"** và cài lại
-3. Kiểm tra lại trên trang FAP gốc
-
-## 🔄 Cập nhật extension
-
-### Tự động
-Extension tự động kiểm tra cập nhật từ GitHub mỗi 6 giờ
-
-### Thủ công
-1. Click nút **"Check update"** trong popup
-2. Nếu có bản mới, nút sẽ đổi thành **"Cập nhật"**
-3. Click để mở trang release trên GitHub
-4. Tải về và cài đặt lại theo hướng dẫn
-
-## 🤝 Đóng góp
-
-Mọi đóng góp đều được hoan nghênh!
-
-### Báo lỗi
-- Tạo [Issue](https://github.com/longurara/FAP-GPA-Viewer/issues) trên GitHub
-- Mô tả chi tiết lỗi và cách tái hiện
-
-### Đề xuất tính năng
-- Tạo [Issue](https://github.com/longurara/FAP-GPA-Viewer/issues) với label "enhancement"
-- Giải thích rõ tính năng và lợi ích
-
-### Pull Request
-1. Fork repository
-2. Tạo branch mới: `git checkout -b feature/ten-tinh-nang`
-3. Commit changes: `git commit -m 'Add some feature'`
-4. Push to branch: `git push origin feature/ten-tinh-nang`
-5. Tạo Pull Request
-
-## 📜 License
-
-MIT License - Xem file [LICENSE](LICENSE) để biết thêm chi tiết
-
-## 👤 Tác giả
-
-**longurara**
-- GitHub: [@longurara](https://github.com/longurara)
-- Repository: [FAP-GPA-Viewer](https://github.com/longurara/FAP-GPA-Viewer)
-
-## 🙏 Lời cảm ơn
-
-- FPT University vì hệ thống FAP
-- Cộng đồng sinh viên FPT đã đóng góp ý kiến
+1. Mở Chrome → `chrome://extensions/`
+2. Bật **Developer Mode**
+3. Nhấn **Load unpacked**
+4. Chọn thư mục có `manifest.json`
+5. Ghim extension qua biểu tượng 🧩 → 📌 **FAP GPA Viewer**
 
 ---
 
-## ⚠️ Disclaimer
+### 📖 Hướng dẫn sử dụng
 
-**English:**  
-This project is an **unofficial, community-built extension** made by FPT students for personal and educational use.  
-It is **not affiliated with, endorsed by, or maintained by FPT University or fap.fpt.edu.vn**.  
-All trademarks and names belong to their respective owners.  
-Use this software **at your own risk**. The author does **not** collect or store any user credentials or personal data.
+#### Bước đầu tiên
 
-**Tiếng Việt:**  
-Dự án này là **công cụ không chính thức** do sinh viên FPT phát triển để phục vụ mục đích cá nhân và học tập.  
-Phần mềm **không thuộc, không được bảo trợ hoặc đại diện cho FPT University hay trang fap.fpt.edu.vn**.  
-Mọi thương hiệu, biểu tượng và tên gọi thuộc quyền sở hữu của FPT University.  
-Người dùng **tự chịu trách nhiệm** khi sử dụng phần mềm này. Tác giả **không thu thập dữ liệu đăng nhập** hay thông tin cá nhân nào.
+1. Đăng nhập [fap.fpt.edu.vn](https://fap.fpt.edu.vn/)
+2. Mở extension → bấm **Làm mới dữ liệu**
+3. Chờ vài giây để tải GPA, điểm danh và lịch học
 
----
+#### Các tab chính
 
-## 🛡️ Privacy Policy (Summary)
-
-- The extension **does not collect**, store, or transmit your login credentials or grades to any external server.  
-- All data (e.g. GPA, schedule, attendance) is processed **locally in your browser** using client-side scripts.  
-- Optional features (like caching) use browser localStorage only.  
-- You can clear all local data anytime by removing the extension or clearing browser storage.
+| Tab             | Mô tả                                            | Chức năng                           |
+| --------------- | ------------------------------------------------ | ----------------------------------- |
+| 📊 **GPA**      | Xem điểm, GPA, tổng tín chỉ                      | Làm mới / Copy / Mở Transcript      |
+| ✅ **Điểm danh** | Tỷ lệ chuyên cần, vắng, muộn                     | Làm mới / Mở Attendance             |
+| 📅 **Lịch học** | Lịch tuần, Slot, phòng                           | Làm mới / Mở Schedule               |
+| 🔖 **Bookmark** | Truy cập nhanh LMS / FAP / IT HCM                | —                                   |
+| ⚙️ **Cài đặt**  | Giờ hoạt động, trễ ngẫu nhiên, tần suất kiểm tra | Lưu / Kiểm tra thông báo / Xuất PDF |
 
 ---
 
+### 🧠 Chi tiết kỹ thuật
 
-**Made with ❤️ by FPT Students, for FPT Students**
+* **Quyền:**
+  `storage`, `tabs`, `notifications`, `alarms`, `host_permissions (https://fap.fpt.edu.vn/*)`
+* **Cache:**
+  GPA – 24h, Điểm danh – 10 phút, Cập nhật – 6h
+* **Service Worker:**
+  Kiểm tra điểm danh, gửi thông báo, kiểm tra bản cập nhật từ GitHub
 
-*Nếu extension hữu ích, hãy cho repo một ⭐ trên GitHub!*
+---
+
+### 🐞 Khắc phục sự cố
+
+| Vấn đề                   | Nguyên nhân         | Cách khắc phục                               |
+| ------------------------ | ------------------- | -------------------------------------------- |
+| ❌ Không hiển thị dữ liệu | Chưa đăng nhập FAP  | Đăng nhập lại → Làm mới                      |
+| 🔕 Không nhận thông báo  | Bị tắt Notification | Mở `chrome://settings/content/notifications` |
+| ⚙️ Lỗi sau cập nhật      | Cache cũ            | `Reload` hoặc gỡ và cài lại                  |
+| 📉 Sai GPA               | Dữ liệu lỗi         | Click “Làm mới” hoặc xóa cache               |
+
+---
+
+### 🔄 Cập nhật
+
+* **Tự động:** Kiểm tra bản mới mỗi 6 giờ
+* **Thủ công:** Bấm “Check Update” → Mở GitHub → Cài lại bản mới nhất
+
+---
+
+### 🤝 Đóng góp
+
+Chào mừng đóng góp từ sinh viên FPT 🎉
+
+* Báo lỗi: [GitHub Issues](https://github.com/longurara/FAP-GPA-Viewer/issues)
+* Đề xuất tính năng: gắn nhãn “enhancement”
+* Tạo Pull Request:
+
+```bash
+git checkout -b feature/ten-tinh-nang
+git commit -m "Thêm tính năng mới"
+git push origin feature/ten-tinh-nang
+```
+
+---
+
+### 📜 Giấy phép
+
+Phát hành theo [Giấy phép MIT Phi Thương mại (LICENSE.md)](LICENSE.md)
+Tham khảo thêm:
+
+* [Chính sách bảo mật (PRIVACY.md)](PRIVACY.md)
+* [Điều khoản sử dụng (TERMS.md)](TERMS.md)
+
+---
+
+### 👤 Tác giả
+
+**Lê Hoàng Long (longurara)**
+
+* GitHub: [@longurara](https://github.com/longurara)
+* Repository: [FAP-GPA-Viewer](https://github.com/longurara/FAP-GPA-Viewer)
+
+---
+
+### ⚠️ Miễn trừ trách nhiệm
+
+Dự án này là **công cụ không chính thức**, phát triển **độc lập** để hỗ trợ sinh viên FPT University.
+Không thuộc, không được bảo trợ, và không đại diện cho **FPT University** hoặc trang **[fap.fpt.edu.vn](https://fap.fpt.edu.vn)**.
+Phần mềm **không thu thập dữ liệu cá nhân**, **không lưu mật khẩu**, **không gửi dữ liệu ra ngoài**.
+Người dùng **tự chịu trách nhiệm** khi sử dụng phần mềm.
+
+---
+
+### 🛡️ Chính sách bảo mật (Tóm tắt)
+
+* Không thu thập hoặc gửi thông tin đăng nhập ra ngoài
+* Xử lý **cục bộ trong trình duyệt**
+* Lưu tạm qua **localStorage**
+* Gỡ extension = xóa toàn bộ dữ liệu
+
+---
+
+### ❤️ Dành cho sinh viên FPT – Bởi sinh viên FPT
+
+Nếu bạn thấy tiện ích này hữu ích, hãy ⭐ dự án trên GitHub nhé!
+
+---
+
+## 🇬🇧 English
+
+### 🧭 Overview
+
+**FAP GPA Viewer – Dashboard** is an unofficial Chrome Extension (Manifest V3) made by FPT University students.
+It helps you view GPA, attendance, schedules, notifications, and export reports — all locally in your browser.
+
+### ✨ Key Features
+
+* View GPA (10 & 4 scale)
+* Track attendance updates
+* Display weekly class schedule
+* Auto notifications when attendance changes
+* Export PDF reports
+* Auto update checks via GitHub
+
+### 🛡️ Privacy
+
+No login credentials are collected.
+All processing happens locally in your browser.
+No external servers are used.
+
+### ⚠️ Disclaimer
+
+This project is **not affiliated with or endorsed by FPT University or fap.fpt.edu.vn**.
+It is a **community-built educational tool** for personal use only.
+
+**Made with ❤️ by FPT Students – for FPT Students**
+
