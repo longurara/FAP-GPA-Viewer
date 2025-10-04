@@ -1,148 +1,177 @@
 // ====== FAP Dashboard (popup) with caching + ScheduleOfWeek attendance ======
 const STORAGE = {
-  get: (k, d) => new Promise(r => chrome.storage.local.get({[k]: d}, v => r(v[k]))),
-  set: (obj) => new Promise(r => chrome.storage.local.set(obj, r)),
-  remove: (k) => new Promise(r => chrome.storage.local.remove(k, r)),
+  get: (k, d) =>
+    new Promise((r) => chrome.storage.local.get({ [k]: d }, (v) => r(v[k]))),
+  set: (obj) => new Promise((r) => chrome.storage.local.set(obj, r)),
+  remove: (k) => new Promise((r) => chrome.storage.local.remove(k, r)),
 };
 
 const DEFAULT_URLS = {
-  transcript: 'https://fap.fpt.edu.vn/Grade/StudentTranscript.aspx',
-  scheduleOfWeek: 'https://fap.fpt.edu.vn/Report/ScheduleOfWeek.aspx'
+  transcript: "https://fap.fpt.edu.vn/Grade/StudentTranscript.aspx",
+  scheduleOfWeek: "https://fap.fpt.edu.vn/Report/ScheduleOfWeek.aspx",
 };
 
-function $(sel){return document.querySelector(sel)}
-function setValue(id, v){const el=$(id); if(el) el.textContent = v;}
-function toNum(txt){const m=(txt||"").match(/-?\d+(?:[.,]\d+)?/);return m?parseFloat(m[0].replace(',', '.')):NaN;}
-function NORM(s){return (s||"").replace(/\s+/g, " ").trim().toUpperCase()}
+function $(sel) {
+  return document.querySelector(sel);
+}
+function setValue(id, v) {
+  const el = document.querySelector(id);
+  if (el) el.textContent = v;
+}
+function toNum(txt) {
+  const m = (txt || "").match(/-?\d+(?:[.,]\d+)?/);
+  return m ? parseFloat(m[0].replace(",", ".")) : NaN;
+}
+function NORM(s) {
+  return (s || "").replace(/\s+/g, " ").trim().toUpperCase();
+}
 
 // ===== Update checker (GitHub Releases) =====
-const REPO = 'longurara/FAP-GPA-Viewer';
+const REPO = "longurara/FAP-GPA-Viewer";
 const LATEST_API = `https://api.github.com/repos/${REPO}/releases/latest`;
-const RELEASE_PAGE = 'https://github.com/longurara/FAP-GPA-Viewer/releases/latest';
+const RELEASE_PAGE =
+  "https://github.com/longurara/FAP-GPA-Viewer/releases/latest";
 
-function semverParts(v){
-  const m = String(v||'').trim().replace(/^v/i,'').match(/^(\d+)\.(\d+)\.(\d+)(.*)?$/);
-  if(!m) return [0,0,0,''];
-  return [parseInt(m[1]), parseInt(m[2]), parseInt(m[3]), m[4]||''];
+function semverParts(v) {
+  const m = String(v || "")
+    .trim()
+    .replace(/^v/i, "")
+    .match(/^(\d+)\.(\d+)\.(\d+)(.*)?$/);
+  if (!m) return [0, 0, 0, ""];
+  return [parseInt(m[1]), parseInt(m[2]), parseInt(m[3]), m[4] || ""];
 }
-function semverCmp(a,b){
-  const A=semverParts(a), B=semverParts(b);
-  for(let i=0;i<3;i++){ if((A[i]||0)!==(B[i]||0)) return (A[i]||0)-(B[i]||0); }
+function semverCmp(a, b) {
+  const A = semverParts(a),
+    B = semverParts(b);
+  for (let i = 0; i < 3; i++) {
+    if ((A[i] || 0) !== (B[i] || 0)) return (A[i] || 0) - (B[i] || 0);
+  }
   return 0;
 }
 
-async function checkUpdate(force=false){
-  const CACHE_KEY = '__gh_latest_release__';
+async function checkUpdate(force = false) {
+  const CACHE_KEY = "__gh_latest_release__";
   const now = Date.now();
   const cached = await STORAGE.get(CACHE_KEY, null);
   let latest = null;
-  if(!force && cached && (now - cached.ts) < 6*60*60*1000){
+  if (!force && cached && now - cached.ts < 6 * 60 * 60 * 1000) {
     latest = cached.data;
   } else {
-    const res = await fetch(LATEST_API, { headers: { 'Accept': 'application/vnd.github+json' }});
-    if(!res.ok) throw new Error('GitHub API error ' + res.status);
+    const res = await fetch(LATEST_API, {
+      headers: { Accept: "application/vnd.github+json" },
+    });
+    if (!res.ok) throw new Error("GitHub API error " + res.status);
     const j = await res.json();
     latest = {
-      tag: j.tag_name || j.name || '',
+      tag: j.tag_name || j.name || "",
       url: j.html_url || RELEASE_PAGE,
-      published_at: j.published_at || ''
+      published_at: j.published_at || "",
     };
-    await STORAGE.set({[CACHE_KEY]: {ts: now, data: latest}});
+    await STORAGE.set({ [CACHE_KEY]: { ts: now, data: latest } });
   }
 
   const curr = chrome.runtime.getManifest().version;
-  const latestClean = (latest.tag||'').replace(/^v/i,'');
+  const latestClean = (latest.tag || "").replace(/^v/i, "");
   const cmp = semverCmp(latestClean, curr);
 
-  const badge = document.getElementById('verBadge');
-  const btn = document.getElementById('btnCheckUpdate');
+  const badge = document.getElementById("verBadge");
+  const btn = document.getElementById("btnCheckUpdate");
 
-  if(badge){ badge.textContent = `v${curr}`; }
+  if (badge) {
+    badge.textContent = `v${curr}`;
+  }
 
-  if(cmp > 0){
-    if(badge){
+  if (cmp > 0) {
+    if (badge) {
       badge.innerHTML = `v${curr} → <strong>v${latestClean}</strong>`;
-      badge.style.color = 'var(--accent)';
+      badge.style.color = "var(--accent)";
     }
-    if(btn){
-      btn.textContent = 'Cập nhật';
-      btn.onclick = ()=> chrome.tabs.create({ url: latest.url || RELEASE_PAGE });
-      btn.classList.add('primary');
+    if (btn) {
+      btn.textContent = "Cập nhật";
+      btn.onclick = () =>
+        chrome.tabs.create({ url: latest.url || RELEASE_PAGE });
+      btn.classList.add("primary");
     }
   } else {
-    if(btn){
-      btn.textContent = 'Check update';
-      btn.onclick = async ()=>{
-        try { await checkUpdate(true); alert('Bạn đang ở phiên bản mới nhất.'); }
-        catch(e){ alert('Không kiểm tra được cập nhật: ' + e.message); }
+    if (btn) {
+      btn.textContent = "Check update";
+      btn.onclick = async () => {
+        try {
+          await checkUpdate(true);
+          alert("Bạn đang ở phiên bản mới nhất.");
+        } catch (e) {
+          alert("Không kiểm tra được cập nhật: " + e.message);
+        }
       };
     }
   }
 }
 
-
-
-
-async function fetchHTML(url){
-  const res = await fetch(url, {credentials:'include', redirect:'follow'});
-  if (res.redirected && /\/Default\.aspx$/i.test(new URL(res.url).pathname)){
-    const loginUrl = 'https://fap.fpt.edu.vn/';
-    alert('Bạn chưa đăng nhập FAP. Mình sẽ mở trang FAP. Hãy đăng nhập, rồi quay lại popup và bấm "Làm mới".');
-    chrome.tabs.create({url: loginUrl});
-    throw new Error('LOGIN_REQUIRED');
+async function fetchHTML(url) {
+  const res = await fetch(url, { credentials: "include", redirect: "follow" });
+  if (res.redirected && /\/Default\.aspx$/i.test(new URL(res.url).pathname)) {
+    const loginUrl = "https://fap.fpt.edu.vn/";
+    alert(
+      'Bạn chưa đăng nhập FAP. Mình sẽ mở trang FAP. Hãy đăng nhập, rồi quay lại popup và bấm "Làm mới".'
+    );
+    chrome.tabs.create({ url: loginUrl });
+    throw new Error("LOGIN_REQUIRED");
   }
-  if(!res.ok) throw new Error(`HTTP ${res.status}`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const html = await res.text();
-  const dom = new DOMParser().parseFromString(html, 'text/html');
+  const dom = new DOMParser().parseFromString(html, "text/html");
   return dom;
 }
 
 // ---------- Simple cache (ms TTL) ----------
-async function cacheGet(key, maxAgeMs){
+async function cacheGet(key, maxAgeMs) {
   const obj = await STORAGE.get(key, null);
-  if(!obj) return null;
-  const {ts, data} = obj;
-  if(!ts || Date.now() - ts > maxAgeMs) return null;
+  if (!obj) return null;
+  const { ts, data } = obj;
+  if (!ts || Date.now() - ts > maxAgeMs) return null;
   return data;
 }
-async function cacheSet(key, data){
-  await STORAGE.set({[key]: {ts: Date.now(), data}});
+async function cacheSet(key, data) {
+  await STORAGE.set({ [key]: { ts: Date.now(), data } });
 }
 
 // ---------- Transcript parsing ----------
-function parseTranscriptDoc(doc){
-  const tables = [...doc.querySelectorAll('table')];
-  for(const t of tables){
-    const trs = [...t.querySelectorAll('tr')];
-    for(const tr of trs){
-      const labels = [...tr.children].map(td => NORM(td.textContent));
-      if(labels.includes('CREDIT') && labels.includes('GRADE')){
-        const header = [...tr.children].map(x => NORM(x.textContent));
+function parseTranscriptDoc(doc) {
+  const tables = [...doc.querySelectorAll("table")];
+  for (const t of tables) {
+    const trs = [...t.querySelectorAll("tr")];
+    for (const tr of trs) {
+      const labels = [...tr.children].map((td) => NORM(td.textContent));
+      if (labels.includes("CREDIT") && labels.includes("GRADE")) {
+        const header = [...tr.children].map((x) => NORM(x.textContent));
         const idx = {
-          term: header.findIndex(v => v === 'TERM'),
-          semester: header.findIndex(v => v === 'SEMESTER'),
-          code: header.findIndex(v => v.includes('SUBJECT CODE')),
-          name: header.findIndex(v => v.includes('SUBJECT NAME') || v.includes('SUBJECT')),
-          credit: header.indexOf('CREDIT'),
-          grade: header.indexOf('GRADE'),
-          status: header.findIndex(v => v === 'STATUS'),
+          term: header.findIndex((v) => v === "TERM"),
+          semester: header.findIndex((v) => v === "SEMESTER"),
+          code: header.findIndex((v) => v.includes("SUBJECT CODE")),
+          name: header.findIndex(
+            (v) => v.includes("SUBJECT NAME") || v.includes("SUBJECT")
+          ),
+          credit: header.indexOf("CREDIT"),
+          grade: header.indexOf("GRADE"),
+          status: header.findIndex((v) => v === "STATUS"),
         };
-        const all = [...t.querySelectorAll('tr')];
+        const all = [...t.querySelectorAll("tr")];
         const start = all.indexOf(tr) + 1;
         const rows = [];
-        for(const r of all.slice(start)){
-          const tds = [...r.querySelectorAll('td')];
-          if(!tds.length) continue;
+        for (const r of all.slice(start)) {
+          const tds = [...r.querySelectorAll("td")];
+          if (!tds.length) continue;
           const row = {
-            term: idx.term>=0 ? tds[idx.term]?.textContent.trim() : "",
-            semester: idx.semester>=0 ? tds[idx.semester]?.textContent.trim() : "",
-            code: idx.code>=0 ? tds[idx.code]?.textContent.trim() : "",
-            name: idx.name>=0 ? tds[idx.name]?.textContent.trim() : "",
-            credit: idx.credit>=0 ? toNum(tds[idx.credit]?.textContent) : NaN,
-            grade: idx.grade>=0 ? toNum(tds[idx.grade]?.textContent) : NaN,
-            status: idx.status>=0 ? tds[idx.status]?.textContent.trim() : "",
+            term: idx.term >= 0 ? tds[idx.term]?.textContent.trim() : "",
+            semester:
+              idx.semester >= 0 ? tds[idx.semester]?.textContent.trim() : "",
+            code: idx.code >= 0 ? tds[idx.code]?.textContent.trim() : "",
+            name: idx.name >= 0 ? tds[idx.name]?.textContent.trim() : "",
+            credit: idx.credit >= 0 ? toNum(tds[idx.credit]?.textContent) : NaN,
+            grade: idx.grade >= 0 ? toNum(tds[idx.grade]?.textContent) : NaN,
+            status: idx.status >= 0 ? tds[idx.status]?.textContent.trim() : "",
           };
-          if(!row.code && !row.name && !Number.isFinite(row.credit)) continue;
+          if (!row.code && !row.name && !Number.isFinite(row.credit)) continue;
           rows.push(row);
         }
         return rows;
@@ -152,378 +181,604 @@ function parseTranscriptDoc(doc){
   return [];
 }
 
-function computeGPA(items, excluded){
-  let sumC=0, sumP=0;
-  for(const it of items){
-    const c=it.credit, g=it.grade, code=(it.code||'').toUpperCase();
-    if(!Number.isFinite(c)||!Number.isFinite(g)||c<=0||g<=0) continue;
-    if(excluded.includes(code)) continue;
-    sumC += c; sumP += c*g;
+function computeGPA(items, excluded) {
+  let sumC = 0,
+    sumP = 0;
+  for (const it of items) {
+    const c = it.credit,
+      g = it.grade,
+      code = (it.code || "").toUpperCase();
+    if (!Number.isFinite(c) || !Number.isFinite(g) || c <= 0 || g <= 0)
+      continue;
+    if (excluded.includes(code)) continue;
+    sumC += c;
+    sumP += c * g;
   }
-  const g10 = sumC>0 ? (sumP/sumC) : NaN;
-  const g4  = Number.isFinite(g10) ? (g10/10)*4 : NaN;
-  return {gpa10:g10, gpa4:g4, credits:sumC};
+  const g10 = sumC > 0 ? sumP / sumC : NaN;
+  const g4 = Number.isFinite(g10) ? (g10 / 10) * 4 : NaN;
+  return { gpa10: g10, gpa4: g4, credits: sumC };
 }
 
 // ---------- Parse ScheduleOfWeek for attendance + today's schedule ----------
-function parseScheduleOfWeek(doc){
+function parseScheduleOfWeek(doc) {
   const result = { entries: [], todayRows: [] };
-  const N = s => (s||'').replace(/\s+/g,' ').trim();
-  const U = s => N(s).toUpperCase();
+  const N = (s) => (s || "").replace(/\s+/g, " ").trim();
 
-  // 1) Pick the grid table
-  const tables = [...doc.querySelectorAll('table')];
-  let grid = null;
-  for(const t of tables){
-    const txt = U(t.textContent);
-    const hasWeek = /(MON|TUE|WED|THU|FRI|SAT|SUN)/.test(txt);
-    const hasDate = /\b\d{2}\/\d{2}(?:\/\d{4})?\b/.test(txt);
-    const hasSlots = [...t.querySelectorAll('tr')].some(r => /^SLOT\s*\d+$/i.test(U(r.children?.[0]?.textContent||'')));
-    if(hasWeek && hasDate && hasSlots){ grid = t; break; }
+  // Tìm table chính - table có tbody chứa các slot rows
+  const tables = [...doc.querySelectorAll("table")];
+  let mainTable = null;
+
+  for (const table of tables) {
+    const tbody = table.querySelector("tbody");
+    if (!tbody) continue;
+
+    const firstRow = tbody.querySelector("tr");
+    if (firstRow && /Slot\s+\d+/i.test(firstRow.textContent)) {
+      mainTable = table;
+      break;
+    }
   }
-  if(!grid) return result;
 
-  const rows = [...grid.querySelectorAll('tr')];
-  if(!rows.length) return result;
+  if (!mainTable) return result;
 
-  // 2) Header row (contains MON.. and dates)
-  let headerRowIdx = rows.findIndex(r=>{
-    const txt = U(r.textContent);
-    return /(MON|TUE|WED|THU|FRI|SAT|SUN)/.test(txt) && /\b\d{2}\/\d{2}/.test(txt);
-  });
-  if(headerRowIdx === -1) return result;
-  const headerCells = [...rows[headerRowIdx].querySelectorAll('td,th')];
+  // Lấy thông tin ngày từ header (trong thead > tr thứ 2)
+  const dateHeaders = [""]; // Index 0 trống cho cột Slot
+  const dayHeaders = [""]; // Index 0 trống cho cột Slot
 
-  // 3) Build day columns from header cells (skip first cell which is blank/"YEAR/WEEK")
-  const dayCols = [];
-  for(let i=0;i<headerCells.length;i++){
-    const t = headerCells[i];
-    const up = U(t.textContent);
-    const date = (up.match(/\b\d{2}\/\d{2}(?:\/\d{4})?\b/)||[])[0] || null;
-    const wd = (up.match(/MON|TUE|WED|THU|FRI|SAT|SUN/)||[])[0] || null;
-    // day columns must have either wd or date, and are never the very first "YEAR/WEEK" cell
-    if(i>0 && (date || wd)){ dayCols.push({ idx:i, day: wd || '', date }); }
+  const theadRows = [...mainTable.querySelectorAll("thead tr")];
+
+  // Row đầu chứa tên thứ (MON, TUE, WED...)
+  if (theadRows.length > 0) {
+    const dayRow = theadRows[0];
+    const dayCells = [...dayRow.querySelectorAll("th")];
+    dayCells.forEach((cell) => {
+      const text = N(cell.textContent).toUpperCase();
+      if (/MON|TUE|WED|THU|FRI|SAT|SUN/.test(text)) {
+        const dayMatch = text.match(/(MON|TUE|WED|THU|FRI|SAT|SUN)/);
+        if (dayMatch) {
+          dayHeaders.push(dayMatch[1]);
+        }
+      }
+    });
   }
-  if(dayCols.length < 5) return result;
 
-  // 4) Slot rows = rows with first cell "Slot X"
-  const slotRows = rows.filter(r => /^SLOT\s*\d+$/i.test(U(r.children?.[0]?.textContent||'')));
+  // Row thứ 2 chứa ngày (dd/mm)
+  if (theadRows.length > 1) {
+    const dateRow = theadRows[1];
+    const dateCells = [...dateRow.querySelectorAll("th")];
+    dateCells.forEach((cell) => {
+      const dateMatch = cell.textContent.match(/(\d{2}\/\d{2})/);
+      if (dateMatch) {
+        dateHeaders.push(dateMatch[1]);
+      }
+    });
+  }
 
-  // Utilities
-  const isEmptyCell = (raw) => {
-    if(!raw) return true;
-    const t = U(raw);
-    return t === '-' || t === '—' || t === '–' || /^-+$/.test(t);
-  };
-  const pickTime = (raw) => (raw.match(/\b\d{2}:\d{2}-\d{2}:\d{2}\b/)||[])[0] || '';
-  const pickRoom = (raw) => (raw.match(/\b[A-Z]\.\d+\b/)||[])[0] || (raw.match(/\bP\.\d+\b/)||[])[0] || '';
-  const pickCode = (raw) => (raw.match(/\b[A-Z]{2,4}\d{3}\b/)||[])[0] || '';
+  // Parse các slot rows trong tbody
+  const tbody = mainTable.querySelector("tbody");
+  if (!tbody) return result;
 
-  // 5) Extract
-  for(const r of slotRows){
-    const cells = [...r.querySelectorAll('td,th')];
-    const slotName = N(cells[0]?.textContent||''); // "Slot 3"
-    for(const d of dayCols){
-      const cell = cells[d.idx]; if(!cell) continue;
-      const raw = N(cell.textContent);
-      if(isEmptyCell(raw)) continue;
-      const code = pickCode(raw);
-      const time = pickTime(raw);
-      if(!code) continue; // must have a subject code to count
-      const room = pickRoom(raw);
-      let status = '';
-      if(/ATTENDED/i.test(raw)) status='attended';
-      else if(/ABSENT/i.test(raw)) status='absent';
-      else if(/NOT YET/i.test(raw)) status='not yet';
-      result.entries.push({
-        day: d.day || (d.date ? d.date : ''),
-        date: d.date || '',
+  const slotRows = [...tbody.querySelectorAll("tr")];
+
+  slotRows.forEach((row) => {
+    const cells = [...row.querySelectorAll("td")];
+    if (cells.length < 2) return;
+
+    const slotName = N(cells[0].textContent); // "Slot 3", "Slot 4"...
+    if (!/Slot\s+\d+/i.test(slotName)) return;
+
+    // Duyệt qua các ô từ cột 1 đến 7 (MON-SUN)
+    for (let colIdx = 1; colIdx < cells.length && colIdx <= 7; colIdx++) {
+      const cell = cells[colIdx];
+      const cellHTML = cell.innerHTML;
+      const cellText = N(cell.textContent);
+
+      // Skip ô trống
+      if (cellText === "-" || !cellText) continue;
+
+      // Extract course code (MAD101, OSG202, PRO192, NWC204...)
+      const codeMatch = cellText.match(/([A-Z]{3}\d{3})/);
+      if (!codeMatch) continue;
+      const courseCode = codeMatch[1];
+
+      // Extract room (P.112, P.215, P.226...)
+      const roomMatch = cellText.match(/at\s+(P\.\d+|[A-Z]\.\d+|NVH\d+)/i);
+      const room = roomMatch ? roomMatch[1] : "";
+
+      // Extract time (12:30-14:45)
+      const timeMatch = cellText.match(/\((\d{2}:\d{2}-\d{2}:\d{2})\)/);
+      const time = timeMatch ? timeMatch[1] : "";
+
+      // Extract status từ HTML
+      let status = "not yet";
+      if (cellHTML.includes("color=Green") || /attended/i.test(cellText)) {
+        status = "attended";
+      } else if (
+        cellHTML.includes("color=red") ||
+        /absent|vắng/i.test(cellText)
+      ) {
+        status = "absent";
+      } else if (/not yet/i.test(cellText)) {
+        status = "not yet";
+      }
+
+      // Lấy date và day từ header
+      const date = dateHeaders[colIdx] || "";
+      const day = dayHeaders[colIdx] || "";
+
+      const entry = {
+        day: day,
+        date: date,
         slot: slotName,
-        time, course: code, room, status
-      });
-    }
-  }
+        time: time,
+        course: courseCode,
+        room: room,
+        status: status,
+        key: `${date || day}|${slotName}|${courseCode}`,
+      };
 
-  // 6) Today rows (optional)
-  const today = new Date();
-  const dd = String(today.getDate()).padStart(2,'0');
-  const mm = String(today.getMonth()+1).padStart(2,'0');
-  const todayDM = `${dd}/${mm}`;
-  const todayCols = dayCols.filter(dc => (dc.date || '').includes(todayDM));
-  if(todayCols.length){
-    const idx = todayCols[0].idx;
-    for(const r of slotRows){
-      const cell = r.children[idx];
-      const raw = N(cell?.textContent||'');
-      if(isEmptyCell(raw)) continue;
-      const code = pickCode(raw);
-      const time = pickTime(raw);
-      if(!code && !time) continue;
-      result.todayRows.push({ time, course: code, room: pickRoom(raw), note: (raw.match(/ONLINE|OFFLINE|LAB|EXAM/i)||[''])[0] });
+      result.entries.push(entry);
     }
-  }
+  });
+
+  // Filter today's schedule
+  const today = new Date();
+  const dd = String(today.getDate()).padStart(2, "0");
+  const mm = String(today.getMonth() + 1).padStart(2, "0");
+  const todayDate = `${dd}/${mm}`;
+
+  result.todayRows = result.entries
+    .filter((e) => e.date === todayDate)
+    .map((e) => ({
+      time: e.time,
+      course: e.course,
+      room: e.room,
+      note: e.status,
+    }));
 
   return result;
 }
 
 // ---------- Renderers ----------
-function renderTranscript(rows, excluded){
-  const g=computeGPA(rows, excluded);
-  setValue('#gpa10', Number.isFinite(g.gpa10)?g.gpa10.toFixed(2):'--');
-  setValue('#gpa4',  Number.isFinite(g.gpa4)?g.gpa4.toFixed(2):'--');
-  setValue('#credits', g.credits || '--');
+function renderTranscript(rows, excluded) {
+  const g = computeGPA(rows, excluded);
+  setValue("#gpa10", Number.isFinite(g.gpa10) ? g.gpa10.toFixed(2) : "--");
+  setValue("#gpa4", Number.isFinite(g.gpa4) ? g.gpa4.toFixed(2) : "--");
+  setValue("#credits", g.credits || "--");
 
-  const tbody = document.querySelector('#tblCourses tbody'); tbody.innerHTML='';
-  const q = (document.querySelector('#searchCourse').value||'').toLowerCase();
-  rows.forEach(r=>{
-    if(q && !(String(r.code).toLowerCase().includes(q) || String(r.name).toLowerCase().includes(q))) return;
-    const tr=document.createElement('tr');
+  const tbody = document.querySelector("#tblCourses tbody");
+  tbody.innerHTML = "";
+  const q = (document.querySelector("#searchCourse").value || "").toLowerCase();
+  rows.forEach((r) => {
+    if (
+      q &&
+      !(
+        String(r.code).toLowerCase().includes(q) ||
+        String(r.name).toLowerCase().includes(q)
+      )
+    )
+      return;
+    const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td>${r.code||''}</td>
-      <td>${r.name||''}</td>
-      <td class="r">${Number.isFinite(r.credit)?r.credit:''}</td>
-      <td class="r">${Number.isFinite(r.grade)?r.grade:''}</td>
-      <td>${r.status||''}</td>
+      <td>${r.code || ""}</td>
+      <td>${r.name || ""}</td>
+      <td class="r">${Number.isFinite(r.credit) ? r.credit : ""}</td>
+      <td class="r">${Number.isFinite(r.grade) ? r.grade : ""}</td>
+      <td>${r.status || ""}</td>
     `;
     tbody.appendChild(tr);
   });
 }
 
-
-function summarizeAttendance(entries){
-  let present=0, absent=0, late=0, neutral=0;
-  for(const e of entries){ if(!e) continue;
-    const s=NORM(e.status||'');
-    if(/ATTENDED|CÓ MẶT/.test(s)) present++;
-    else if(/LATE|MUỘN/.test(s)) late++;         // muộn: không tính vắng, cũng không tính vào mẫu
-    else if(/ABSENT|VẮNG/.test(s)) absent++;     // vắng thực sự
-    else if(/NOT YET/.test(s)) neutral++;        // chưa diễn ra -> bỏ qua
+function summarizeAttendance(entries) {
+  let present = 0,
+    absent = 0,
+    late = 0,
+    neutral = 0;
+  for (const e of entries) {
+    if (!e) continue;
+    const s = NORM(e.status || "");
+    if (/ATTENDED|CÓ MẶT/.test(s)) present++;
+    else if (/LATE|MUỘN/.test(s))
+      late++; // muộn: không tính vắng, cũng không tính vào mẫu
+    else if (/ABSENT|VẮNG/.test(s)) absent++; // vắng thực sự
+    else if (/NOT YET/.test(s)) neutral++; // chưa diễn ra -> bỏ qua
   }
-  const denom = present + absent;                // chỉ tính khi tiết đã chốt hiện diện/vắng
-  const rate = denom ? Math.round((present/denom)*100) : 0;
-  return {present, absent, late, rate, total: present+absent+late, neutral};
+  const denom = present + absent; // chỉ tính khi tiết đã chốt hiện diện/vắng
+  const rate = denom ? Math.round((present / denom) * 100) : 0;
+  return {
+    present,
+    absent,
+    late,
+    rate,
+    total: present + absent + late,
+    neutral,
+  };
 }
 
-function renderAttendance(entries){
-  const raw = (entries||[]).filter(e=>{
-    if(!e) return false;
-    const codeOk = !!(e.course && /\b[A-Z]{3}\d{3}\b/.test(e.course));
-    const badStatus = /^\s*slot\s*\d+/i.test(e.status||'');
-    return codeOk && !badStatus;
+function renderAttendance(entries) {
+  // Clean và validate data
+  const validEntries = (entries || []).filter((e) => {
+    return e && e.course && /^[A-Z]{2,4}\d{3}$/.test(e.course);
   });
 
-  // populate day options (append unique dd/mm once)
-  const sel = document.getElementById('filterDay');
-  if(sel){
-    const existing = new Set(Array.from(sel.options).map(o=>o.value));
-    const ddmm = Array.from(new Set(raw.map(e=> (e.date||'').match(/^\d{2}\/\d{2}$/)?.[0]).filter(Boolean)));
-    ddmm.forEach(d=>{ if(!existing.has(d)){ const o=document.createElement('option'); o.value=d; o.textContent=d; sel.appendChild(o);} });
+  // Sort by date (newest first), then by slot
+  const sorted = validEntries.sort((a, b) => {
+    // Parse dates if available
+    if (a.date && b.date) {
+      const [dayA, monthA] = a.date.split("/").map(Number);
+      const [dayB, monthB] = b.date.split("/").map(Number);
+
+      // Compare month first, then day (descending - newest first)
+      if (monthA !== monthB) return monthB - monthA;
+      if (dayA !== dayB) return dayB - dayA;
+    }
+
+    // Then sort by slot number
+    const slotA = parseInt((a.slot || "").replace(/\D/g, "") || "999");
+    const slotB = parseInt((b.slot || "").replace(/\D/g, "") || "999");
+    return slotA - slotB;
+  });
+
+  // Update filter dropdown
+  const filterSelect = document.getElementById("filterDay");
+  if (filterSelect) {
+    const existingOptions = new Set(
+      [...filterSelect.options].map((o) => o.value)
+    );
+
+    // Add date options
+    const uniqueDates = [...new Set(sorted.map((e) => e.date).filter(Boolean))];
+    uniqueDates.forEach((date) => {
+      if (!existingOptions.has(date)) {
+        const option = document.createElement("option");
+        option.value = date;
+        option.textContent = date;
+        filterSelect.appendChild(option);
+      }
+    });
   }
 
-  // day filter
-  const dayKey = (sel && sel.value) ? sel.value : 'ALL';
-  const filtered = raw.filter(e=>{
-    if(dayKey==='ALL') return true;
-    if(/^\d{2}\/\d{2}$/.test(dayKey)) return (e.date===dayKey);
-    return (e.day===dayKey);
+  // Apply filter
+  const filterValue = filterSelect?.value || "ALL";
+  let filtered = sorted;
+
+  if (filterValue !== "ALL") {
+    if (/^\d{2}\/\d{2}$/.test(filterValue)) {
+      // Filter by date
+      filtered = sorted.filter((e) => e.date === filterValue);
+    } else if (/^(MON|TUE|WED|THU|FRI|SAT|SUN)$/.test(filterValue)) {
+      // Filter by day
+      filtered = sorted.filter((e) => e.day === filterValue);
+    }
+  }
+
+  // Calculate statistics
+  let attended = 0,
+    absent = 0,
+    late = 0,
+    notYet = 0;
+
+  filtered.forEach((e) => {
+    const s = (e.status || "").toLowerCase();
+    if (s.includes("attended")) attended++;
+    else if (s.includes("absent")) absent++;
+    else if (s.includes("late")) late++;
+    else if (s.includes("not yet")) notYet++;
   });
 
-  // metrics based on filtered set
-  const sum=summarizeAttendance(filtered);
-  setValue('#attRate', sum.rate+'%');
-  setValue('#attPresent', sum.present);
-  setValue('#attAbsentLate', `${sum.absent}/${sum.late}`);
+  const total = attended + absent; // Only count completed sessions
+  const attendanceRate = total > 0 ? Math.round((attended / total) * 100) : 0;
 
-  // render table
-  const tbody=document.querySelector('#tblAttendance tbody'); tbody.innerHTML='';
-  const q = (document.querySelector('#searchAtt').value||'').toLowerCase();
-  filtered.forEach(e=>{
-    if(q && !(e.course?.toLowerCase().includes(q) || e.status?.toLowerCase().includes(q))) return;
-    const tr=document.createElement('tr');
-    tr.innerHTML = `<td>${e.day||''}</td><td>${e.slot||''}</td><td>${e.course||''}</td><td>${e.status||''}</td>`;
+  // Update statistics display
+  setValue("#attRate", attendanceRate + "%");
+  setValue("#attPresent", attended);
+  setValue("#attAbsentLate", `${absent}/${late}`);
+
+  // Apply search filter
+  const searchQuery = (
+    document.querySelector("#searchAtt")?.value || ""
+  ).toLowerCase();
+
+  if (searchQuery) {
+    filtered = filtered.filter(
+      (e) =>
+        e.course?.toLowerCase().includes(searchQuery) ||
+        e.status?.toLowerCase().includes(searchQuery) ||
+        e.room?.toLowerCase().includes(searchQuery)
+    );
+  }
+
+  // Render table
+  const tbody = document.querySelector("#tblAttendance tbody");
+  if (!tbody) return;
+
+  tbody.innerHTML = "";
+
+  filtered.forEach((entry) => {
+    const tr = document.createElement("tr");
+
+    // Format display
+    const dayDisplay = entry.date || entry.day || "";
+    const slotDisplay = entry.slot || "";
+    const courseDisplay = entry.course || "";
+    const statusDisplay = entry.status || "";
+
+    tr.innerHTML = `
+      <td>${dayDisplay}</td>
+      <td>${slotDisplay}</td>
+      <td>${courseDisplay}</td>
+      <td>${statusDisplay}</td>
+    `;
+
+    // Add color coding for status
+    if (statusDisplay.includes("attended")) {
+      tr.style.color = "#10b981";
+    } else if (statusDisplay.includes("absent")) {
+      tr.style.color = "#ef4444";
+    }
+
     tbody.appendChild(tr);
   });
+
+  // If no results
+  if (filtered.length === 0) {
+    const tr = document.createElement("tr");
+    tr.innerHTML =
+      '<td colspan="4" style="text-align: center">Không có dữ liệu</td>';
+    tbody.appendChild(tr);
+  }
 }
-function _renderScheduleToday_DEPRECATED(rows){
-  const tbody=document.querySelector('#tblScheduleToday tbody'); tbody.innerHTML='';
-  if(!rows.length){
-    const tr=document.createElement('tr');
+
+// Helper function
+function setValue(selector, value) {
+  const element = document.querySelector(selector);
+  if (element) element.textContent = value;
+}
+
+function _renderScheduleToday_DEPRECATED(rows) {
+  const tbody = document.querySelector("#tblScheduleToday tbody");
+  tbody.innerHTML = "";
+  if (!rows.length) {
+    const tr = document.createElement("tr");
     tr.innerHTML = `<td colspan="4">Hôm nay không có tiết nào (hoặc trang lịch khác định dạng).</td>`;
     tbody.appendChild(tr);
     return;
   }
-  rows.forEach(r=>{
-    const tr=document.createElement('tr');
-    tr.innerHTML = `<td>${r.time||''}</td><td>${r.course||''}</td><td>${r.room||''}</td><td>${r.note||''}</td>`;
+  rows.forEach((r) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${r.time || ""}</td><td>${r.course || ""}</td><td>${
+      r.room || ""
+    }</td><td>${r.note || ""}</td>`;
     tbody.appendChild(tr);
   });
 }
 
 // ---------- Loaders with caching ----------
 const EXCLUDED_KEY = "__FAP_EXCLUDED_CODES__";
-const EXCLUDED_DEFAULT = ["TRS501","ENT503","VOV114","VOV124","VOV134","OTP101"];
+const EXCLUDED_DEFAULT = [
+  "TRS501",
+  "ENT503",
+  "VOV114",
+  "VOV124",
+  "VOV134",
+  "OTP101",
+];
 
-const DAY_MS = 24*60*60*1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
-async function loadGPA(){
+async function loadGPA() {
   // 24h cache: if cached data exists, use it; otherwise fetch and cache
-  const cache = await cacheGet('cache_transcript', DAY_MS);
+  const cache = await cacheGet("cache_transcript", DAY_MS);
   let rows;
-  if(cache && Array.isArray(cache.rows)) {
+  if (cache && Array.isArray(cache.rows)) {
     rows = cache.rows;
   } else {
     const doc = await fetchHTML(DEFAULT_URLS.transcript);
     rows = parseTranscriptDoc(doc);
-    await cacheSet('cache_transcript', {rows});
+    await cacheSet("cache_transcript", { rows });
     await STORAGE.set({ cache_transcript_flat: rows });
   }
-  const excluded = (await STORAGE.get(EXCLUDED_KEY, EXCLUDED_DEFAULT));
+  const excluded = await STORAGE.get(EXCLUDED_KEY, EXCLUDED_DEFAULT);
   renderTranscript(rows, excluded);
 }
 
-async function refreshAttendance(){
+async function refreshAttendance() {
   const doc = await fetchHTML(DEFAULT_URLS.scheduleOfWeek);
   const parsed = parseScheduleOfWeek(doc);
-  await cacheSet('cache_attendance', parsed);
-  await STORAGE.set({ cache_attendance_flat: (parsed && parsed.entries) ? parsed.entries : [] });
+  await cacheSet("cache_attendance", parsed);
+  await STORAGE.set({
+    cache_attendance_flat: parsed && parsed.entries ? parsed.entries : [],
+  });
   renderAttendance(parsed.entries);
   renderScheduleWeek(parsed.entries);
 }
 
-async function loadAttendanceAndSchedule(){
+async function loadAttendanceAndSchedule() {
   const cache = null; // bypass cache to avoid stale bad parse; will re-cache fresh
-  if(cache){
+  if (cache) {
     renderAttendance(cache.entries);
     renderScheduleWeek(cache.entries);
-  }else{
+  } else {
     await refreshAttendance();
   }
 }
 
 // ---------- Settings (UI <-> storage) ----------
-const DEFAULT_CFG = {activeFrom:'07:00', activeTo:'17:40', delayMin:10, delayMax:30, pollEvery:15};
+const DEFAULT_CFG = {
+  activeFrom: "07:00",
+  activeTo: "17:40",
+  delayMin: 10,
+  delayMax: 30,
+  pollEvery: 15,
+};
 
-async function loadSettingsUI(){
-  const cfg = await STORAGE.get('cfg', DEFAULT_CFG);
-  const get = id => document.getElementById(id);
-  get('setActiveFrom').value = cfg.activeFrom || DEFAULT_CFG.activeFrom;
-  get('setActiveTo').value   = cfg.activeTo   || DEFAULT_CFG.activeTo;
-  get('setDelayMin').value   = Number.isFinite(cfg.delayMin)?cfg.delayMin:DEFAULT_CFG.delayMin;
-  get('setDelayMax').value   = Number.isFinite(cfg.delayMax)?cfg.delayMax:DEFAULT_CFG.delayMax;
-  get('setPollEvery').value  = Number.isFinite(cfg.pollEvery)?cfg.pollEvery:DEFAULT_CFG.pollEvery;
+async function loadSettingsUI() {
+  const cfg = await STORAGE.get("cfg", DEFAULT_CFG);
+  const get = (id) => document.getElementById(id);
+  get("setActiveFrom").value = cfg.activeFrom || DEFAULT_CFG.activeFrom;
+  get("setActiveTo").value = cfg.activeTo || DEFAULT_CFG.activeTo;
+  get("setDelayMin").value = Number.isFinite(cfg.delayMin)
+    ? cfg.delayMin
+    : DEFAULT_CFG.delayMin;
+  get("setDelayMax").value = Number.isFinite(cfg.delayMax)
+    ? cfg.delayMax
+    : DEFAULT_CFG.delayMax;
+  get("setPollEvery").value = Number.isFinite(cfg.pollEvery)
+    ? cfg.pollEvery
+    : DEFAULT_CFG.pollEvery;
 }
 
-async function saveSettingsUI(){
-  const get = id => document.getElementById(id);
+async function saveSettingsUI() {
+  const get = (id) => document.getElementById(id);
   const cfg = {
-    activeFrom: get('setActiveFrom').value || DEFAULT_CFG.activeFrom,
-    activeTo:   get('setActiveTo').value   || DEFAULT_CFG.activeTo,
-    delayMin:   Math.max(0, parseInt(get('setDelayMin').value || DEFAULT_CFG.delayMin, 10)),
-    delayMax:   Math.max(0, parseInt(get('setDelayMax').value || DEFAULT_CFG.delayMax, 10)),
-    pollEvery:  Math.max(5, parseInt(get('setPollEvery').value || DEFAULT_CFG.pollEvery, 10)),
+    activeFrom: get("setActiveFrom").value || DEFAULT_CFG.activeFrom,
+    activeTo: get("setActiveTo").value || DEFAULT_CFG.activeTo,
+    delayMin: Math.max(
+      0,
+      parseInt(get("setDelayMin").value || DEFAULT_CFG.delayMin, 10)
+    ),
+    delayMax: Math.max(
+      0,
+      parseInt(get("setDelayMax").value || DEFAULT_CFG.delayMax, 10)
+    ),
+    pollEvery: Math.max(
+      5,
+      parseInt(get("setPollEvery").value || DEFAULT_CFG.pollEvery, 10)
+    ),
   };
-  if(cfg.delayMax < cfg.delayMin){ const t = cfg.delayMin; cfg.delayMin = cfg.delayMax; cfg.delayMax = t; }
-  await STORAGE.set({cfg});
+  if (cfg.delayMax < cfg.delayMin) {
+    const t = cfg.delayMin;
+    cfg.delayMin = cfg.delayMax;
+    cfg.delayMax = t;
+  }
+  await STORAGE.set({ cfg });
   // ping background to reschedule
-  chrome.runtime.sendMessage({type:'CFG_UPDATED'});
-  alert('Đã lưu cài đặt ✅');
+  chrome.runtime.sendMessage({ type: "CFG_UPDATED" });
+  alert("Đã lưu cài đặt ✅");
 }
 
 // ---------- Buttons & Filters ----------
-document.getElementById('btnOpenFAP').onclick=()=>chrome.tabs.create({url:'https://fap.fpt.edu.vn/'});
-document.getElementById('btnOpenTranscript').onclick=()=>chrome.tabs.create({url:DEFAULT_URLS.transcript});
+document.getElementById("btnOpenFAP").onclick = () =>
+  chrome.tabs.create({ url: "https://fap.fpt.edu.vn/" });
+document.getElementById("btnOpenTranscript").onclick = () =>
+  chrome.tabs.create({ url: DEFAULT_URLS.transcript });
 
 // --- Quick bookmarks ---
-const btnLMS = document.getElementById('btnOpenLMS');
-if (btnLMS) btnLMS.onclick = () => chrome.tabs.create({ url: 'https://lms-hcm.fpt.edu.vn/' });
-const btnFAP2 = document.getElementById('btnOpenFAP2');
-if (btnFAP2) btnFAP2.onclick = () => chrome.tabs.create({ url: 'https://fap.fpt.edu.vn/' });
-const btnIT = document.getElementById('btnOpenIT');
-if (btnIT) btnIT.onclick = () => chrome.tabs.create({ url: 'https://it-hcm.fpt.edu.vn/' });
+const btnLMS = document.getElementById("btnOpenLMS");
+if (btnLMS)
+  btnLMS.onclick = () =>
+    chrome.tabs.create({ url: "https://lms-hcm.fpt.edu.vn/" });
+const btnFAP2 = document.getElementById("btnOpenFAP2");
+if (btnFAP2)
+  btnFAP2.onclick = () =>
+    chrome.tabs.create({ url: "https://fap.fpt.edu.vn/" });
+const btnIT = document.getElementById("btnOpenIT");
+if (btnIT)
+  btnIT.onclick = () =>
+    chrome.tabs.create({ url: "https://it-hcm.fpt.edu.vn/" });
 
-document.getElementById('btnOpenAttendance').onclick=()=>chrome.tabs.create({url:DEFAULT_URLS.scheduleOfWeek});
-document.getElementById('btnOpenSchedule').onclick=()=>chrome.tabs.create({url:DEFAULT_URLS.scheduleOfWeek});
+document.getElementById("btnOpenAttendance").onclick = () =>
+  chrome.tabs.create({ url: DEFAULT_URLS.scheduleOfWeek });
+document.getElementById("btnOpenSchedule").onclick = () =>
+  chrome.tabs.create({ url: DEFAULT_URLS.scheduleOfWeek });
 
-
-document.getElementById('searchCourse').addEventListener('input', loadGPA);
-document.getElementById('searchAtt').addEventListener('input', async ()=>{
-  const c = await cacheGet('cache_attendance', 10*60*1000);
-  renderAttendance((c?.entries)||[]);
+document.getElementById("searchCourse").addEventListener("input", loadGPA);
+document.getElementById("searchAtt").addEventListener("input", async () => {
+  const c = await cacheGet("cache_attendance", 10 * 60 * 1000);
+  renderAttendance(c?.entries || []);
 });
-document.getElementById('filterDay').addEventListener('change', async ()=>{
-  const c = await cacheGet('cache_attendance', 10*60*1000);
-  renderAttendance((c?.entries)||[]);
+document.getElementById("filterDay").addEventListener("change", async () => {
+  const c = await cacheGet("cache_attendance", 10 * 60 * 1000);
+  renderAttendance(c?.entries || []);
 });
 
-document.getElementById('btnRefreshAttendance').onclick = async ()=>{
-  await refreshAttendance();
+document.getElementById("btnRefreshAttendance").onclick = async function () {
+  await handleRefreshWithLoading(this, refreshAttendance);
 };
-document.getElementById('btnRefreshSchedule').onclick = async ()=>{
-  await refreshAttendance();
+document.getElementById("btnRefreshSchedule").onclick = async function () {
+  await handleRefreshWithLoading(this, refreshAttendance);
 };
 
 // Settings buttons
-document.getElementById('btnSaveSettings').onclick = saveSettingsUI;
-document.getElementById('btnTestNotify').onclick = ()=> chrome.runtime.sendMessage({type:'TEST_NOTIFY'});
+document.getElementById("btnSaveSettings").onclick = saveSettingsUI;
+document.getElementById("btnTestNotify").onclick = () =>
+  chrome.runtime.sendMessage({ type: "TEST_NOTIFY" });
 
 // Tabs
-document.querySelectorAll('.tabs button').forEach(btn=>{
-  btn.onclick=()=>{
-    document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
+document.querySelectorAll(".tabs button").forEach((btn) => {
+  btn.onclick = () => {
+    document
+      .querySelectorAll(".tabs button")
+      .forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
     const id = btn.dataset.tab;
-    document.querySelectorAll('.tab').forEach(s=>s.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
+    document
+      .querySelectorAll(".tab")
+      .forEach((s) => s.classList.remove("active"));
+    document.getElementById(id).classList.add("active");
   };
 });
 
-(async function init(){
+(async function init() {
   await Promise.all([loadGPA(), loadAttendanceAndSchedule(), loadSettingsUI()]);
 
-  try{ await checkUpdate(); }catch(e){}
+  try {
+    await checkUpdate();
+  } catch (e) {}
 })();
 
-
 // Refresh-all: clear caches and reload
-document.getElementById('btnRefreshAll').onclick = async ()=>{
-  await STORAGE.remove('cache_transcript');
-  await STORAGE.remove('cache_attendance');
-  await Promise.all([loadGPA(), refreshAttendance(), loadSettingsUI()]);
+document.getElementById("btnRefreshAll").onclick = async function () {
+  await handleRefreshWithLoading(this, async () => {
+    await STORAGE.remove("cache_transcript");
+    await STORAGE.remove("cache_attendance");
+    await Promise.all([loadGPA(), refreshAttendance()]);
+  });
 };
 
+function renderScheduleWeek(entries) {
+  const tbody = document.querySelector("#tblScheduleWeek tbody");
+  if (!tbody) return;
 
-function renderScheduleWeek(entries){
-  const tbody = document.querySelector('#tblScheduleWeek tbody'); 
-  if(!tbody) return;
-  tbody.innerHTML='';
-  if(!entries || !entries.length){
-    const tr=document.createElement('tr');
-    tr.innerHTML = `<td colspan="6">Không có dữ liệu lịch (hoặc trang lịch khác định dạng).</td>`;
+  tbody.innerHTML = "";
+
+  if (!entries || entries.length === 0) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = '<td colspan="6">Không có dữ liệu lịch học</td>';
     tbody.appendChild(tr);
     return;
   }
-  const dayOrder = ['MON','TUE','WED','THU','FRI','SAT','SUN','T2','T3','T4','T5','T6','T7','CN'];
-  const parseSlot = s => { const m=String(s||'').match(/\d+/); return m?parseInt(m[0],10):999; };
-  const parseTime = t => { const m=String(t||'').match(/^(\d{2}):(\d{2})/); return m?parseInt(m[1])*60+parseInt(m[2]):9999; };
-  // FILTER_SLOT_GARBAGE
-  const clean = (entries||[]).filter(e=> e && !/^\s*slot\s*\d+/i.test(String(e.course||'')) && !/^\s*slot\s*\d+/i.test(String(e.status||'')) );
-  const arr = clean.slice().sort((a,b)=>{
-    const da = dayOrder.indexOf(String(a.day||'').toUpperCase());
-    const db = dayOrder.indexOf(String(b.day||'').toUpperCase());
-    if(da!==db) return da-db;
-    const sa=parseSlot(a.slot), sb=parseSlot(b.slot);
-    if(sa!==sb) return sa-sb;
-    return parseTime(a.time)-parseTime(b.time);
+
+  // Sort by day of week, then slot
+  const dayOrder = { MON: 1, TUE: 2, WED: 3, THU: 4, FRI: 5, SAT: 6, SUN: 7 };
+
+  const sorted = [...entries].sort((a, b) => {
+    const dayA = dayOrder[a.day] || 999;
+    const dayB = dayOrder[b.day] || 999;
+    if (dayA !== dayB) return dayA - dayB;
+
+    const slotA = parseInt((a.slot || "").replace(/\D/g, "") || "999");
+    const slotB = parseInt((b.slot || "").replace(/\D/g, "") || "999");
+    return slotA - slotB;
   });
-  arr.forEach(r=>{
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${r.day||''}</td><td>${r.slot||''}</td><td>${r.time||''}</td><td>${r.course||''}</td><td>${r.room||''}</td><td>${r.status||r.note||''}</td>`;
+
+  sorted.forEach((entry) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${entry.day || ""}</td>
+      <td>${entry.slot || ""}</td>
+      <td>${entry.time || ""}</td>
+      <td>${entry.course || ""}</td>
+      <td>${entry.room || ""}</td>
+      <td>${entry.status || ""}</td>
+    `;
     tbody.appendChild(tr);
   });
 }
 
 // ===== Export All to PDF =====
-async function exportAllPDF(){
+async function exportAllPDF() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
   const today = new Date().toLocaleDateString("vi-VN");
@@ -534,48 +789,85 @@ async function exportAllPDF(){
       doc.setFontSize(10);
       doc.setTextColor(100);
       doc.text(`FAP GPA Viewer – Dashboard | Xuất ngày: ${today}`, 14, 10);
-      doc.text(`Trang ${i} / ${pageCount}`, doc.internal.pageSize.getWidth() - 40, doc.internal.pageSize.getHeight() - 10);
+      doc.text(
+        `Trang ${i} / ${pageCount}`,
+        doc.internal.pageSize.getWidth() - 40,
+        doc.internal.pageSize.getHeight() - 10
+      );
     }
   }
   const logo = await fetch(chrome.runtime.getURL("icon128.png"))
-    .then(r=>r.blob())
-    .then(b=>new Promise(res=>{
-      const reader=new FileReader();
-      reader.onload=()=>res(reader.result);
-      reader.readAsDataURL(b);
-    }));
+    .then((r) => r.blob())
+    .then(
+      (b) =>
+        new Promise((res) => {
+          const reader = new FileReader();
+          reader.onload = () => res(reader.result);
+          reader.readAsDataURL(b);
+        })
+    );
   doc.addImage(logo, "PNG", 15, 20, 30, 30);
   doc.setFontSize(18);
   doc.text("FAP GPA Viewer – Dashboard", 55, 30);
   doc.setFontSize(12);
-  doc.text("Một Chrome Extension giúp sinh viên FPT University theo dõi GPA, lịch học, điểm danh và nhắc nhở tự động.", 15, 60);
+  doc.text(
+    "Một Chrome Extension giúp sinh viên FPT University theo dõi GPA, lịch học, điểm danh và nhắc nhở tự động.",
+    15,
+    60
+  );
   doc.addPage();
   const transcript = await STORAGE.get("cache_transcript", null);
-  if(transcript?.rows?.length){
+  if (transcript?.rows?.length) {
     doc.setFontSize(16);
     doc.text("Transcript", 14, 20);
-    doc.autoTable({ startY: 25, head: [["Code","Name","Credit","Grade","Status"]],
-      body: transcript.rows.map(r=>[r.code,r.name,r.credit,r.grade,r.status]) });
+    doc.autoTable({
+      startY: 25,
+      head: [["Code", "Name", "Credit", "Grade", "Status"]],
+      body: transcript.rows.map((r) => [
+        r.code,
+        r.name,
+        r.credit,
+        r.grade,
+        r.status,
+      ]),
+    });
     doc.addPage();
   }
   const att = await STORAGE.get("cache_attendance", null);
-  if(att?.entries?.length){
+  if (att?.entries?.length) {
     doc.setFontSize(16);
     doc.text("Attendance", 14, 20);
-    doc.autoTable({ startY: 25, head: [["Date","Day","Slot","Course","Status"]],
-      body: att.entries.map(e=>[e.date,e.day,e.slot,e.course,e.status]) });
+    doc.autoTable({
+      startY: 25,
+      head: [["Date", "Day", "Slot", "Course", "Status"]],
+      body: att.entries.map((e) => [e.date, e.day, e.slot, e.course, e.status]),
+    });
     doc.addPage();
     doc.setFontSize(16);
     doc.text("Schedule (Week)", 14, 20);
-    doc.autoTable({ startY: 25, head: [["Day","Date","Slot","Time","Course","Room","Status"]],
-      body: att.entries.map(e=>[e.day,e.date,e.slot,e.time||"",e.course,e.room||"",e.status||""]) });
+    doc.autoTable({
+      startY: 25,
+      head: [["Day", "Date", "Slot", "Time", "Course", "Room", "Status"]],
+      body: att.entries.map((e) => [
+        e.day,
+        e.date,
+        e.slot,
+        e.time || "",
+        e.course,
+        e.room || "",
+        e.status || "",
+      ]),
+    });
     doc.addPage();
   }
   const cfg = await STORAGE.get("cfg", {});
   doc.setFontSize(16);
   doc.text("Settings", 14, 20);
-  doc.autoTable({ startY: 25, head: [["Key","Value"]],
-    body: Object.entries(cfg).map(([k,v])=>[k,String(v)]) });
+  doc.autoTable({
+    startY: 25,
+    head: [["Key", "Value"]],
+    body: Object.entries(cfg).map(([k, v]) => [k, String(v)]),
+  });
   addHeaderFooter();
   doc.save("fap_dashboard_all.pdf");
 }
@@ -584,11 +876,175 @@ async function exportAllPDF(){
 const btnExportPDF = document.getElementById("btnExportPDF");
 if (btnExportPDF) btnExportPDF.onclick = exportAllPDF;
 
-
 // === Export PDF via printable report page (no external libs needed) ===
-(function(){
-  const btn = document.getElementById('btnExportPDF');
-  if(btn){
-    btn.onclick = ()=> chrome.tabs.create({ url: chrome.runtime.getURL('report.html') });
+(function () {
+  const btn = document.getElementById("btnExportPDF");
+  if (btn) {
+    btn.onclick = () =>
+      chrome.tabs.create({ url: chrome.runtime.getURL("report.html") });
   }
 })();
+
+// === Loading States cho Refresh Buttons ===
+const loadingStyles = `
+/* Custom Scrollbar - Mỏng và đẹp hơn */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) var(--bg);
+}
+
+@keyframes spin {
+  0% { transform: translateY(-50%) rotate(0deg); }
+  100% { transform: translateY(-50%) rotate(360deg); }
+}
+
+.btn-loading {
+  position: relative;
+  pointer-events: none;
+  opacity: 0.7;
+  padding-left: 32px !important;
+}
+
+.btn-loading::before {
+  content: '';
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  transform-origin: center center;
+}
+
+.btn-success,
+.btn-error {
+  position: relative;
+  padding-left: 32px !important;
+}
+
+.btn-success::before {
+  content: '✓';
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #10b981;
+  font-size: 18px;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.btn-error::before {
+  content: '✗';
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #ef4444;
+  font-size: 18px;
+  font-weight: bold;
+  line-height: 1;
+}
+`;
+
+const styleEl = document.createElement("style");
+styleEl.textContent = loadingStyles;
+document.head.appendChild(styleEl);
+
+async function handleRefreshWithLoading(btn, fn) {
+  // Remove any previous states
+  btn.classList.remove("btn-success", "btn-error");
+
+  // Store original text and add loading state
+  const orig = btn.textContent;
+  btn.classList.add("btn-loading");
+  btn.textContent = "Đang tải...";
+
+  try {
+    await fn();
+
+    // Success state
+    btn.classList.remove("btn-loading");
+    btn.classList.add("btn-success");
+    btn.textContent = "Thành công!";
+
+    setTimeout(() => {
+      btn.classList.remove("btn-success");
+      btn.textContent = orig;
+    }, 2000);
+  } catch (e) {
+    // Error state
+    btn.classList.remove("btn-loading");
+    btn.classList.add("btn-error");
+    btn.textContent = "Lỗi!";
+
+    console.error("Refresh error:", e);
+
+    setTimeout(() => {
+      btn.classList.remove("btn-error");
+      btn.textContent = orig;
+    }, 2000);
+  }
+}
+
+// === Copy GPA Button ===
+const btnCopyGPA = document.getElementById("btnCopyGPA");
+if (btnCopyGPA) {
+  btnCopyGPA.onclick = async function () {
+    const gpa10 = document.querySelector("#gpa10")?.textContent || "--";
+    const gpa4 = document.querySelector("#gpa4")?.textContent || "--";
+    const credits = document.querySelector("#credits")?.textContent || "--";
+
+    if (gpa10 === "--" || gpa4 === "--") {
+      alert("Chưa có dữ liệu GPA để copy!");
+      return;
+    }
+
+    const text = `GPA (10): ${gpa10}\nGPA (4): ${gpa4}\nTổng tín chỉ: ${credits}`;
+
+    try {
+      await navigator.clipboard.writeText(text);
+
+      // Show success feedback
+      const original = this.textContent;
+      this.textContent = "✓ Đã copy!";
+      this.style.background = "#10b981";
+      this.style.borderColor = "#10b981";
+      this.style.color = "#fff";
+
+      setTimeout(() => {
+        this.textContent = original;
+        this.style.background = "";
+        this.style.borderColor = "";
+        this.style.color = "";
+      }, 1500);
+    } catch (err) {
+      alert("Không thể copy: " + err.message);
+    }
+  };
+}
+
+// Export function
+window.handleRefreshWithLoading = handleRefreshWithLoading;
