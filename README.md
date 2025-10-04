@@ -50,7 +50,7 @@ cd FAP-GPA-Viewer
 ### Lần đầu sử dụng
 
 1. **Đăng nhập FAP**: 
-   - Truy cập https://fap.fpt.edu.vn
+   - Truy cập trang của trường hoặc cứ mở extension là sẽ có thông báo chuyển hướng đến trang của trường
    - Đăng nhập bằng tài khoản FEID của bạn
 
 2. **Mở extension**: 
