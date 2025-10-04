@@ -59,7 +59,7 @@ It is provided “**as is**”, without warranty of any kind. The author shall n
 ## 6. Contact
 
 If you have privacy concerns or wish for your data to be removed, contact:  
-📧 `longurara+gpaviewer@gmail.com`
+📧 `longurara@gmail.com`
 
 The author will respond promptly and comply with any legitimate request.
 
