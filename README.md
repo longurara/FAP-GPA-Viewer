@@ -246,15 +246,33 @@ MIT License - Xem file [LICENSE](LICENSE) để biết thêm chi tiết
 - FPT University vì hệ thống FAP
 - Cộng đồng sinh viên FPT đã đóng góp ý kiến
 
-## ⚖️ Disclaimer
+---
 
-Extension này **không chính thức** và **không liên quan** đến FPT University hay FPT Education. 
+## ⚠️ Disclaimer
 
-- Sử dụng với trách nhiệm của bản thân
-- Không spam hay lạm dụng hệ thống FAP
-- Tôn trọng quy định của trường
+**English:**  
+This project is an **unofficial, community-built extension** made by FPT students for personal and educational use.  
+It is **not affiliated with, endorsed by, or maintained by FPT University or fap.fpt.edu.vn**.  
+All trademarks and names belong to their respective owners.  
+Use this software **at your own risk**. The author does **not** collect or store any user credentials or personal data.
+
+**Tiếng Việt:**  
+Dự án này là **công cụ không chính thức** do sinh viên FPT phát triển để phục vụ mục đích cá nhân và học tập.  
+Phần mềm **không thuộc, không được bảo trợ hoặc đại diện cho FPT University hay trang fap.fpt.edu.vn**.  
+Mọi thương hiệu, biểu tượng và tên gọi thuộc quyền sở hữu của FPT University.  
+Người dùng **tự chịu trách nhiệm** khi sử dụng phần mềm này. Tác giả **không thu thập dữ liệu đăng nhập** hay thông tin cá nhân nào.
 
 ---
+
+## 🛡️ Privacy Policy (Summary)
+
+- The extension **does not collect**, store, or transmit your login credentials or grades to any external server.  
+- All data (e.g. GPA, schedule, attendance) is processed **locally in your browser** using client-side scripts.  
+- Optional features (like caching) use browser localStorage only.  
+- You can clear all local data anytime by removing the extension or clearing browser storage.
+
+---
+
 
 **Made with ❤️ by FPT Students, for FPT Students**
 
