@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FAP GPA Viewer - Xem điểm thông minh hơn</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+          "Helvetica Neue", sans-serif;
+        background: #ffffff;
+        color: #37352f;
+        overflow-x: hidden;
+        line-height: 1.5;
+      }
+
+      nav {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 5%;
+        position: fixed;
+        width: 100%;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(8px);
+        z-index: 100;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+      }
+
+      .logo {
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: #37352f;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .nav-links {
+        display: flex;
+        gap: 2rem;
+        list-style: none;
+        align-items: center;
+      }
+
+      .nav-links a {
+        color: rgba(55, 53, 47, 0.65);
+        text-decoration: none;
+        transition: color 0.2s;
+        font-size: 0.95rem;
+      }
+
+      .nav-links a:hover {
+        color: #37352f;
+      }
+
+      .hero {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        padding: 2rem 5%;
+        padding-top: 100px;
+        background: linear-gradient(180deg, #ffffff 0%, #fafafa 100%);
+      }
+
+      .hero-content {
+        max-width: 1000px;
+        animation: fadeInUp 0.8s ease;
+      }
+
+      h1 {
+        font-size: 5rem;
+        font-weight: 700;
+        line-height: 1.1;
+        margin-bottom: 1.5rem;
+        color: #37352f;
+        letter-spacing: -0.03em;
+      }
+
+      .gradient-text {
+        background: linear-gradient(90deg, #000000 0%, #434343 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .subtitle {
+        font-size: 1.5rem;
+        color: rgba(55, 53, 47, 0.65);
+        max-width: 700px;
+        margin: 0 auto 3rem;
+        line-height: 1.5;
+      }
+
+      .cta-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        margin-bottom: 4rem;
+      }
+
+      .btn {
+        padding: 0.75rem 1.5rem;
+        font-size: 1rem;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.2s;
+        cursor: pointer;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .btn-primary {
+        background: #37352f;
+        color: white;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+      }
+
+      .btn-primary:hover {
+        background: #2d2b26;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.16);
+      }
+
+      .btn-secondary {
+        background: white;
+        color: #37352f;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+      }
+
+      .btn-secondary:hover {
+        background: #fafafa;
+      }
+
+      .hero-image {
+        width: 100%;
+        max-width: 900px;
+        margin-top: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        border: 1px solid rgba(0, 0, 0, 0.06);
+        padding: 2rem;
+        background: white;
+        text-align: center;
+        font-size: 3rem;
+      }
+
+      .features {
+        padding: 6rem 5%;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      .section-header {
+        text-align: center;
+        margin-bottom: 4rem;
+      }
+
+      .section-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #37352f;
+        margin-bottom: 1rem;
+        letter-spacing: -0.02em;
+      }
+
+      .section-subtitle {
+        font-size: 1.25rem;
+        color: rgba(55, 53, 47, 0.65);
+      }
+
+      .feature-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 2rem;
+      }
+
+      .feature-card {
+        padding: 2rem;
+        border-radius: 8px;
+        background: white;
+        border: 1px solid rgba(0, 0, 0, 0.06);
+        transition: all 0.2s;
+      }
+
+      .feature-card:hover {
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        transform: translateY(-2px);
+      }
+
+      .feature-icon {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+      }
+
+      .feature-card h3 {
+        font-size: 1.25rem;
+        margin-bottom: 0.75rem;
+        color: #37352f;
+        font-weight: 600;
+      }
+
+      .feature-card p {
+        color: rgba(55, 53, 47, 0.65);
+        line-height: 1.6;
+      }
+
+      .install-section {
+        padding: 6rem 5%;
+        background: #fafafa;
+      }
+
+      .install-container {
+        max-width: 900px;
+        margin: 0 auto;
+      }
+
+      .install-steps {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+        margin-top: 3rem;
+      }
+
+      .step {
+        background: white;
+        padding: 2rem;
+        border-radius: 8px;
+        border: 1px solid rgba(0, 0, 0, 0.06);
+        display: flex;
+        gap: 1.5rem;
+        align-items: flex-start;
+        transition: all 0.2s;
+      }
+
+      .step:hover {
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+      }
+
+      .step-number {
+        min-width: 48px;
+        height: 48px;
+        background: #37352f;
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        font-weight: 600;
+        flex-shrink: 0;
+      }
+
+      .step-content {
+        flex: 1;
+      }
+
+      .step-content h3 {
+        font-size: 1.25rem;
+        margin-bottom: 0.75rem;
+        color: #37352f;
+        font-weight: 600;
+      }
+
+      .step-content p {
+        color: rgba(55, 53, 47, 0.65);
+        line-height: 1.6;
+        margin-bottom: 0.5rem;
+      }
+
+      .code-block {
+        background: #f7f6f3;
+        border: 1px solid rgba(0, 0, 0, 0.06);
+        padding: 1rem;
+        border-radius: 6px;
+        margin-top: 0.75rem;
+        font-family: "SF Mono", Monaco, "Courier New", monospace;
+        font-size: 0.9rem;
+        color: #eb5757;
+        overflow-x: auto;
+        white-space: pre;
+      }
+
+      .cta-section {
+        padding: 6rem 5%;
+        text-align: center;
+        background: white;
+      }
+
+      .cta-box {
+        max-width: 700px;
+        margin: 0 auto;
+        padding: 4rem 2rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 12px;
+        color: white;
+      }
+
+      .cta-box h2 {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+        font-weight: 700;
+      }
+
+      .cta-box p {
+        font-size: 1.25rem;
+        margin-bottom: 2rem;
+        opacity: 0.95;
+      }
+
+      .cta-box .btn {
+        background: white;
+        color: #37352f;
+        font-weight: 600;
+      }
+
+      .cta-box .btn:hover {
+        background: #f7f6f3;
+      }
+
+      .footer {
+        text-align: center;
+        padding: 3rem 5%;
+        border-top: 1px solid rgba(0, 0, 0, 0.06);
+        color: rgba(55, 53, 47, 0.65);
+        font-size: 0.95rem;
+      }
+
+      .footer a {
+        color: #37352f;
+        text-decoration: none;
+      }
+
+      .footer a:hover {
+        text-decoration: underline;
+      }
+
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(30px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @media (max-width: 768px) {
+        h1 {
+          font-size: 3rem;
+        }
+
+        .subtitle {
+          font-size: 1.25rem;
+        }
+
+        .cta-buttons {
+          flex-direction: column;
+          align-items: center;
+        }
+
+        .nav-links {
+          gap: 1rem;
+        }
+
+        .feature-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <nav>
+      <div class="logo">FAP GPA Viewer</div>
+      <ul class="nav-links">
+        <li><a href="#features">Tính năng</a></li>
+        <li><a href="#install">Cài đặt</a></li>
+        <li>
+          <a href="https://github.com/longurara/FAP-GPA-Viewer" target="_blank"
+            >GitHub</a
+          >
+        </li>
+      </ul>
+    </nav>
+
+    <section class="hero">
+      <div class="hero-content">
+        <h1>
+          Xem điểm <span class="gradient-text">thông minh hơn</span><br />cho
+          sinh viên FPT
+        </h1>
+        <p class="subtitle">
+          Extension Chrome giúp bạn xem GPA tự động, trực quan và đầy đủ. Miễn
+          phí, an toàn và dễ sử dụng.
+        </p>
+        <div class="cta-buttons">
+          <a href="#install" class="btn btn-primary"> Bắt đầu ngay → </a>
+          <a
+            href="https://github.com/longurara/FAP-GPA-Viewer"
+            target="_blank"
+            class="btn btn-secondary"
+          >
+            ⭐ Xem trên GitHub
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section id="features" class="features">
+      <div class="section-header">
+        <h2 class="section-title">Được thiết kế cho sinh viên</h2>
+        <p class="section-subtitle">Đơn giản, nhanh chóng và hiệu quả</p>
+      </div>
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="feature-icon">⚡</div>
+          <h3>Tính toán tự động</h3>
+          <p>
+            Tự động phân tích và tính GPA ngay khi bạn mở trang FAP. Không cần
+            thao tác thủ công.
+          </p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🎨</div>
+          <h3>Giao diện rõ ràng</h3>
+          <p>
+            Hiển thị điểm số với giao diện sạch đẹp, dễ đọc. Tất cả thông tin
+            quan trọng đều có sẵn.
+          </p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🔒</div>
+          <h3>Bảo mật tuyệt đối</h3>
+          <p>
+            Hoạt động hoàn toàn trên trình duyệt. Không lưu trữ hay gửi dữ liệu
+            đi bất kỳ đâu.
+          </p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📈</div>
+          <h3>Theo dõi chi tiết</h3>
+          <p>
+            Xem điểm từng môn, điểm trung bình kỳ và GPA tổng. Quản lý học tập
+            hiệu quả hơn.
+          </p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🆓</div>
+          <h3>Hoàn toàn miễn phí</h3>
+          <p>
+            Open source và miễn phí mãi mãi. Được phát triển bởi sinh viên, dành
+            cho sinh viên.
+          </p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">⚙️</div>
+          <h3>Cài đặt dễ dàng</h3>
+          <p>
+            Chỉ mất vài phút để cài đặt. Không cần kiến thức kỹ thuật, ai cũng
+            làm được.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section id="install" class="install-section">
+      <div class="install-container">
+        <div class="section-header">
+          <h2 class="section-title">Hướng dẫn cài đặt</h2>
+          <p class="section-subtitle">5 bước đơn giản để bắt đầu</p>
+        </div>
+        <div class="install-steps">
+          <div class="step">
+            <div class="step-number">1</div>
+            <div class="step-content">
+              <h3>Tải source code</h3>
+              <p>
+                Truy cập GitHub repository và tải về source code. Bạn có thể
+                clone bằng Git hoặc download ZIP.
+              </p>
+              <div class="code-block">
+                git clone https://github.com/longurara/FAP-GPA-Viewer.git
+              </div>
+              <p style="margin-top: 0.75rem">
+                Hoặc nhấn nút "Code" → "Download ZIP" trên GitHub, sau đó giải
+                nén.
+              </p>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-number">2</div>
+            <div class="step-content">
+              <h3>Mở trang Extensions</h3>
+              <p>Mở Chrome và truy cập trang quản lý extensions:</p>
+              <div class="code-block">chrome://extensions/</div>
+              <p style="margin-top: 0.75rem">
+                Hoặc vào Menu (⋮) → Extensions → Manage Extensions
+              </p>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-number">3</div>
+            <div class="step-content">
+              <h3>Bật Developer mode</h3>
+              <p>
+                Ở góc trên bên phải, bật công tắc "Developer mode". Bạn sẽ thấy
+                các nút mới xuất hiện.
+              </p>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-number">4</div>
+            <div class="step-content">
+              <h3>Tải extension</h3>
+              <p>
+                Nhấn "Load unpacked" và chọn thư mục source code vừa tải.
+                Extension sẽ được cài ngay lập tức.
+              </p>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-number">5</div>
+            <div class="step-content">
+              <h3>Bắt đầu sử dụng</h3>
+              <p>
+                Truy cập fap.fpt.edu.vn và xem điểm như bình thường. Extension
+                sẽ tự động hiển thị GPA của bạn!
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta-section">
+      <div class="cta-box">
+        <h2>Sẵn sàng bắt đầu?</h2>
+        <p>Tham gia cùng hàng trăm sinh viên FPT đang sử dụng FAP GPA Viewer</p>
+        <a href="https://github.com/longurara/FAP-GPA-Viewer" class="btn"
+          >Cài đặt ngay</a
+        >
+      </div>
+    </section>
+
+    <footer class="footer">
+      <p>
+        Phát triển bởi sinh viên FPT •
+        <a href="https://github.com/longurara/FAP-GPA-Viewer" target="_blank"
+          >GitHub</a
+        >
+        • Open Source & Miễn phí
+      </p>
+    </footer>
+
+    <script>
+      document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
+        anchor.addEventListener("click", function (e) {
+          e.preventDefault();
+          const target = document.querySelector(this.getAttribute("href"));
+          if (target) {
+            target.scrollIntoView({
+              behavior: "smooth",
+              block: "start",
+            });
+          }
+        });
+      });
+
+      const observerOptions = {
+        threshold: 0.1,
+        rootMargin: "0px 0px -50px 0px",
+      };
+
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry, index) => {
+          if (entry.isIntersecting) {
+            setTimeout(() => {
+              entry.target.style.opacity = "1";
+              entry.target.style.transform = "translateY(0)";
+            }, index * 100);
+          }
+        });
+      }, observerOptions);
+
+      document.querySelectorAll(".feature-card, .step").forEach((el) => {
+        el.style.opacity = "0";
+        el.style.transform = "translateY(20px)";
+        el.style.transition = "opacity 0.5s ease, transform 0.5s ease";
+        observer.observe(el);
+      });
+    </script>
+  </body>
+</html>
