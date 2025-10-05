@@ -35,33 +35,89 @@
     const tb = tbody("#tblTranscript");
     if (!tb) return;
     tb.innerHTML = "";
-    (rows || []).forEach((r) =>
-      addRows(tb, [
-        [
-          r.code || "",
-          r.name || "",
-          Number.isFinite(r.credit) ? r.credit : "",
-          Number.isFinite(r.grade) ? r.grade : "",
-          r.status || "",
-        ],
-      ])
-    );
+
+    // Calculate GPA
+    let totalCredits = 0,
+      totalPoints = 0,
+      courseCount = 0;
+
+    (rows || []).forEach((r) => {
+      const tr = document.createElement("tr");
+      const grade = r.grade;
+      const credit = r.credit;
+
+      if (
+        Number.isFinite(grade) &&
+        Number.isFinite(credit) &&
+        grade > 0 &&
+        credit > 0
+      ) {
+        totalCredits += credit;
+        totalPoints += credit * grade;
+        courseCount++;
+      }
+
+      let gradeClass = "";
+      if (Number.isFinite(grade)) {
+        if (grade >= 9) gradeClass = "grade-excellent";
+        else if (grade >= 7) gradeClass = "grade-good";
+        else if (grade >= 5) gradeClass = "grade-average";
+        else gradeClass = "grade-poor";
+      }
+
+      tr.innerHTML = `
+        <td>${r.code || ""}</td>
+        <td>${r.name || ""}</td>
+        <td>${Number.isFinite(r.credit) ? r.credit : ""}</td>
+        <td class="${gradeClass}">${
+        Number.isFinite(r.grade) ? r.grade : ""
+      }</td>
+        <td>${r.status || ""}</td>
+      `;
+      tb.appendChild(tr);
+    });
+
+    // Render GPA summary
+    const gpa10 =
+      totalCredits > 0 ? (totalPoints / totalCredits).toFixed(2) : "N/A";
+    const gpa4 =
+      totalCredits > 0
+        ? ((totalPoints / totalCredits / 10) * 4).toFixed(2)
+        : "N/A";
+
+    const summaryBox = $("#gpaSummary");
+    if (summaryBox) {
+      summaryBox.innerHTML = `
+        <h3>Tổng kết GPA</h3>
+        <p>
+          <strong>GPA (thang 10):</strong> ${gpa10} | 
+          <strong>GPA (thang 4):</strong> ${gpa4} | 
+          <strong>Tổng tín chỉ:</strong> ${totalCredits} | 
+          <strong>Số môn:</strong> ${courseCount}
+        </p>
+      `;
+    }
   }
   function renderAttendance(entries) {
     const tb = tbody("#tblAttendance");
     if (!tb) return;
     tb.innerHTML = "";
-    (entries || []).forEach((e) =>
-      addRows(tb, [
-        [
-          e.date || "",
-          e.day || "",
-          e.slot || "",
-          e.course || "",
-          e.status || "",
-        ],
-      ])
-    );
+    (entries || []).forEach((e) => {
+      const tr = document.createElement("tr");
+      const status = (e.status || "").toLowerCase();
+      let statusClass = "";
+      if (status.includes("attended")) statusClass = "status-attended";
+      else if (status.includes("absent")) statusClass = "status-absent";
+
+      tr.innerHTML = `
+        <td>${e.date || ""}</td>
+        <td>${e.day || ""}</td>
+        <td>${e.slot || ""}</td>
+        <td>${e.course || ""}</td>
+        <td class="${statusClass}">${e.status || ""}</td>
+      `;
+      tb.appendChild(tr);
+    });
   }
   function renderSchedule(entries) {
     const tb = tbody("#tblSchedule");

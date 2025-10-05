@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "FAP Dashboard",
-  "version": "3.1.0",
-  "description": "Xem GPA, điểm danh, lịch học, lịch thi và xuất PDF ngay trong popup",
+  "version": "4.2.0",
+  "description": "Xem GPA, điểm danh, lịch học, lịch thi, thống kê, tính toán GPA và nhiều tính năng nâng cao",
   "icons": {
     "128": "icon128.png"
   },
@@ -15,11 +15,27 @@
   "background": {
     "service_worker": "background.js"
   },
-  "permissions": ["storage", "tabs", "notifications", "alarms"],
-  "host_permissions": ["https://fap.fpt.edu.vn/*"],
+  "permissions": [
+    "storage",
+    "tabs",
+    "notifications",
+    "alarms",
+    "activeTab",
+    "declarativeNetRequest"
+  ],
+  "host_permissions": ["https://fap.fpt.edu.vn/*", "<all_urls>"],
   "web_accessible_resources": [
     {
-      "resources": ["report.html", "report.js", "report.css", "icon128.png"],
+      "resources": [
+        "report.html",
+        "report.js",
+        "report.css",
+        "focus-page.html",
+        "focus-page.js",
+        "timer-icons.css",
+        "icon128.png",
+        "chart.min.js"
+      ],
       "matches": ["<all_urls>"]
     }
   ]

@@ -6,31 +6,263 @@
     <meta content="width=device-width,initial-scale=1" name="viewport" />
     <title>FAP Dashboard</title>
     <link href="popup.css" rel="stylesheet" />
+    <link href="timer-icons.css" rel="stylesheet" />
   </head>
   <body>
+    <!-- SVG Icons -->
+    <svg xmlns="http://www.w3.org/2000/svg" style="display: none">
+      <symbol id="play-icon" viewBox="0 0 24 24">
+        <path d="M8 5v14l11-7z" fill="currentColor" />
+      </symbol>
+      <symbol id="pause-icon" viewBox="0 0 24 24">
+        <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" fill="currentColor" />
+      </symbol>
+      <symbol id="reset-icon" viewBox="0 0 24 24">
+        <path
+          d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"
+          fill="currentColor"
+        />
+      </symbol>
+      <symbol id="stop-icon" viewBox="0 0 24 24">
+        <path d="M6 6h12v12H6z" fill="currentColor" />
+      </symbol>
+      <symbol id="settings-icon" viewBox="0 0 24 24">
+        <path
+          d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.82,11.69,4.82,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"
+          fill="currentColor"
+        />
+      </symbol>
+      <symbol id="timer-icon" viewBox="0 0 24 24">
+        <path
+          d="M15 1H9v2h6V1zm-4 13h2V8h-2v6zm8.03-6.61l1.42-1.42c-.43-.51-.9-.99-1.41-1.41l-1.42 1.42C16.07 4.74 14.12 4 12 4c-4.97 0-9 4.03-9 9s4.02 9 9 9 9-4.03 9-9c0-2.12-.74-4.07-1.97-5.61zM12 20c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"
+          fill="currentColor"
+        />
+      </symbol>
+    </svg>
     <div class="wrap">
       <header class="top">
         <div class="brand">
           <img alt="icon" src="icon128.png" />
           <h1>FAP Dashboard</h1>
         </div>
-        <div class="top-actions">
-          <span id="verBadge" style="opacity: 0.8; margin-right: 8px"></span
-          ><button id="btnCheckUpdate" title="Kiểm tra cập nhật">
-            Check update
-          </button>
-          <button id="btnOpenFAP" title="Mở FAP">Mở FAP</button>
+        <div class="header-controls">
+          <div class="search-container">
+            <input
+              type="text"
+              id="globalSearch"
+              placeholder="Tìm kiếm tất cả..."
+            />
+            <div class="search-results" id="searchResults"></div>
+          </div>
+          <div class="top-actions">
+            <span id="verBadge" style="opacity: 0.8; margin-right: 8px"></span>
+            <div
+              class="theme-toggle"
+              id="themeToggle"
+              title="Chuyển Dark/Light mode"
+            ></div>
+            <button id="btnCheckUpdate" title="Kiểm tra cập nhật">
+              Check update
+            </button>
+            <button id="btnOpenFAP" title="Mở FAP">Mở FAP</button>
+          </div>
         </div>
       </header>
       <nav class="tabs">
-        <button class="active" data-tab="tab-gpa">GPA</button>
+        <div class="tab-indicator"></div>
+        <button class="active" data-tab="tab-today">Hôm nay</button>
+        <button data-tab="tab-gpa">GPA</button>
+        <button data-tab="tab-calc">Tính GPA</button>
+        <button data-tab="tab-stats">Thống kê</button>
+        <button data-tab="tab-timer">Timer</button>
         <button data-tab="tab-att">Điểm danh</button>
         <button data-tab="tab-schedule">Lịch</button>
         <button data-tab="tab-exam">Lịch thi</button>
-        <button data-tab="tab-bookmark">Bookmark</button
-        ><button data-tab="tab-settings">Cài đặt</button>
+        <button data-tab="tab-bookmark">Bookmark</button>
+        <button data-tab="tab-settings">Cài đặt</button>
+        <button data-tab="tab-smart-study">Smart Study</button>
       </nav>
-      <section class="tab active" id="tab-gpa">
+      <!-- Today's Schedule Tab -->
+      <section class="tab active" id="tab-today">
+        <div class="widgets-container" id="widgetsContainer">
+          <!-- Quick Stats Widget -->
+          <div class="widget" data-widget="quick-stats">
+            <div class="widget-header">
+              <div class="widget-title">📊 Thống kê nhanh</div>
+              <div class="widget-controls">
+                <button
+                  class="widget-btn"
+                  data-widget-action="toggle"
+                  data-widget-id="quick-stats"
+                >
+                  −
+                </button>
+                <button
+                  class="widget-btn"
+                  data-widget-action="remove"
+                  data-widget-id="quick-stats"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+            <div class="widget-content" id="quickStatsContent">
+              <div class="stat-row">
+                <span>GPA hiện tại:</span>
+                <span id="quickGPA">--</span>
+              </div>
+              <div class="stat-row">
+                <span>Điểm danh:</span>
+                <span id="quickAttendance">--</span>
+              </div>
+              <div class="stat-row">
+                <span>Pomodoros hôm nay:</span>
+                <span id="quickPomodoros">0</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Today's Schedule Widget -->
+          <div class="widget" data-widget="today-schedule">
+            <div class="widget-header">
+              <div class="widget-title">📅 Lịch hôm nay</div>
+              <div class="widget-controls">
+                <button
+                  class="widget-btn"
+                  data-widget-action="toggle"
+                  data-widget-id="today-schedule"
+                >
+                  −
+                </button>
+                <button
+                  class="widget-btn"
+                  data-widget-action="remove"
+                  data-widget-id="today-schedule"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+            <div class="widget-content" id="todayClasses">
+              <div class="no-class">Đang tải...</div>
+            </div>
+          </div>
+
+          <!-- Quick Actions Widget -->
+          <div class="widget" data-widget="quick-actions">
+            <div class="widget-header">
+              <div class="widget-title">⚡ Thao tác nhanh</div>
+              <div class="widget-controls">
+                <button
+                  class="widget-btn"
+                  data-widget-action="toggle"
+                  data-widget-id="quick-actions"
+                >
+                  −
+                </button>
+                <button
+                  class="widget-btn"
+                  data-widget-action="remove"
+                  data-widget-id="quick-actions"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+            <div class="widget-content">
+              <div class="quick-actions-grid">
+                <button
+                  class="quick-action-btn"
+                  data-tab-action="switch"
+                  data-tab-id="tab-timer"
+                >
+                  <span class="action-icon">⏱️</span>
+                  <span class="action-text">Timer</span>
+                </button>
+                <button
+                  class="quick-action-btn"
+                  data-tab-action="switch"
+                  data-tab-id="tab-calc"
+                >
+                  <span class="action-icon">🧮</span>
+                  <span class="action-text">Tính GPA</span>
+                </button>
+                <button
+                  class="quick-action-btn"
+                  data-tab-action="switch"
+                  data-tab-id="tab-att"
+                >
+                  <span class="action-icon">📚</span>
+                  <span class="action-text">Điểm danh</span>
+                </button>
+                <button
+                  class="quick-action-btn"
+                  data-tab-action="switch"
+                  data-tab-id="tab-exam"
+                >
+                  <span class="action-icon">📝</span>
+                  <span class="action-text">Lịch thi</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Weather Widget -->
+          <div class="widget" data-widget="weather">
+            <div class="widget-header">
+              <div class="widget-title">🌤️ Thời tiết</div>
+              <div class="widget-controls">
+                <button
+                  class="widget-btn"
+                  data-widget-action="toggle"
+                  data-widget-id="weather"
+                >
+                  −
+                </button>
+                <button
+                  class="widget-btn"
+                  data-widget-action="remove"
+                  data-widget-id="weather"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+            <div class="widget-content">
+              <div class="weather-info">
+                <div class="weather-temp">--°C</div>
+                <div class="weather-desc">Không có dữ liệu</div>
+                <div class="weather-location">Hồ Chí Minh</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="cards">
+          <div class="card">
+            <div class="label">GPA (10)</div>
+            <div class="value" id="gpa10Quick">--</div>
+          </div>
+          <div class="card">
+            <div class="label">% chuyên cần</div>
+            <div class="value" id="attRateQuick">--</div>
+          </div>
+          <div class="card">
+            <div class="label">
+              <span class="streak-badge">
+                <span class="fire">🔥</span>
+                <span id="streakCount">0</span> ngày
+              </span>
+            </div>
+            <div class="label" style="font-size: 11px; margin-top: 4px">
+              Streak hiện tại
+            </div>
+          </div>
+        </div>
+        <div class="actions">
+          <button id="btnQuickRefresh" class="primary">Làm mới tất cả</button>
+        </div>
+      </section>
+      <section class="tab" id="tab-gpa">
         <div class="cards">
           <div class="card">
             <div class="label">GPA (10)</div>
@@ -44,10 +276,19 @@
             <div class="label">Tổng tín chỉ</div>
             <div class="value" id="credits">--</div>
           </div>
+          <div class="card exclude-info">
+            <div class="label">Môn loại trừ</div>
+            <div class="value" id="excludedCount">0</div>
+            <div class="exclude-detail" id="excludedDetail">
+              Không có môn nào
+            </div>
+          </div>
         </div>
         <div class="actions">
           <button id="btnOpenTranscript">Trang Transcript</button>
           <button id="btnCopyGPA">Copy GPA</button>
+          <button id="btnResetExcluded">Reset loại trừ</button>
+          <button id="btnSetDefaultExcluded">Mặc định</button>
           <button id="btnRefreshAll">Làm mới</button>
         </div>
         <div class="table">
@@ -58,17 +299,528 @@
           <table id="tblCourses">
             <thead>
               <tr>
+                <th style="width: 40px">🚫</th>
                 <th>Code</th>
                 <th>Tên môn</th>
                 <th class="r">TC</th>
                 <th class="r">Điểm</th>
                 <th>Trạng thái</th>
+                <th style="width: 60px">📝</th>
               </tr>
             </thead>
             <tbody></tbody>
           </table>
         </div>
       </section>
+      <!-- GPA Calculator Tab -->
+      <section class="tab" id="tab-calc">
+        <div class="cards">
+          <div class="card">
+            <div class="label">GPA hiện tại (10)</div>
+            <div class="value" id="calcCurrentGPA">--</div>
+          </div>
+          <div class="card">
+            <div class="label">Tổng tín chỉ hiện tại</div>
+            <div class="value" id="calcCurrentCredits">--</div>
+          </div>
+          <div class="card">
+            <div class="label">GPA mục tiêu</div>
+            <input
+              type="number"
+              id="calcTargetGPA"
+              class="calc-input-large"
+              placeholder="3.5"
+              step="0.1"
+              min="0"
+              max="10"
+            />
+          </div>
+        </div>
+        <div class="calc-form">
+          <div class="calc-row">
+            <label class="calc-label">Số tín chỉ môn mới:</label>
+            <input
+              type="number"
+              id="calcNewCredits"
+              class="calc-input-small"
+              value="3"
+              min="1"
+              max="10"
+            />
+          </div>
+          <div class="calc-row-result">
+            <label class="calc-label">Điểm cần đạt:</label>
+            <div id="calcResult">--</div>
+          </div>
+          <div class="calc-actions">
+            <button id="btnCalculateGPA" class="primary">🧮 Tính toán</button>
+            <button id="btnResetCalc">↺ Reset</button>
+          </div>
+        </div>
+        <p class="hint" style="margin-top: 12px">
+          💡 Công cụ giúp bạn tính toán cần bao nhiêu điểm để đạt GPA mục tiêu.
+        </p>
+      </section>
+      <!-- Statistics Tab -->
+      <section class="tab" id="tab-stats">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">Điểm trung bình</div>
+            <div class="stat-value" id="statAvgGrade">--</div>
+            <div class="stat-detail">Trung bình các môn đã học</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Môn điểm cao nhất</div>
+            <div class="stat-value" id="statBestGrade">--</div>
+            <div class="stat-detail" id="statBestCourse">--</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Môn điểm thấp nhất</div>
+            <div class="stat-value" id="statWorstGrade">--</div>
+            <div class="stat-detail" id="statWorstCourse">--</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Tỷ lệ Pass</div>
+            <div class="stat-value" id="statPassRate">--</div>
+            <div class="stat-detail">Môn đạt / tổng môn</div>
+          </div>
+        </div>
+        <div class="chart-container">
+          <canvas id="gpaChart"></canvas>
+        </div>
+
+        <!-- Analytics Dashboard -->
+        <div class="analytics-section">
+          <h3 class="section-title">📊 Analytics Dashboard</h3>
+          <div class="analytics-grid">
+            <div class="analytics-card">
+              <div class="analytics-header">
+                <h4>📈 Study Patterns</h4>
+                <button
+                  class="analytics-btn"
+                  data-analytics-action="toggle"
+                  data-analytics-id="study-patterns"
+                >
+                  −
+                </button>
+              </div>
+              <div class="analytics-content" id="study-patterns">
+                <div class="pattern-item">
+                  <span class="pattern-label">Peak study time:</span>
+                  <span class="pattern-value" id="peakStudyTime">--</span>
+                </div>
+                <div class="pattern-item">
+                  <span class="pattern-label">Average session:</span>
+                  <span class="pattern-value" id="avgSession">--</span>
+                </div>
+                <div class="pattern-item">
+                  <span class="pattern-label">Most productive day:</span>
+                  <span class="pattern-value" id="productiveDay">--</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="analytics-card">
+              <div class="analytics-header">
+                <h4>🎯 Productivity Insights</h4>
+                <button
+                  class="analytics-btn"
+                  data-analytics-action="toggle"
+                  data-analytics-id="productivity"
+                >
+                  −
+                </button>
+              </div>
+              <div class="analytics-content" id="productivity">
+                <div class="insight-item">
+                  <span class="insight-label">Focus score:</span>
+                  <div class="insight-bar">
+                    <div
+                      class="insight-fill"
+                      id="focusScore"
+                      style="width: 0%"
+                    ></div>
+                  </div>
+                  <span class="insight-value" id="focusScoreText">0%</span>
+                </div>
+                <div class="insight-item">
+                  <span class="insight-label">Consistency:</span>
+                  <div class="insight-bar">
+                    <div
+                      class="insight-fill"
+                      id="consistencyScore"
+                      style="width: 0%"
+                    ></div>
+                  </div>
+                  <span class="insight-value" id="consistencyScoreText"
+                    >0%</span
+                  >
+                </div>
+                <div class="insight-item">
+                  <span class="insight-label">Goal progress:</span>
+                  <div class="insight-bar">
+                    <div
+                      class="insight-fill"
+                      id="goalProgress"
+                      style="width: 0%"
+                    ></div>
+                  </div>
+                  <span class="insight-value" id="goalProgressText">0%</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="analytics-card">
+              <div class="analytics-header">
+                <h4>📅 Weekly Report</h4>
+                <button
+                  class="analytics-btn"
+                  data-analytics-action="toggle"
+                  data-analytics-id="weekly-report"
+                >
+                  −
+                </button>
+              </div>
+              <div class="analytics-content" id="weekly-report">
+                <div class="report-item">
+                  <span class="report-label">Total study time:</span>
+                  <span class="report-value" id="weeklyStudyTime">0h 0m</span>
+                </div>
+                <div class="report-item">
+                  <span class="report-label">Pomodoros completed:</span>
+                  <span class="report-value" id="weeklyPomodoros">0</span>
+                </div>
+                <div class="report-item">
+                  <span class="report-label">Achievements unlocked:</span>
+                  <span class="report-value" id="weeklyAchievements">0</span>
+                </div>
+                <div class="report-item">
+                  <span class="report-label">Attendance rate:</span>
+                  <span class="report-value" id="weeklyAttendance">--</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="analytics-card">
+              <div class="analytics-header">
+                <h4>🎯 Goals & Targets</h4>
+                <button
+                  class="analytics-btn"
+                  data-analytics-action="toggle"
+                  data-analytics-id="goals"
+                >
+                  −
+                </button>
+              </div>
+              <div class="analytics-content" id="goals">
+                <div class="goal-item">
+                  <div class="goal-header">
+                    <span class="goal-title">Daily Study Goal</span>
+                    <span class="goal-progress" id="dailyGoalProgress"
+                      >0/2h</span
+                    >
+                  </div>
+                  <div class="goal-bar">
+                    <div
+                      class="goal-fill"
+                      id="dailyGoalFill"
+                      style="width: 0%"
+                    ></div>
+                  </div>
+                </div>
+                <div class="goal-item">
+                  <div class="goal-header">
+                    <span class="goal-title">Weekly Pomodoros</span>
+                    <span class="goal-progress" id="weeklyGoalProgress"
+                      >0/20</span
+                    >
+                  </div>
+                  <div class="goal-bar">
+                    <div
+                      class="goal-fill"
+                      id="weeklyGoalFill"
+                      style="width: 0%"
+                    ></div>
+                  </div>
+                </div>
+                <div class="goal-item">
+                  <div class="goal-header">
+                    <span class="goal-title">GPA Target</span>
+                    <span class="goal-progress" id="gpaGoalProgress"
+                      >--/3.5</span
+                    >
+                  </div>
+                  <div class="goal-bar">
+                    <div
+                      class="goal-fill"
+                      id="gpaGoalFill"
+                      style="width: 0%"
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Achievement System -->
+        <div class="achievements-section">
+          <h3 class="section-title">🏆 Thành tích</h3>
+          <div class="achievement-stats" id="achievementStats">
+            <!-- Achievement stats will be populated by JavaScript -->
+          </div>
+          <div class="achievements-grid" id="achievementsGrid">
+            <!-- Achievements will be populated by JavaScript -->
+          </div>
+        </div>
+
+        <!-- Progress Tracking -->
+        <div class="progress-tracking-section">
+          <h3 class="section-title">📈 Progress Tracking</h3>
+          <div class="progress-grid">
+            <div class="progress-card">
+              <div class="progress-header">
+                <h4>🎯 Study Goals</h4>
+                <button
+                  class="progress-btn"
+                  data-progress-action="toggle"
+                  data-progress-id="study-goals"
+                >
+                  −
+                </button>
+              </div>
+              <div class="progress-content" id="study-goals">
+                <div class="goal-tracker">
+                  <div class="goal-item">
+                    <div class="goal-info">
+                      <span class="goal-name">Daily Study Time</span>
+                      <span class="goal-target">2h / 2h</span>
+                    </div>
+                    <div class="goal-bar">
+                      <div
+                        class="goal-fill"
+                        id="dailyStudyProgress"
+                        style="width: 0%"
+                      ></div>
+                    </div>
+                    <div class="goal-percentage" id="dailyStudyPercent">0%</div>
+                  </div>
+                  <div class="goal-item">
+                    <div class="goal-info">
+                      <span class="goal-name">Weekly Pomodoros</span>
+                      <span class="goal-target">0 / 20</span>
+                    </div>
+                    <div class="goal-bar">
+                      <div
+                        class="goal-fill"
+                        id="weeklyPomoProgress"
+                        style="width: 0%"
+                      ></div>
+                    </div>
+                    <div class="goal-percentage" id="weeklyPomoPercent">0%</div>
+                  </div>
+                  <div class="goal-item">
+                    <div class="goal-info">
+                      <span class="goal-name">Monthly GPA</span>
+                      <span class="goal-target">-- / 3.5</span>
+                    </div>
+                    <div class="goal-bar">
+                      <div
+                        class="goal-fill"
+                        id="gpaProgress"
+                        style="width: 0%"
+                      ></div>
+                    </div>
+                    <div class="goal-percentage" id="gpaPercent">0%</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="progress-card">
+              <div class="progress-header">
+                <h4>📊 Study Streak</h4>
+                <button
+                  class="progress-btn"
+                  data-progress-action="toggle"
+                  data-progress-id="study-streak"
+                >
+                  −
+                </button>
+              </div>
+              <div class="progress-content" id="study-streak">
+                <div class="streak-display">
+                  <div class="streak-number" id="currentStreak">0</div>
+                  <div class="streak-label">ngày liên tiếp</div>
+                  <div class="streak-calendar" id="streakCalendar">
+                    <!-- Calendar will be populated by JavaScript -->
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="progress-card">
+              <div class="progress-header">
+                <h4>📚 Subject Progress</h4>
+                <button
+                  class="progress-btn"
+                  data-progress-action="toggle"
+                  data-progress-id="subject-progress"
+                >
+                  −
+                </button>
+              </div>
+              <div class="progress-content" id="subject-progress">
+                <div class="subject-list" id="subjectList">
+                  <!-- Subjects will be populated by JavaScript -->
+                </div>
+              </div>
+            </div>
+
+            <div class="progress-card">
+              <div class="progress-header">
+                <h4>🏆 Achievement Progress</h4>
+                <button
+                  class="progress-btn"
+                  data-progress-action="toggle"
+                  data-progress-id="achievement-progress"
+                >
+                  −
+                </button>
+              </div>
+              <div class="progress-content" id="achievement-progress">
+                <div class="achievement-stats">
+                  <div class="stat-item">
+                    <span class="stat-label">Unlocked:</span>
+                    <span class="stat-value" id="unlockedCount">0</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">In Progress:</span>
+                    <span class="stat-value" id="inProgressCount">0</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">Completion:</span>
+                    <span class="stat-value" id="completionRate">0%</span>
+                  </div>
+                </div>
+                <div class="achievement-progress-bar">
+                  <div
+                    class="achievement-fill"
+                    id="achievementFill"
+                    style="width: 0%"
+                  ></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button id="btnRefreshStats" class="primary">Làm mới thống kê</button>
+        </div>
+      </section>
+
+      <!-- Study Timer Tab -->
+      <section class="tab" id="tab-timer">
+        <div class="timer-container">
+          <div class="timer-display">
+            <div class="timer-time" id="timerDisplay">25:00</div>
+            <div class="timer-mode" id="timerMode">Pomodoro</div>
+          </div>
+
+          <div class="timer-controls">
+            <button id="timerStart" class="timer-btn primary">
+              <svg class="timer-icon"><use href="#play-icon"></use></svg>
+              <span>Bắt đầu</span>
+            </button>
+            <button
+              id="timerPause"
+              class="timer-btn secondary"
+              style="display: none"
+            >
+              <svg class="timer-icon"><use href="#pause-icon"></use></svg>
+              <span>Tạm dừng</span>
+            </button>
+            <button id="timerReset" class="timer-btn secondary">
+              <svg class="timer-icon"><use href="#reset-icon"></use></svg>
+              <span>Reset</span>
+            </button>
+          </div>
+
+          <div class="timer-modes">
+            <button class="mode-btn active" data-mode="pomodoro" data-time="25">
+              🍅 Pomodoro (25m)
+            </button>
+            <button class="mode-btn" data-mode="short" data-time="5">
+              ☕ Nghỉ ngắn (5m)
+            </button>
+            <button class="mode-btn" data-mode="long" data-time="15">
+              🛋️ Nghỉ dài (15m)
+            </button>
+            <button class="mode-btn" data-mode="custom" data-time="30">
+              ⚙️ Tùy chỉnh (30m)
+            </button>
+          </div>
+
+          <div class="timer-stats">
+            <div class="stat-item">
+              <span class="stat-label">Pomodoros hôm nay:</span>
+              <span class="stat-value" id="pomodorosToday">0</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Thời gian học:</span>
+              <span class="stat-value" id="studyTimeToday">0h 0m</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Streak:</span>
+              <span class="stat-value" id="studyStreak">0 ngày</span>
+            </div>
+          </div>
+
+          <div class="timer-settings">
+            <h4>⚙️ Cài đặt Timer</h4>
+            <div class="setting-row">
+              <label>Pomodoro (phút):</label>
+              <input
+                type="number"
+                id="pomodoroTime"
+                value="25"
+                min="1"
+                max="60"
+              />
+            </div>
+            <div class="setting-row">
+              <label>Nghỉ ngắn (phút):</label>
+              <input
+                type="number"
+                id="shortBreakTime"
+                value="5"
+                min="1"
+                max="30"
+              />
+            </div>
+            <div class="setting-row">
+              <label>Nghỉ dài (phút):</label>
+              <input
+                type="number"
+                id="longBreakTime"
+                value="15"
+                min="1"
+                max="60"
+              />
+            </div>
+            <div class="setting-row">
+              <label>Auto-start nghỉ:</label>
+              <input type="checkbox" id="autoStartBreak" />
+            </div>
+            <div class="setting-row">
+              <label>Thông báo âm thanh:</label>
+              <input type="checkbox" id="soundNotification" checked />
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section class="tab" id="tab-att">
         <div class="cards">
           <div class="card">
@@ -149,7 +901,18 @@
           <button class="primary" id="btnRefreshExams">Làm mới</button>
         </div>
         <div class="table">
-          <div class="table-head"><div>Lịch thi các môn</div></div>
+          <div class="table-head">
+            <div>Lịch thi các môn</div>
+            <div style="display: flex; gap: 8px">
+              <select id="filterExamTime">
+                <option value="ALL">Tất cả</option>
+                <option value="THIS_WEEK">Tuần này</option>
+                <option value="THIS_MONTH">Tháng này</option>
+                <option value="UPCOMING">Sắp tới</option>
+              </select>
+              <input id="searchExam" placeholder="Tìm môn thi..." />
+            </div>
+          </div>
           <table id="tblExams">
             <thead>
               <tr>
@@ -176,33 +939,468 @@
         </div>
       </section>
       <section class="tab" id="tab-settings">
-        <div class="form">
-          <label class="row">
-            <span>Giờ hoạt động (hh:mm-hh:mm)</span>
-            <input id="setActiveFrom" value="07:00" />
-            <input id="setActiveTo" value="17:40" />
-          </label>
-          <label class="row">
-            <span>Trễ thông báo ngẫu nhiên (phút, min-max)</span>
-            <input id="setDelayMin" min="0" type="number" value="10" />
-            <input id="setDelayMax" min="0" type="number" value="30" />
-          </label>
-          <label class="row">
-            <span>Tần suất kiểm tra cập nhật (phút)</span>
-            <input id="setPollEvery" min="5" type="number" value="15" />
-          </label>
-          <div class="row">
-            <button class="primary" id="btnSaveSettings">Lưu cài đặt</button>
-            <button id="btnTestNotify">Test thông báo</button>
-            <button id="btnExportPDF">Export PDF</button>
+        <div class="settings-section">
+          <h3 class="section-title">🎨 Giao diện</h3>
+          <div class="form">
+            <div class="row">
+              <span>Theme presets:</span>
+              <div class="theme-presets">
+                <button
+                  class="theme-preset"
+                  data-theme="blue"
+                  style="--preset-color: #60a5fa"
+                  title="Blue (Default)"
+                ></button>
+                <button
+                  class="theme-preset"
+                  data-theme="green"
+                  style="--preset-color: #10b981"
+                  title="Green"
+                ></button>
+                <button
+                  class="theme-preset"
+                  data-theme="purple"
+                  style="--preset-color: #a78bfa"
+                  title="Purple"
+                ></button>
+                <button
+                  class="theme-preset"
+                  data-theme="pink"
+                  style="--preset-color: #f472b6"
+                  title="Pink"
+                ></button>
+                <button
+                  class="theme-preset"
+                  data-theme="orange"
+                  style="--preset-color: #fb923c"
+                  title="Orange"
+                ></button>
+                <button
+                  class="theme-preset"
+                  data-theme="red"
+                  style="--preset-color: #ef4444"
+                  title="Red"
+                ></button>
+              </div>
+            </div>
+            <div class="row">
+              <span>Custom accent color:</span>
+              <input type="color" id="customAccentColor" value="#60a5fa" />
+            </div>
+            <div class="row">
+              <span>Background image:</span>
+              <div class="bg-controls">
+                <input
+                  type="file"
+                  id="bgImageInput"
+                  accept="image/*"
+                  style="display: none"
+                />
+                <button id="btnSelectBg" class="secondary">📁 Chọn ảnh</button>
+                <button id="btnRemoveBg" class="secondary">🗑️ Xóa</button>
+                <button id="btnPresetBg" class="secondary">🎨 Presets</button>
+              </div>
+            </div>
+            <div class="row">
+              <span>Background opacity:</span>
+              <input type="range" id="bgOpacity" min="0" max="100" value="20" />
+              <span id="bgOpacityValue">20%</span>
+            </div>
+            <div class="bg-preview" id="bgPreview"></div>
           </div>
         </div>
+
+        <div class="settings-section">
+          <h3 class="section-title">⚙️ Hệ thống</h3>
+          <div class="form">
+            <label class="row">
+              <span>Giờ hoạt động (hh:mm-hh:mm)</span>
+              <input id="setActiveFrom" value="07:00" />
+              <input id="setActiveTo" value="17:40" />
+            </label>
+            <label class="row">
+              <span>Trễ thông báo ngẫu nhiên (phút, min-max)</span>
+              <input id="setDelayMin" min="0" type="number" value="10" />
+              <input id="setDelayMax" min="0" type="number" value="30" />
+            </label>
+            <label class="row">
+              <span>Tần suất kiểm tra cập nhật (phút)</span>
+              <input id="setPollEvery" min="5" type="number" value="15" />
+            </label>
+            <div class="row">
+              <button class="primary" id="btnSaveSettings">Lưu cài đặt</button>
+              <button id="btnTestNotify">Test thông báo</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3 class="section-title">🎨 Advanced Customization</h3>
+          <div class="form">
+            <div class="row">
+              <span>Custom CSS:</span>
+              <div class="css-editor-container">
+                <textarea
+                  id="customCSS"
+                  placeholder="/* Nhập CSS tùy chỉnh của bạn */
+.example {
+  background: red;
+  color: white;
+}"
+                ></textarea>
+                <div class="css-controls">
+                  <button id="btnApplyCSS" class="primary">Apply CSS</button>
+                  <button id="btnResetCSS" class="secondary">Reset</button>
+                  <button id="btnPreviewCSS" class="secondary">Preview</button>
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <span>Layout Mode:</span>
+              <select id="layoutMode">
+                <option value="default">Default</option>
+                <option value="compact">Compact</option>
+                <option value="spacious">Spacious</option>
+                <option value="minimal">Minimal</option>
+              </select>
+            </div>
+            <div class="row">
+              <span>Widget System:</span>
+              <div class="widget-controls">
+                <button id="btnToggleWidgets" class="secondary">
+                  Toggle Widgets
+                </button>
+                <button id="btnResetLayout" class="secondary">
+                  Reset Layout
+                </button>
+              </div>
+            </div>
+            <div class="row">
+              <span>Tab Layout:</span>
+              <div class="layout-editor">
+                <button id="btnEditTabs" class="secondary">✏️ Edit Tabs</button>
+                <button id="btnResetTabs" class="secondary">
+                  🔄 Reset Tabs
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section smart-notifications-section">
+          <div class="section-header">
+            <div class="section-icon">🔔</div>
+            <h3 class="section-title">Smart Notifications</h3>
+            <div class="section-subtitle">Tùy chỉnh thông báo thông minh</div>
+          </div>
+
+          <div class="smart-notifications-content">
+            <!-- Timing Settings -->
+            <div class="notification-group">
+              <div class="group-title">
+                <span class="group-icon">⏰</span>
+                <span>Thời gian thông báo</span>
+              </div>
+              <div class="timing-control">
+                <div class="timing-label">
+                  <span class="label-text">Thông báo trước lớp</span>
+                  <span class="label-desc"
+                    >Nhắc nhở trước khi lớp học bắt đầu</span
+                  >
+                </div>
+                <div class="timing-input">
+                  <input
+                    type="number"
+                    id="notifyBeforeClass"
+                    min="0"
+                    max="60"
+                    value="15"
+                    class="number-input"
+                  />
+                  <span class="input-unit">phút</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Notification Types -->
+            <div class="notification-group">
+              <div class="group-title">
+                <span class="group-icon">📱</span>
+                <span>Loại thông báo</span>
+              </div>
+
+              <div class="notification-options">
+                <div class="notification-option">
+                  <div class="option-content">
+                    <div class="option-icon">🧠</div>
+                    <div class="option-text">
+                      <div class="option-title">Smart reminders</div>
+                      <div class="option-desc">
+                        Nhắc nhở thông minh dựa trên lịch học
+                      </div>
+                    </div>
+                  </div>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="smartReminders" checked />
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+
+                <div class="notification-option">
+                  <div class="option-content">
+                    <div class="option-icon">☕</div>
+                    <div class="option-text">
+                      <div class="option-title">Study break reminders</div>
+                      <div class="option-desc">
+                        Nhắc nhở nghỉ ngơi khi học lâu
+                      </div>
+                    </div>
+                  </div>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="breakReminders" checked />
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+
+                <div class="notification-option">
+                  <div class="option-content">
+                    <div class="option-icon">🎯</div>
+                    <div class="option-text">
+                      <div class="option-title">Goal progress alerts</div>
+                      <div class="option-desc">
+                        Thông báo tiến độ mục tiêu học tập
+                      </div>
+                    </div>
+                  </div>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="goalAlerts" checked />
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+
+                <div class="notification-option">
+                  <div class="option-content">
+                    <div class="option-icon">🏆</div>
+                    <div class="option-text">
+                      <div class="option-title">Achievement notifications</div>
+                      <div class="option-desc">
+                        Thông báo khi đạt thành tích mới
+                      </div>
+                    </div>
+                  </div>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="achievementNotifs" checked />
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+
+                <div class="notification-option">
+                  <div class="option-content">
+                    <div class="option-icon">📊</div>
+                    <div class="option-text">
+                      <div class="option-title">Daily summary</div>
+                      <div class="option-desc">
+                        Tóm tắt hoạt động học tập hàng ngày
+                      </div>
+                    </div>
+                  </div>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="dailySummary" />
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Sound Settings -->
+            <div class="notification-group">
+              <div class="group-title">
+                <span class="group-icon">🔊</span>
+                <span>Âm thanh thông báo</span>
+              </div>
+              <div class="sound-control">
+                <div class="sound-label">
+                  <span class="label-text">Notification sound</span>
+                  <span class="label-desc">Chọn âm thanh cho thông báo</span>
+                </div>
+                <select id="notificationSound" class="sound-select">
+                  <option value="default">🔔 Default</option>
+                  <option value="gentle">🌸 Gentle</option>
+                  <option value="energetic">⚡ Energetic</option>
+                  <option value="none">🔇 None</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Test Buttons -->
+            <div class="notification-group">
+              <div class="group-title">
+                <span class="group-icon">🧪</span>
+                <span>Kiểm tra thông báo</span>
+              </div>
+              <div class="test-buttons">
+                <button id="btnTestNotify" class="test-btn primary">
+                  <span class="btn-icon">🔔</span>
+                  <span>Test thông báo</span>
+                </button>
+                <button id="btnTestSmartNotify" class="test-btn secondary">
+                  <span class="btn-icon">🧠</span>
+                  <span>Test Smart Notify</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3 class="section-title">📤 Export</h3>
+          <div class="form">
+            <div class="row">
+              <button id="btnExportPDF">📄 Export PDF</button>
+              <button id="btnExportCSV">📊 Export CSV</button>
+            </div>
+          </div>
+        </div>
+
         <p class="hint">
           Cài đặt này dùng cho service worker để tự kiểm tra cập nhật điểm danh
           và nhắc bạn sau khi hệ thống cập nhật.
         </p>
       </section>
     </div>
+
+    <!-- Custom Modal System -->
+    <div class="modal-overlay" id="modalOverlay">
+      <div class="modal-box">
+        <div class="modal-icon" id="modalIcon"></div>
+        <h3 class="modal-title" id="modalTitle">Thông báo</h3>
+        <p class="modal-message" id="modalMessage"></p>
+        <div class="modal-actions">
+          <button id="modalConfirm" class="primary">OK</button>
+          <button id="modalCancel" style="display: none">Hủy</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Smart Study Mode Tab -->
+    <section class="tab" id="tab-smart-study">
+      <div class="smart-study-container">
+        <div class="study-status-card">
+          <div class="status-header">
+            <h3>🧠 Smart Study Mode</h3>
+            <div class="status-indicator" id="studyStatusIndicator">
+              <span class="status-dot inactive"></span>
+              <span class="status-text">Inactive</span>
+            </div>
+          </div>
+          <div class="current-session" id="currentSessionInfo">
+            <div class="session-stats">
+              <div class="stat-item">
+                <span class="stat-label">Session Time:</span>
+                <span class="stat-value" id="sessionTime">--</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Focus Time:</span>
+                <span class="stat-value" id="focusTime">--</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Distractions:</span>
+                <span class="stat-value" id="distractionCount">0</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="study-controls">
+          <div class="control-group">
+            <h4>⚙️ Settings</h4>
+            <div class="setting-item master-toggle">
+              <label>
+                <input type="checkbox" id="smartStudyEnabled" checked />
+                <span class="toggle-label">Enable Smart Study Mode</span>
+                <span class="toggle-description"
+                  >Master switch to completely enable/disable Smart Study
+                  Mode</span
+                >
+              </label>
+            </div>
+            <div class="setting-item">
+              <label>
+                <input type="checkbox" id="autoDetectStudy" checked />
+                Auto-detect study sessions
+              </label>
+            </div>
+            <div class="setting-item">
+              <label>
+                <input type="checkbox" id="blockDistractions" checked />
+                Block distracting websites
+              </label>
+            </div>
+            <div class="setting-item">
+              <label>
+                <input type="checkbox" id="showNotifications" checked />
+                Show notifications
+              </label>
+            </div>
+          </div>
+
+          <div class="control-group">
+            <h4>📊 Analytics</h4>
+            <div class="analytics-grid">
+              <div class="analytics-item">
+                <div class="analytics-label">Total Sessions</div>
+                <div class="analytics-value" id="totalSessions">0</div>
+              </div>
+              <div class="analytics-item">
+                <div class="analytics-label">Total Time</div>
+                <div class="analytics-value" id="totalTime">0h</div>
+              </div>
+              <div class="analytics-item">
+                <div class="analytics-label">Focus Rate</div>
+                <div class="analytics-value" id="focusRate">0%</div>
+              </div>
+              <div class="analytics-item">
+                <div class="analytics-label">Avg Session</div>
+                <div class="analytics-value" id="avgSession">0min</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="study-actions">
+          <button id="btnStartStudy" class="btn btn-primary">
+            🚀 Start Study Session
+          </button>
+          <button
+            id="btnEndStudy"
+            class="btn btn-secondary"
+            style="display: none"
+          >
+            ✅ End Session
+          </button>
+          <button id="btnViewAnalytics" class="btn btn-secondary">
+            📈 View Detailed Analytics
+          </button>
+        </div>
+
+        <div class="study-tips">
+          <h4>💡 Study Tips</h4>
+          <div class="tips-list">
+            <div class="tip-item">🎯 Set specific goals for each session</div>
+            <div class="tip-item">
+              ⏰ Use Pomodoro technique (25min work, 5min break)
+            </div>
+            <div class="tip-item">📱 Keep phone away during study time</div>
+            <div class="tip-item">🌱 Take regular breaks to maintain focus</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Toast Notifications Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="chart.min.js"></script>
     <script src="popup.js"></script>
   </body>
 </html>
