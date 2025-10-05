@@ -304,8 +304,8 @@ Nếu bạn thấy tiện ích này hữu ích, hãy ⭐ dự án trên GitHub n
 ---
 
 <p align="center">
-  🌐 <b>Language:</b> 
-  <a href="README.md">🇻🇳 Vietnamese</a> | 
+  🌐 <b>Ngôn ngữ:</b> 
+  <a href="#-tiếng-việt">🇻🇳 Tiếng Việt</a> | 
   <a href="#-english">🇬🇧 English</a>
 </p>
 
