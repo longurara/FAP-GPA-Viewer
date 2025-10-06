@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "FAP Dashboard",
-  "version": "4.2.0",
+  "version": "4.3.0",
   "description": "Xem GPA, điểm danh, lịch học, lịch thi, thống kê, tính toán GPA và nhiều tính năng nâng cao",
   "icons": {
     "128": "icon128.png"

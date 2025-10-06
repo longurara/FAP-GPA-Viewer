@@ -89,9 +89,10 @@ async function checkUpdate(force = false) {
     }
     if (btn) {
       btn.textContent = "Cập nhật";
-      btn.addEventListener("click", () =>
-        chrome.tabs.create({ url: latest.url || RELEASE_PAGE })
-      );
+      btn.addEventListener("click", () => {
+        // Show update modal instead of redirecting to GitHub
+        UpdateModal.show();
+      });
       btn.classList.add("primary");
     }
   } else {
@@ -100,7 +101,8 @@ async function checkUpdate(force = false) {
       btn.addEventListener("click", async () => {
         try {
           await checkUpdate(true);
-          Modal.success("Bạn đang ở phiên bản mới nhất.", "Cập nhật");
+          // Show iPadOS style update modal
+          UpdateModal.show();
         } catch (e) {
           Modal.error("Không kiểm tra được cập nhật: " + e.message);
         }
@@ -2314,32 +2316,186 @@ async function calculateStreak() {
     return;
   }
 
-  // Sort by date descending
-  const sorted = entries
-    .filter((e) => e.date && e.status)
-    .sort((a, b) => {
-      const [dayA, monthA] = (a.date || "01/01").split("/").map(Number);
-      const [dayB, monthB] = (b.date || "01/01").split("/").map(Number);
-      if (monthA !== monthB) return monthB - monthA;
-      return dayB - dayA;
-    });
+  // Helper function to parse date string to Date object
+  function parseDate(dateStr) {
+    const [day, month, year] = dateStr.split("/").map(Number);
+    return new Date(year || new Date().getFullYear(), month - 1, day);
+  }
+
+  // Helper function to format date as YYYY-MM-DD for comparison
+  function formatDate(date) {
+    return date.toISOString().split("T")[0];
+  }
+
+  // Group entries by date and get the most recent status for each date
+  const dateStatusMap = new Map();
+  entries.forEach((entry) => {
+    if (entry.date && entry.status) {
+      const dateKey = formatDate(parseDate(entry.date));
+      const status = entry.status.toLowerCase();
+
+      // Only keep the most recent entry for each date
+      if (
+        !dateStatusMap.has(dateKey) ||
+        (status.includes("attended") &&
+          !dateStatusMap.get(dateKey).includes("attended"))
+      ) {
+        dateStatusMap.set(dateKey, status);
+      }
+    }
+  });
+
+  // Get all dates and sort them in descending order (most recent first)
+  const sortedDates = Array.from(dateStatusMap.keys()).sort().reverse();
 
   let streak = 0;
-  const datesSeen = new Set();
+  const today = new Date();
+  const todayStr = formatDate(today);
 
-  for (const entry of sorted) {
-    if (entry.status?.toLowerCase().includes("attended")) {
-      if (!datesSeen.has(entry.date)) {
-        datesSeen.add(entry.date);
+  // Check if today has attendance data
+  let hasTodayData = false;
+  let currentDate = new Date(today);
+
+  // Count consecutive days with attendance, starting from today
+  for (let i = 0; i < 365; i++) {
+    // Check up to 1 year back
+    const dateStr = formatDate(currentDate);
+    const status = dateStatusMap.get(dateStr);
+
+    if (status) {
+      hasTodayData = true;
+      if (status.includes("attended")) {
         streak++;
+        // Move to previous day
+        currentDate.setDate(currentDate.getDate() - 1);
+      } else if (status.includes("absent") || status.includes("late")) {
+        // Streak broken by absence or being late
+        break;
       }
-    } else if (entry.status?.toLowerCase().includes("absent")) {
-      break; // Streak broken
+    } else {
+      // No data for this date - if we haven't found today's data yet, continue
+      // If we have found today's data, this means no attendance record for this day = streak broken
+      if (hasTodayData) {
+        break;
+      }
+      // Move to previous day
+      currentDate.setDate(currentDate.getDate() - 1);
     }
   }
 
-  setValue("#streakCount", streak.toString());
+  // Get previous streak for comparison
+  const previousStreak = await STORAGE.get("attendance_streak", 0);
+
+  // Update display with animation
+  const streakElement = document.getElementById("streakCount");
+  if (streakElement) {
+    // Add celebration effect if streak increased
+    if (streak > previousStreak && streak > 0) {
+      streakElement.classList.add("streak-celebration");
+
+      // Special effects for milestones
+      if (streak === 7 || streak === 30 || streak === 100) {
+        showStreakMilestone(streak);
+      }
+
+      setTimeout(() => {
+        streakElement.classList.remove("streak-celebration");
+      }, 2000);
+    }
+
+    // Animate number change
+    animateNumberChange(streakElement, previousStreak, streak);
+  }
+
+  // Update other streak displays
+  const currentStreakElement = document.getElementById("currentStreak");
+  if (currentStreakElement) {
+    animateNumberChange(currentStreakElement, previousStreak, streak);
+  }
+
   await STORAGE.set({ attendance_streak: streak });
+}
+
+// Helper function to animate number changes
+function animateNumberChange(element, fromValue, toValue) {
+  if (!element || fromValue === toValue) return;
+
+  const duration = 800; // milliseconds
+  const startTime = performance.now();
+
+  function updateNumber(currentTime) {
+    const elapsed = currentTime - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+
+    // Easing function for smooth animation
+    const easeOutCubic = 1 - Math.pow(1 - progress, 3);
+    const currentValue = Math.round(
+      fromValue + (toValue - fromValue) * easeOutCubic
+    );
+
+    element.textContent = currentValue.toString();
+
+    if (progress < 1) {
+      requestAnimationFrame(updateNumber);
+    } else {
+      element.textContent = toValue.toString();
+    }
+  }
+
+  requestAnimationFrame(updateNumber);
+}
+
+// Show special milestone notification
+function showStreakMilestone(streak) {
+  const milestones = {
+    7: {
+      emoji: "🔥",
+      title: "Tuần học tập!",
+      message: "Bạn đã duy trì streak 7 ngày liên tiếp!",
+    },
+    30: {
+      emoji: "🏆",
+      title: "Tháng học tập!",
+      message: "Xuất sắc! 30 ngày streak không ngừng!",
+    },
+    100: {
+      emoji: "🎯",
+      title: "Bậc thầy!",
+      message: "Không thể tin được! 100 ngày streak!",
+    },
+  };
+
+  const milestone = milestones[streak];
+  if (!milestone) return;
+
+  // Create milestone notification
+  const notification = document.createElement("div");
+  notification.className = "streak-milestone-notification";
+  notification.innerHTML = `
+    <div class="milestone-content">
+      <div class="milestone-emoji">${milestone.emoji}</div>
+      <div class="milestone-title">${milestone.title}</div>
+      <div class="milestone-message">${milestone.message}</div>
+      <div class="milestone-streak">${streak} ngày streak!</div>
+    </div>
+  `;
+
+  document.body.appendChild(notification);
+
+  // Animate in
+  setTimeout(() => {
+    notification.classList.add("show");
+  }, 100);
+
+  // Remove after 4 seconds
+  setTimeout(() => {
+    notification.classList.remove("show");
+    setTimeout(() => {
+      if (notification.parentNode) {
+        notification.parentNode.removeChild(notification);
+      }
+    }, 500);
+  }, 4000);
 }
 
 // ===== EXAM COUNTDOWN =====
@@ -2611,6 +2767,9 @@ const Modal = {
     return new Promise((resolve) => {
       if (!this.overlay) this.init();
 
+      // Store reference to modal box
+      this.box = this.overlay.querySelector(".modal-box");
+
       this.icon.textContent = icon;
       this.title.textContent = title;
       this.message.textContent = message;
@@ -2645,6 +2804,10 @@ const Modal = {
 
   close() {
     this.overlay?.classList.remove("active");
+    // Remove success class when closing
+    if (this.box) {
+      this.box.classList.remove("success");
+    }
   },
 
   alert(message, options = {}) {
@@ -2669,7 +2832,12 @@ const Modal = {
   },
 
   success(message, title = "Thành công") {
-    return this.alert(message, { icon: "✅", title });
+    const result = this.alert(message, { icon: "✅", title });
+    // Add success class for special styling
+    if (this.box) {
+      this.box.classList.add("success");
+    }
+    return result;
   },
 
   error(message, title = "Lỗi") {
@@ -7294,3 +7462,933 @@ let smartStudyManager;
 document.addEventListener("DOMContentLoaded", () => {
   smartStudyManager = new SmartStudyManager();
 });
+
+// ===== TEST FUNCTIONS FOR STREAK CALCULATION =====
+// Test function to verify streak calculation logic
+async function testStreakCalculation() {
+  console.log("🧪 Testing streak calculation...");
+
+  // Mock attendance data for testing
+  const testData = {
+    entries: [
+      { date: "15/12/2024", status: "Attended" },
+      { date: "14/12/2024", status: "Attended" },
+      { date: "13/12/2024", status: "Attended" },
+      { date: "12/12/2024", status: "Absent" },
+      { date: "11/12/2024", status: "Attended" },
+      { date: "10/12/2024", status: "Attended" },
+    ],
+  };
+
+  // Temporarily override cache for testing
+  const originalCacheGet = window.cacheGet;
+  window.cacheGet = async (key, ttl) => {
+    if (key === "cache_attendance") {
+      return testData;
+    }
+    return originalCacheGet(key, ttl);
+  };
+
+  try {
+    await calculateStreak();
+    const streakValue = document.getElementById("streakCount")?.textContent;
+    console.log(`✅ Streak calculated: ${streakValue}`);
+    console.log("Expected: 3 (consecutive days from 15/12 to 13/12)");
+  } catch (error) {
+    console.error("❌ Streak calculation test failed:", error);
+  } finally {
+    // Restore original function
+    window.cacheGet = originalCacheGet;
+  }
+}
+
+// Make test function available globally for debugging
+window.testStreakCalculation = testStreakCalculation;
+
+// Demo function to test streak effects
+window.demoStreakEffects = async function () {
+  console.log("🎨 Demo streak effects...");
+
+  // Test milestone notification
+  showStreakMilestone(7);
+
+  // Test celebration animation
+  const streakElement = document.getElementById("streakCount");
+  if (streakElement) {
+    streakElement.classList.add("streak-celebration");
+    setTimeout(() => {
+      streakElement.classList.remove("streak-celebration");
+    }, 2000);
+  }
+
+  // Test number animation
+  if (streakElement) {
+    const currentValue = parseInt(streakElement.textContent) || 0;
+    animateNumberChange(streakElement, currentValue, currentValue + 5);
+  }
+};
+
+// Demo function to test update modal
+window.demoUpdateModal = async function () {
+  console.log("🎨 Demo update modal...");
+
+  // Test success modal with new styling
+  await Modal.success("Bạn đang ở phiên bản mới nhất.", "Cập nhật");
+
+  // Wait a bit then show another modal
+  setTimeout(async () => {
+    await Modal.alert("Đây là modal thông thường để so sánh", {
+      title: "Modal thông thường",
+      icon: "ℹ️",
+    });
+  }, 3000);
+};
+
+// Premium demo function to showcase all professional effects
+window.demoPremiumModal = async function () {
+  console.log("💎 Demo premium modal effects...");
+
+  // Show success modal with all premium effects
+  await Modal.success(
+    "🎉 Hoàn thành cập nhật thành công!\n\nTất cả tính năng mới đã được kích hoạt.",
+    "Cập nhật hoàn tất"
+  );
+
+  // Wait then show error modal for comparison
+  setTimeout(async () => {
+    await Modal.error(
+      "Đã xảy ra lỗi trong quá trình cập nhật.\n\nVui lòng thử lại sau.",
+      "Lỗi cập nhật"
+    );
+  }, 4000);
+
+  // Wait then show warning modal
+  setTimeout(async () => {
+    await Modal.warning(
+      "Có một số thay đổi có thể ảnh hưởng đến trải nghiệm.\n\nBạn có muốn tiếp tục không?",
+      "Cảnh báo"
+    );
+  }, 8000);
+};
+
+// ===== iPadOS Style Update Modal System =====
+const UpdateModal = {
+  overlay: null,
+  box: null,
+  progressBar: null,
+  progressFill: null,
+  progressText: null,
+  downloadBtn: null,
+  cancelBtn: null,
+
+  // Configuration for GitHub repository
+  config: {
+    repoOwner: "longurara", // Real FAP-GPA-Viewer repository
+    repoName: "FAP-GPA-Viewer", // Real FAP-GPA-Viewer repository
+    fallbackDownloadUrl:
+      "https://github.com/longurara/FAP-GPA-Viewer/releases/latest", // Fallback URL
+    useRealDownload: true, // Enable real download by default
+  },
+
+  init() {
+    // Create update modal HTML
+    const modalHTML = `
+      <div class="update-modal-overlay" id="updateModalOverlay">
+        <div class="update-modal-box">
+          <div class="update-modal-header">
+            <div class="update-modal-icon">
+              <img src="icon128.png" alt="FAP-GPA-Viewer" class="extension-icon">
+            </div>
+            <h2 class="update-modal-title">Cập nhật FAP Dashboard</h2>
+            <p class="update-modal-subtitle">Phiên bản mới có sẵn</p>
+          </div>
+          <div class="update-modal-content">
+            <div class="update-info-box">
+              <div class="update-info-header">
+                <div class="update-info-icon">🚀</div>
+                <div class="update-info-details">
+                  <h3 id="updateAppName">FAP Dashboard v2.3.0</h3>
+                  <p id="updateDeveloper">Nhà phát triển: FAP Team</p>
+                </div>
+              </div>
+              <div class="update-description" id="updateDescription">
+                Phiên bản mới với nhiều tính năng tuyệt vời và cải tiến hiệu suất đáng kể.
+              </div>
+              <ul class="update-features" id="updateFeatures">
+                <li>Giao diện mới với thiết kế hiện đại</li>
+                <li>Cải thiện hiệu suất và tốc độ tải</li>
+                <li>Thêm tính năng Smart Study Mode</li>
+                <li>Tối ưu hóa cho mobile và tablet</li>
+                <li>Sửa lỗi và cải thiện ổn định</li>
+              </ul>
+              <div class="update-size" id="updateSize">
+                <strong>Kích thước:</strong> 2.4 MB
+              </div>
+            </div>
+            <div class="update-actions">
+              <button class="update-btn secondary" id="updateCancelBtn">Hủy</button>
+              <button class="update-btn primary" id="updateDownloadBtn">Tải về và Cài đặt</button>
+            </div>
+            <div class="update-progress" id="updateProgress">
+              <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+              </div>
+              <div class="progress-text" id="progressText">Đang tải về...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Add to body
+    document.body.insertAdjacentHTML("beforeend", modalHTML);
+
+    // Get references
+    this.overlay = document.getElementById("updateModalOverlay");
+    this.progressBar = document.getElementById("updateProgress");
+    this.progressFill = document.getElementById("progressFill");
+    this.progressText = document.getElementById("progressText");
+    this.downloadBtn = document.getElementById("updateDownloadBtn");
+    this.cancelBtn = document.getElementById("updateCancelBtn");
+
+    // Add event listeners
+    this.cancelBtn.addEventListener("click", () => this.close());
+    this.downloadBtn.addEventListener("click", () => this.startDownload());
+
+    // Click overlay to close
+    this.overlay.addEventListener("click", (e) => {
+      if (e.target === this.overlay) {
+        this.close();
+      }
+    });
+
+    // ESC to close
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && this.overlay?.classList.contains("active")) {
+        this.close();
+      }
+    });
+  },
+
+  show() {
+    if (!this.overlay) this.init();
+    this.overlay.classList.add("active");
+    this.resetProgress();
+    this.updateModalContent();
+    this.checkForUpdates();
+  },
+
+  async checkForUpdates() {
+    try {
+      const latestReleaseUrl = `https://api.github.com/repos/${this.config.repoOwner}/${this.config.repoName}/releases/latest`;
+      const response = await fetch(latestReleaseUrl);
+
+      if (response.ok) {
+        const releaseData = await response.json();
+        const latestVersion = releaseData.tag_name;
+        const currentVersion = this.getCurrentVersion();
+
+        console.log(`📦 Current version: ${currentVersion}`);
+        console.log(`📦 Latest version available: ${latestVersion}`);
+
+        // Check if update is needed
+        if (this.isVersionNewer(latestVersion, currentVersion)) {
+          // Update available
+          this.showUpdateAvailable(latestVersion, releaseData);
+        } else {
+          // Already up to date
+          this.showUpToDate(currentVersion);
+        }
+      }
+    } catch (error) {
+      console.log("Could not fetch latest version info:", error.message);
+      // Fallback to showing update modal anyway
+      this.showUpdateAvailable("v4.2.0", null);
+    }
+  },
+
+  getCurrentVersion() {
+    // Get current version from manifest or default
+    try {
+      const manifest = chrome.runtime.getManifest();
+      return manifest.version || "v2.2.1"; // Fallback to current version
+    } catch (error) {
+      return "v2.2.1"; // Fallback version
+    }
+  },
+
+  isVersionNewer(latestVersion, currentVersion) {
+    // Simple version comparison (remove 'v' prefix and compare)
+    const latest = latestVersion.replace("v", "").split(".").map(Number);
+    const current = currentVersion.replace("v", "").split(".").map(Number);
+
+    for (let i = 0; i < Math.max(latest.length, current.length); i++) {
+      const latestNum = latest[i] || 0;
+      const currentNum = current[i] || 0;
+
+      if (latestNum > currentNum) return true;
+      if (latestNum < currentNum) return false;
+    }
+
+    return false; // Versions are equal
+  },
+
+  showUpdateAvailable(latestVersion, releaseData) {
+    // Update modal title with latest version
+    const titleEl = document.querySelector(".update-modal-title");
+    if (titleEl && this.config.repoOwner === "longurara") {
+      titleEl.textContent = `Cập nhật FAP-GPA-Viewer ${latestVersion}`;
+    }
+
+    // Update app name with latest version
+    const appNameEl = document.getElementById("updateAppName");
+    if (appNameEl && this.config.repoOwner === "longurara") {
+      appNameEl.textContent = `FAP-GPA-Viewer ${latestVersion}`;
+    }
+
+    // Update with real release data if available
+    if (releaseData) {
+      this.updateModalWithRealData(releaseData);
+    }
+
+    // Show download button
+    const downloadBtn = document.getElementById("updateDownloadBtn");
+    if (downloadBtn) {
+      downloadBtn.style.display = "block";
+      downloadBtn.textContent = "Tải về và Cài đặt";
+      // Ensure download functionality is restored
+      downloadBtn.replaceWith(downloadBtn.cloneNode(true));
+      const newDownloadBtn = document.getElementById("updateDownloadBtn");
+      newDownloadBtn.addEventListener("click", () => this.startDownload());
+    }
+  },
+
+  updateModalWithRealData(releaseData) {
+    // Update description with simple text
+    const descriptionEl = document.getElementById("updateDescription");
+    if (descriptionEl) {
+      descriptionEl.textContent = "Test download";
+    }
+
+    // Hide features list
+    const featuresEl = document.getElementById("updateFeatures");
+    if (featuresEl) {
+      featuresEl.style.display = "none";
+    }
+
+    // Show file size with real asset size
+    const sizeEl = document.getElementById("updateSize");
+    if (sizeEl) {
+      sizeEl.style.display = "block";
+      if (releaseData.assets && releaseData.assets.length > 0) {
+        const asset = releaseData.assets[0];
+        const sizeInMB = (asset.size / 1024 / 1024).toFixed(1);
+        console.log(`📦 Real file size: ${asset.size} bytes = ${sizeInMB} MB`);
+        sizeEl.innerHTML = `<strong>Kích thước:</strong> ${sizeInMB} MB`;
+      } else {
+        console.log("❌ No assets found, using default size");
+        sizeEl.innerHTML = `<strong>Kích thước:</strong> ~0.2 MB`;
+      }
+    }
+  },
+
+  extractFeaturesFromReleaseNotes(releaseNotes) {
+    const features = [];
+    const lines = releaseNotes.split("\n");
+
+    for (const line of lines) {
+      const trimmedLine = line.trim();
+
+      // Look for bullet points or numbered lists
+      if (
+        trimmedLine.match(/^[-*+]\s+(.+)/) ||
+        trimmedLine.match(/^\d+\.\s+(.+)/)
+      ) {
+        let feature = trimmedLine
+          .replace(/^[-*+]\s+/, "")
+          .replace(/^\d+\.\s+/, "");
+
+        // Clean up markdown formatting
+        feature = feature
+          .replace(/\*\*([^*]+)\*\*/g, "$1") // Remove bold
+          .replace(/\*([^*]+)\*/g, "$1") // Remove italic
+          .replace(/`([^`]+)`/g, "$1") // Remove inline code
+          .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1") // Remove links
+          .trim();
+
+        if (feature && feature.length > 0 && feature.length < 100) {
+          features.push(feature);
+        }
+      }
+
+      // Limit to 5 features max
+      if (features.length >= 5) break;
+    }
+
+    // If no features found, use default ones
+    if (features.length === 0) {
+      return [
+        "Smart Study Mode với auto-detection",
+        "Pomodoro Timer Material Design 3",
+        "Dynamic GPA Calculation",
+        "Clean Scrollbar Design",
+        "Performance optimizations",
+      ];
+    }
+
+    return features;
+  },
+
+  showUpToDate(currentVersion) {
+    // Update modal title
+    const titleEl = document.querySelector(".update-modal-title");
+    if (titleEl) {
+      titleEl.textContent = `FAP-GPA-Viewer ${currentVersion}`;
+    }
+
+    // Update subtitle
+    const subtitleEl = document.querySelector(".update-modal-subtitle");
+    if (subtitleEl) {
+      subtitleEl.textContent = "Bạn đã ở phiên bản mới nhất!";
+    }
+
+    // Update app name
+    const appNameEl = document.getElementById("updateAppName");
+    if (appNameEl) {
+      appNameEl.textContent = `FAP-GPA-Viewer ${currentVersion}`;
+    }
+
+    // Update description
+    const descriptionEl = document.getElementById("updateDescription");
+    if (descriptionEl) {
+      descriptionEl.textContent =
+        "Extension của bạn đã được cập nhật lên phiên bản mới nhất. Cảm ơn bạn đã sử dụng FAP-GPA-Viewer!";
+    }
+
+    // Hide features list
+    const featuresEl = document.getElementById("updateFeatures");
+    if (featuresEl) {
+      featuresEl.style.display = "none";
+    }
+
+    // Hide size info
+    const sizeEl = document.getElementById("updateSize");
+    if (sizeEl) {
+      sizeEl.style.display = "none";
+    }
+
+    // Change download button to close button
+    const downloadBtn = document.getElementById("updateDownloadBtn");
+    if (downloadBtn) {
+      downloadBtn.textContent = "Đóng";
+      // Remove existing event listeners and add new one
+      downloadBtn.replaceWith(downloadBtn.cloneNode(true));
+      const newDownloadBtn = document.getElementById("updateDownloadBtn");
+      newDownloadBtn.addEventListener("click", () => this.close());
+    }
+
+    console.log("✅ User is up to date!");
+  },
+
+  updateModalContent() {
+    // Update modal content based on current repository
+    const appNameEl = document.getElementById("updateAppName");
+    const developerEl = document.getElementById("updateDeveloper");
+    const descriptionEl = document.getElementById("updateDescription");
+    const featuresEl = document.getElementById("updateFeatures");
+    const sizeEl = document.getElementById("updateSize");
+
+    if (
+      this.config.repoOwner === "longurara" &&
+      this.config.repoName === "FAP-GPA-Viewer"
+    ) {
+      // FAP-GPA-Viewer real content
+      if (appNameEl) appNameEl.textContent = "FAP-GPA-Viewer v4.2.0";
+      if (developerEl) developerEl.textContent = "Nhà phát triển: longurara";
+      if (descriptionEl) descriptionEl.textContent = "Test download";
+      if (featuresEl) {
+        featuresEl.style.display = "none";
+      }
+      if (sizeEl) {
+        sizeEl.style.display = "block";
+        sizeEl.innerHTML = "<strong>Kích thước:</strong> ~2.4 MB";
+      }
+    } else if (
+      this.config.repoOwner === "microsoft" &&
+      this.config.repoName === "vscode"
+    ) {
+      // VS Code demo content
+      if (appNameEl) appNameEl.textContent = "Visual Studio Code v1.85.0";
+      if (developerEl) developerEl.textContent = "Nhà phát triển: Microsoft";
+      if (descriptionEl)
+        descriptionEl.textContent =
+          "Phiên bản mới của VS Code với nhiều tính năng và cải tiến hiệu suất.";
+      if (featuresEl) {
+        featuresEl.innerHTML = `
+          <li>IntelliSense cải tiến với AI</li>
+          <li>Performance tối ưu hóa</li>
+          <li>Extensions mới và cập nhật</li>
+          <li>Debugging tools nâng cao</li>
+          <li>Git integration cải thiện</li>
+        `;
+      }
+      if (sizeEl) sizeEl.innerHTML = "<strong>Kích thước:</strong> ~100 MB";
+    } else if (
+      this.config.repoOwner === "facebook" &&
+      this.config.repoName === "react"
+    ) {
+      // React demo content
+      if (appNameEl) appNameEl.textContent = "React v18.2.0";
+      if (developerEl)
+        developerEl.textContent = "Nhà phát triển: Facebook (Meta)";
+      if (descriptionEl)
+        descriptionEl.textContent =
+          "Thư viện JavaScript mạnh mẽ cho xây dựng giao diện người dùng.";
+      if (featuresEl) {
+        featuresEl.innerHTML = `
+          <li>Concurrent rendering</li>
+          <li>Automatic batching</li>
+          <li>Suspense improvements</li>
+          <li>New hooks và APIs</li>
+          <li>Better TypeScript support</li>
+        `;
+      }
+      if (sizeEl) sizeEl.innerHTML = "<strong>Kích thước:</strong> ~50 MB";
+    } else {
+      // Default FAP Dashboard content
+      if (appNameEl) appNameEl.textContent = "FAP Dashboard v2.3.0";
+      if (developerEl) developerEl.textContent = "Nhà phát triển: FAP Team";
+      if (descriptionEl)
+        descriptionEl.textContent =
+          "Phiên bản mới với nhiều tính năng tuyệt vời và cải tiến hiệu suất đáng kể.";
+      if (featuresEl) {
+        featuresEl.innerHTML = `
+          <li>Giao diện mới với thiết kế hiện đại</li>
+          <li>Cải thiện hiệu suất và tốc độ tải</li>
+          <li>Thêm tính năng Smart Study Mode</li>
+          <li>Tối ưu hóa cho mobile và tablet</li>
+          <li>Sửa lỗi và cải thiện ổn định</li>
+        `;
+      }
+      if (sizeEl) sizeEl.innerHTML = "<strong>Kích thước:</strong> 2.4 MB";
+    }
+  },
+
+  close() {
+    this.overlay?.classList.remove("active");
+  },
+
+  resetProgress() {
+    this.progressBar.classList.remove("active");
+    this.progressFill.style.width = "0%";
+    this.progressText.textContent = "Đang tải về...";
+    if (this.downloadBtn) {
+      this.downloadBtn.textContent = "Tải về và Cài đặt";
+      this.downloadBtn.disabled = false;
+      this.downloadBtn.style.display = "block";
+    }
+  },
+
+  async startDownload() {
+    this.downloadBtn.disabled = true;
+    this.downloadBtn.textContent = "Đang tải về...";
+    this.progressBar.classList.add("active");
+
+    try {
+      if (this.config.useRealDownload) {
+        // Try real download from GitHub first
+        await this.realDownload();
+      } else {
+        // Fallback: Open GitHub releases page
+        await this.fallbackDownload();
+      }
+
+      // After download, show installation
+      this.progressText.textContent = "Đang cài đặt...";
+      await this.simulateInstallation();
+
+      // Complete
+      this.progressFill.style.width = "100%";
+      this.progressText.textContent = "Hoàn thành!";
+
+      setTimeout(() => {
+        this.close();
+        // Show success notification
+        Toast.success(
+          "Cập nhật thành công! Vui lòng tải lại trang để sử dụng phiên bản mới."
+        );
+      }, 1000);
+    } catch (error) {
+      console.error("Download failed:", error);
+      this.progressText.textContent = "Tải về thất bại!";
+      this.downloadBtn.disabled = false;
+      this.downloadBtn.textContent = "Mở GitHub";
+
+      // Change button to open GitHub page instead of retry
+      this.downloadBtn.replaceWith(this.downloadBtn.cloneNode(true));
+      const newDownloadBtn = document.getElementById("updateDownloadBtn");
+      newDownloadBtn.addEventListener("click", () => {
+        window.open(this.config.fallbackDownloadUrl, "_blank");
+        this.close();
+      });
+
+      // Show error notification with option to open GitHub
+      Toast.error(
+        "Không thể tải về trực tiếp. Nhấn 'Mở GitHub' để tải về thủ công."
+      );
+    }
+  },
+
+  async fallbackDownload() {
+    // Simulate download progress for fallback
+    this.progressText.textContent = "Đang mở trang tải về...";
+    this.progressFill.style.width = "30%";
+
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    this.progressText.textContent = "Đang chuyển hướng...";
+    this.progressFill.style.width = "60%";
+
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    // Open GitHub releases page in new tab
+    window.open(this.config.fallbackDownloadUrl, "_blank");
+
+    this.progressFill.style.width = "100%";
+    this.progressText.textContent = "Đã mở trang tải về!";
+  },
+
+  async realDownload() {
+    const latestReleaseUrl = `https://api.github.com/repos/${this.config.repoOwner}/${this.config.repoName}/releases/latest`;
+
+    try {
+      // Get latest release info
+      this.progressText.textContent = "Đang kiểm tra phiên bản mới...";
+      this.progressFill.style.width = "10%";
+
+      console.log("🔍 Fetching release info from:", latestReleaseUrl);
+
+      const response = await fetch(latestReleaseUrl);
+      if (!response.ok) {
+        console.error(
+          "GitHub API error:",
+          response.status,
+          response.statusText
+        );
+        throw new Error(
+          `GitHub API error: ${response.status} - ${response.statusText}`
+        );
+      }
+
+      const releaseData = await response.json();
+      console.log("📦 Release data:", releaseData);
+
+      // Check if there are assets
+      if (!releaseData.assets || releaseData.assets.length === 0) {
+        console.log("📦 Release data:", releaseData);
+        console.log("❌ No assets found in release");
+        throw new Error(
+          "Không tìm thấy file tải về trong release này. Release có thể chưa có file đính kèm."
+        );
+      }
+
+      const downloadUrl = releaseData.assets[0]?.browser_download_url;
+      const fileName = releaseData.assets[0]?.name || "update.zip";
+      const fileSize = releaseData.assets[0]?.size || 0;
+
+      if (!downloadUrl) {
+        throw new Error("Không tìm thấy URL tải về");
+      }
+
+      console.log("⬇️ Downloading from:", downloadUrl);
+      console.log("📁 File name:", fileName);
+      console.log("📏 File size:", fileSize, "bytes");
+
+      // Start actual download
+      this.progressText.textContent = "Đang tải về...";
+      this.progressFill.style.width = "20%";
+
+      const downloadResponse = await fetch(downloadUrl);
+      if (!downloadResponse.ok) {
+        throw new Error(
+          `Download failed: ${downloadResponse.status} - ${downloadResponse.statusText}`
+        );
+      }
+
+      const contentLength = downloadResponse.headers.get("content-length");
+      const total = contentLength ? parseInt(contentLength, 10) : fileSize;
+      let loaded = 0;
+
+      console.log("📊 Total size to download:", total, "bytes");
+
+      const reader = downloadResponse.body.getReader();
+      const chunks = [];
+
+      while (true) {
+        const { done, value } = await reader.read();
+
+        if (done) break;
+
+        chunks.push(value);
+        loaded += value.length;
+
+        // Update progress
+        const progress =
+          total > 0 ? Math.round((loaded / total) * 80) + 20 : 50;
+        this.progressFill.style.width = progress + "%";
+
+        const percent = total > 0 ? Math.round((loaded / total) * 100) : 50;
+        const loadedMB = (loaded / 1024 / 1024).toFixed(1);
+        const totalMB = total > 0 ? (total / 1024 / 1024).toFixed(1) : "?";
+
+        this.progressText.textContent = `Đang tải về... ${percent}% (${loadedMB}/${totalMB} MB)`;
+
+        // Small delay for smooth animation
+        await new Promise((resolve) => setTimeout(resolve, 30));
+      }
+
+      // Combine chunks
+      const blob = new Blob(chunks);
+      console.log("✅ Download completed, blob size:", blob.size, "bytes");
+
+      // Save file
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+      this.progressFill.style.width = "100%";
+      this.progressText.textContent = "Tải về hoàn tất!";
+
+      console.log("🎉 File saved successfully:", fileName);
+    } catch (error) {
+      console.error("Real download error:", error);
+      throw error;
+    }
+  },
+
+  async simulateDownload() {
+    const steps = [
+      { progress: 20, text: "Đang tải về... 20%" },
+      { progress: 40, text: "Đang tải về... 40%" },
+      { progress: 60, text: "Đang tải về... 60%" },
+      { progress: 80, text: "Đang tải về... 80%" },
+      { progress: 100, text: "Tải về hoàn tất!" },
+    ];
+
+    for (const step of steps) {
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      this.progressFill.style.width = step.progress + "%";
+      this.progressText.textContent = step.text;
+    }
+  },
+
+  async simulateInstallation() {
+    const steps = [
+      { progress: 20, text: "Đang cài đặt... 20%" },
+      { progress: 40, text: "Đang cài đặt... 40%" },
+      { progress: 60, text: "Đang cài đặt... 60%" },
+      { progress: 80, text: "Đang cài đặt... 80%" },
+      { progress: 100, text: "Cài đặt hoàn tất!" },
+    ];
+
+    for (const step of steps) {
+      await new Promise((resolve) => setTimeout(resolve, 600));
+      this.progressFill.style.width = step.progress + "%";
+      this.progressText.textContent = step.text;
+    }
+  },
+};
+
+// Demo function for iPadOS style update modal
+window.demoIPadOSUpdate = function () {
+  console.log("📱 Demo iPadOS style update modal...");
+  UpdateModal.show();
+};
+
+// Configuration functions for UpdateModal
+window.configureUpdateModal = function (config) {
+  UpdateModal.config = { ...UpdateModal.config, ...config };
+  console.log("✅ UpdateModal configured:", UpdateModal.config);
+};
+
+// Enable real download (requires valid GitHub repo)
+window.enableRealDownload = function (repoOwner, repoName) {
+  UpdateModal.config = {
+    ...UpdateModal.config,
+    repoOwner: repoOwner,
+    repoName: repoName,
+    useRealDownload: true,
+    fallbackDownloadUrl: `https://github.com/${repoOwner}/${repoName}/releases/latest`,
+  };
+  console.log("🚀 Real download enabled for:", `${repoOwner}/${repoName}`);
+};
+
+// Disable real download (use fallback)
+window.disableRealDownload = function () {
+  UpdateModal.config.useRealDownload = false;
+  console.log("📄 Real download disabled, using fallback");
+};
+
+// Demo with real download (example)
+window.demoRealDownload = function () {
+  // Example configuration - replace with your actual repo
+  enableRealDownload("your-username", "FAP-GPA-Viewer");
+  UpdateModal.show();
+};
+
+// Demo with fallback download
+window.demoFallbackDownload = function () {
+  disableRealDownload();
+  UpdateModal.show();
+};
+
+// Demo with a real public repository (for testing)
+window.demoRealGitHubDownload = function () {
+  // Using a real public repository for testing
+  enableRealDownload("microsoft", "vscode");
+  UpdateModal.show();
+};
+
+// Demo with another real repository
+window.demoRealGitHubDownload2 = function () {
+  // Using another real public repository
+  enableRealDownload("facebook", "react");
+  UpdateModal.show();
+};
+
+// Test with a small repository (faster download)
+window.demoSmallRepo = function () {
+  // Using a smaller repository for faster testing
+  enableRealDownload("octocat", "Hello-World");
+  UpdateModal.show();
+};
+
+// Test with a repository that has releases
+window.demoWithReleases = function () {
+  // Using a repository known to have releases
+  enableRealDownload("electron", "electron");
+  UpdateModal.show();
+};
+
+// Demo with real FAP-GPA-Viewer repository
+window.demoFAPGPAViewer = function () {
+  // Using the real FAP-GPA-Viewer repository
+  enableRealDownload("longurara", "FAP-GPA-Viewer");
+  UpdateModal.show();
+};
+
+// Check if repository has downloadable assets
+window.checkRepositoryAssets = async function () {
+  try {
+    const url = `https://api.github.com/repos/longurara/FAP-GPA-Viewer/releases/latest`;
+    const response = await fetch(url);
+    const data = await response.json();
+
+    console.log("🔍 Repository check:", {
+      hasAssets: data.assets && data.assets.length > 0,
+      assetsCount: data.assets ? data.assets.length : 0,
+      assets: data.assets,
+      releaseName: data.name,
+      tagName: data.tag_name,
+      releaseNotes: data.body
+        ? data.body.substring(0, 200) + "..."
+        : "No release notes",
+    });
+
+    if (data.assets && data.assets.length > 0) {
+      console.log("✅ Repository has downloadable assets");
+      console.log(
+        "📦 Asset details:",
+        data.assets.map((asset) => ({
+          name: asset.name,
+          size: (asset.size / 1024 / 1024).toFixed(1) + " MB",
+          downloadUrl: asset.browser_download_url,
+        }))
+      );
+      return true;
+    } else {
+      console.log("❌ Repository has no downloadable assets");
+      return false;
+    }
+  } catch (error) {
+    console.error("❌ Error checking repository:", error);
+    return false;
+  }
+};
+
+// Test modal with real release data
+window.testRealReleaseData = async function () {
+  try {
+    const url = `https://api.github.com/repos/longurara/FAP-GPA-Viewer/releases/latest`;
+    const response = await fetch(url);
+    const data = await response.json();
+
+    console.log("📦 Real release data:", data);
+
+    // Log asset details
+    if (data.assets && data.assets.length > 0) {
+      console.log("📦 Assets found:", data.assets.length);
+      data.assets.forEach((asset, index) => {
+        const sizeInMB = (asset.size / 1024 / 1024).toFixed(1);
+        console.log(`📦 Asset ${index + 1}:`, {
+          name: asset.name,
+          size: asset.size,
+          sizeInMB: sizeInMB + " MB",
+          downloadUrl: asset.browser_download_url,
+        });
+      });
+    } else {
+      console.log("❌ No assets found in release");
+    }
+
+    // Show modal with real data
+    enableRealDownload("longurara", "FAP-GPA-Viewer");
+    UpdateModal.show();
+
+    // Manually update with real data
+    setTimeout(() => {
+      UpdateModal.updateModalWithRealData(data);
+    }, 500);
+  } catch (error) {
+    console.error("❌ Error fetching real release data:", error);
+  }
+};
+
+// Demo version comparison (force up-to-date state)
+window.demoUpToDate = function () {
+  // Temporarily override getCurrentVersion to simulate up-to-date
+  const originalGetCurrentVersion = UpdateModal.getCurrentVersion;
+  UpdateModal.getCurrentVersion = function () {
+    return "v4.2.0"; // Same as latest
+  };
+
+  enableRealDownload("longurara", "FAP-GPA-Viewer");
+  UpdateModal.show();
+
+  // Restore original function after a delay
+  setTimeout(() => {
+    UpdateModal.getCurrentVersion = originalGetCurrentVersion;
+  }, 1000);
+};
+
+// Demo version comparison (force update needed)
+window.demoUpdateNeeded = function () {
+  // Temporarily override getCurrentVersion to simulate old version
+  const originalGetCurrentVersion = UpdateModal.getCurrentVersion;
+  UpdateModal.getCurrentVersion = function () {
+    return "v2.2.1"; // Older than latest
+  };
+
+  enableRealDownload("longurara", "FAP-GPA-Viewer");
+  UpdateModal.show();
+
+  // Restore original function after a delay
+  setTimeout(() => {
+    UpdateModal.getCurrentVersion = originalGetCurrentVersion;
+  }, 1000);
+};
