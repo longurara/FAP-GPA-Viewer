@@ -11,7 +11,7 @@
 
 <p align="center">
   <!-- Version -->
-  <img src="https://img.shields.io/badge/version-4.1.0-blue.svg" alt="Version: 4.1.0">
+  <img src="https://img.shields.io/badge/version-4.1.0-blue.svg" alt="Version: 4.3.0">
   <!-- License -->
   <a href="LICENSE.md">
     <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License: MIT">
