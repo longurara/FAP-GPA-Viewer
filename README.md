@@ -1,5 +1,7 @@
-<p align="center">
-  <img src="icon128.png" alt="FAP Dashboard Logo" width="100" height="100">
+<p align="center"> 
+  <a href="https://chromewebstore.google.com/detail/fpt-academic-portal-dashb/pkfcnophcekokdfobdkbliaainejbdhn?hl=vi" target="_blank">
+    <img src="icon128.png" alt="FAP Dashboard Logo" width="100" height="100">
+  </a>
 </p>
 
 <h1 align="center">🎓 FAP Dashboard – Advanced Edition</h1>
@@ -19,8 +21,10 @@
     <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License: MIT">
   </a>
 
-  <!-- Chrome -->
-  <img src="https://img.shields.io/badge/Chrome-Extension-orange.svg" alt="Chrome Extension">
+  <!-- Chrome (clickable) -->
+  <a href="https://chromewebstore.google.com/detail/fpt-academic-portal-dashb/pkfcnophcekokdfobdkbliaainejbdhn?hl=vi" target="_blank">
+    <img src="https://img.shields.io/badge/Chrome-Extension-orange.svg" alt="Chrome Extension">
+  </a>
 
   <!-- Privacy -->
   <img src="https://img.shields.io/badge/Privacy-Local%20Only-green.svg" alt="Privacy: Local Only">
@@ -36,6 +40,7 @@
   </a>
 
 </p>
+
 
 
 ---
