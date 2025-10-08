@@ -21,8 +21,8 @@
   <!-- Privacy -->
   <img src="https://img.shields.io/badge/Privacy-Local%20Only-green.svg" alt="Privacy: Local Only">
   <!-- Status -->
-<a href="https://chromewebstore.google.com/detail/fpt-academic-portal-dashb/pkfcnophcekokdfobdkbliaainejbdhn?authuser=1&hl=vi" target="_blank">
-  <img src="https://img.shields.io/badge/Status-official-lightgrey.svg" alt="Official Status Badge">
+[![Status](https://img.shields.io/badge/Status-official-lightgrey.svg)](https://chromewebstore.google.com/detail/fpt-academic-portal-dashb/pkfcnophcekokdfobdkbliaainejbdhn?authuser=1&hl=vi)
+
 </a>
 
   <!-- Stars -->
