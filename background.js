@@ -198,7 +198,7 @@ async function pollOnce() {
     activeTo: "17:40",
     delayMin: 10,
     delayMax: 30,
-    pollEvery: 15,
+    pollEvery: 30,
   });
   if (!within(cfg.activeFrom, cfg.activeTo)) return;
   try {
@@ -255,7 +255,7 @@ async function pollOnce() {
 }
 
 async function schedulePollAlarm() {
-  const cfg = await STORAGE.get("cfg", { pollEvery: 15 });
+  const cfg = await STORAGE.get("cfg", { pollEvery: 30 });
   chrome.alarms.create("att_poll", {
     periodInMinutes: Math.max(5, cfg.pollEvery),
   });
@@ -275,6 +275,7 @@ chrome.runtime.onMessage.addListener(async (msg, _sender, sendResponse) => {
       const acache = await STORAGE.get("cache_attendance", null);
       let transcriptRows = tcache?.rows || tcache?.data?.rows || null;
       let attendanceEntries = acache?.entries || acache?.data?.entries || null;
+      let showLoginBanner = false;
 
       // If missing, try to fetch now
       try {
@@ -289,7 +290,11 @@ chrome.runtime.onMessage.addListener(async (msg, _sender, sendResponse) => {
           });
           attendanceEntries = entries;
         }
-      } catch (e) {}
+      } catch (e) {
+        if (e.message === "LOGIN_REQUIRED") {
+          showLoginBanner = true;
+        }
+      }
 
       try {
         if (!transcriptRows) {
@@ -300,14 +305,21 @@ chrome.runtime.onMessage.addListener(async (msg, _sender, sendResponse) => {
           });
           transcriptRows = rows;
         }
-      } catch (e) {}
+      } catch (e) {
+        if (e.message === "LOGIN_REQUIRED") {
+          showLoginBanner = true;
+        }
+      }
+
+      // Set login banner flag
+      await STORAGE.set({ show_login_banner: showLoginBanner });
 
       const cfg = await STORAGE.get("cfg", {
         activeFrom: "07:00",
         activeTo: "17:40",
         delayMin: 10,
         delayMax: 30,
-        pollEvery: 15,
+        pollEvery: 30,
       });
       try {
         await STORAGE.set({
@@ -321,6 +333,7 @@ chrome.runtime.onMessage.addListener(async (msg, _sender, sendResponse) => {
         attendance: attendanceEntries || [],
         schedule: attendanceEntries || [],
         settings: cfg,
+        show_login_banner: showLoginBanner,
       });
     })();
     return true;
@@ -390,7 +403,7 @@ async function checkUpdateAndNotify() {
 
 async function scheduleUpdateAlarm() {
   chrome.alarms.create("UPDATE_CHECK", {
-    periodInMinutes: 60 * 6,
+    periodInMinutes: 60 * 12,
     when: Date.now() + 30 * 1000,
   });
 }
@@ -405,7 +418,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         activeTo: "17:40",
         delayMin: 10,
         delayMax: 30,
-        pollEvery: 15,
+        pollEvery: 30,
       });
       const transcriptRows = tcache?.rows || tcache?.data?.rows || [];
       const attendance = acache?.entries || acache?.data?.entries || [];
@@ -416,80 +429,6 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         schedule: attendance,
         settings: cfg,
       });
-    })();
-    return true;
-  }
-
-  // Smart Study Mode message handlers
-  if (msg && msg.action === "startSmartStudy") {
-    (async () => {
-      try {
-        // Get current active tab
-        const [activeTab] = await chrome.tabs.query({
-          active: true,
-          currentWindow: true,
-        });
-        await smartStudyMode.startStudySession(activeTab?.id, activeTab);
-        sendResponse({ success: true });
-      } catch (error) {
-        console.error("Error starting smart study:", error);
-        sendResponse({ success: false, error: error.message });
-      }
-    })();
-    return true;
-  }
-
-  if (msg && msg.action === "endSmartStudy") {
-    (async () => {
-      try {
-        console.log("Ending smart study session...");
-        await smartStudyMode.endStudySession();
-        console.log("Smart study session ended successfully");
-        sendResponse({ success: true });
-      } catch (error) {
-        console.error("Error ending smart study:", error);
-        sendResponse({ success: false, error: error.message });
-      }
-    })();
-    return true;
-  }
-
-  if (msg && msg.action === "updateSmartStudySettings") {
-    (async () => {
-      try {
-        smartStudyMode.settings = msg.settings;
-        await STORAGE.set({ smartStudySettings: msg.settings });
-        sendResponse({ success: true });
-      } catch (error) {
-        console.error("Error updating smart study settings:", error);
-        sendResponse({ success: false, error: error.message });
-      }
-    })();
-    return true;
-  }
-
-  if (msg && msg.action === "enableSmartStudy") {
-    (async () => {
-      try {
-        await smartStudyMode.enableSmartStudy();
-        sendResponse({ success: true });
-      } catch (error) {
-        console.error("Error enabling smart study:", error);
-        sendResponse({ success: false, error: error.message });
-      }
-    })();
-    return true;
-  }
-
-  if (msg && msg.action === "disableSmartStudy") {
-    (async () => {
-      try {
-        await smartStudyMode.disableSmartStudy();
-        sendResponse({ success: true });
-      } catch (error) {
-        console.error("Error disabling smart study:", error);
-        sendResponse({ success: false, error: error.message });
-      }
     })();
     return true;
   }
@@ -592,8 +531,8 @@ async function scheduleClassReminders() {
   }
 }
 
-// Check and schedule reminders every hour
-chrome.alarms.create("SCHEDULE_REMINDERS", { periodInMinutes: 60 });
+// Check and schedule reminders every 2 hours
+chrome.alarms.create("SCHEDULE_REMINDERS", { periodInMinutes: 120 });
 
 chrome.alarms.onAlarm.addListener(async (alarm) => {
   // Existing alarm handlers
@@ -612,7 +551,8 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
       priority: 2,
     });
   } else if (alarm.name === "UPDATE_CHECK") {
-    checkUpdateAndNotify();
+    // Auto update check disabled to avoid GitHub API rate limit
+    // checkUpdateAndNotify();
   } else if (alarm.name === "SCHEDULE_REMINDERS") {
     await scheduleClassReminders();
   } else if (alarm.name.startsWith("class_reminder_")) {
@@ -643,7 +583,8 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 // Schedule reminders on startup
 chrome.runtime.onStartup.addListener(async () => {
   await scheduleUpdateAlarm();
-  await checkUpdateAndNotify();
+  // Auto update check disabled to avoid GitHub API rate limit
+  // await checkUpdateAndNotify();
   await scheduleClassReminders();
 });
 
@@ -820,293 +761,10 @@ async function resetPomodoroTimer() {
   console.log("Pomodoro timer reset");
 }
 
-// ===== SMART STUDY MODE SYSTEM =====
-class SmartStudyMode {
-  constructor() {
-    this.isActive = false;
-    this.currentSession = null;
-    this.distractingSites = [
-      "facebook.com",
-      "instagram.com",
-      "tiktok.com",
-      "youtube.com",
-      "twitter.com",
-      "reddit.com",
-      "netflix.com",
-      "twitch.tv",
-    ];
-    this.studySites = [
-      "fap.fpt.edu.vn",
-      "lms.fpt.edu.vn",
-      "github.com",
-      "stackoverflow.com",
-      "w3schools.com",
-      "coursera.org",
-      "edx.org",
-      "khanacademy.org",
-    ];
-    this.init();
-  }
-
-  async init() {
-    // Load saved settings
-    const settings = await STORAGE.get("smartStudySettings", {
-      enabled: true, // Master switch to completely disable Smart Study Mode
-      autoDetect: true,
-      blockDistractions: true,
-      showNotifications: true,
-      minSessionTime: 5, // minutes
-      breakReminderInterval: 25, // minutes
-    });
-    this.settings = settings;
-
-    // Setup listeners only if enabled
-    if (this.settings.enabled) {
-      this.setupTabListeners();
-      this.setupActivityTracking();
-    }
-  }
-
-  setupTabListeners() {
-    // Detect when user visits study-related sites
-    chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-      if (changeInfo.status === "complete" && tab.url) {
-        this.handleTabUpdate(tabId, tab);
-      }
-    });
-
-    // Detect when user switches tabs
-    chrome.tabs.onActivated.addListener((activeInfo) => {
-      this.handleTabSwitch(activeInfo.tabId);
-    });
-  }
-
-  async handleTabUpdate(tabId, tab) {
-    const url = new URL(tab.url);
-    const domain = url.hostname;
-
-    // Check if it's a study site
-    if (this.isStudySite(domain)) {
-      await this.startStudySession(tabId, tab);
-    } else if (this.isDistractingSite(domain) && this.isActive) {
-      await this.handleDistraction(tabId, tab);
-    }
-  }
-
-  async handleTabSwitch(tabId) {
-    if (this.isActive) {
-      const tab = await chrome.tabs.get(tabId);
-      if (tab.url) {
-        const url = new URL(tab.url);
-        const domain = url.hostname;
-
-        if (this.isDistractingSite(domain)) {
-          await this.handleDistraction(tabId, tab);
-        }
-      }
-    }
-  }
-
-  isStudySite(domain) {
-    return this.studySites.some((site) => domain.includes(site));
-  }
-
-  isDistractingSite(domain) {
-    return this.distractingSites.some((site) => domain.includes(site));
-  }
-
-  async startStudySession(tabId, tab) {
-    if (!this.settings.enabled || !this.settings.autoDetect) return;
-
-    const now = Date.now();
-
-    // Check if we're already in a session
-    if (this.isActive && this.currentSession) {
-      // Update existing session
-      this.currentSession.lastActivity = now;
-      return;
-    }
-
-    // Get current tab if not provided
-    if (!tab && tabId) {
-      try {
-        tab = await chrome.tabs.get(tabId);
-      } catch (error) {
-        console.error("Error getting tab:", error);
-        return;
-      }
-    }
-
-    // Start new session
-    this.isActive = true;
-    this.currentSession = {
-      startTime: now,
-      lastActivity: now,
-      tabId: tabId || null,
-      url: tab?.url || "unknown",
-      distractions: 0,
-      focusTime: 0,
-    };
-
-    // Show notification
-    if (this.settings.showNotifications) {
-      chrome.notifications.create({
-        type: "basic",
-        iconUrl: "icon128.png",
-        title: "🧠 Smart Study Mode Activated",
-        message: "Focus mode enabled. Distracting sites will be blocked.",
-        priority: 1,
-      });
-    }
-
-    // Setup break reminder
-    this.scheduleBreakReminder();
-
-    // Save session data
-    await this.saveSessionData();
-
-    console.log("Smart Study Mode started");
-  }
-
-  async handleDistraction(tabId, tab) {
-    if (!this.settings.enabled || !this.settings.blockDistractions) return;
-
-    this.currentSession.distractions++;
-
-    // Show warning notification
-    chrome.notifications.create({
-      type: "basic",
-      iconUrl: "icon128.png",
-      title: "⚠️ Distraction Detected",
-      message: "You're on a distracting site. Consider staying focused!",
-      priority: 2,
-    });
-
-    // Optionally redirect to a focus page
-    if (this.settings.blockDistractions) {
-      await chrome.tabs.update(tabId, {
-        url: chrome.runtime.getURL("focus-page.html"),
-      });
-    }
-  }
-
-  scheduleBreakReminder() {
-    const interval = this.settings.breakReminderInterval * 60 * 1000;
-    chrome.alarms.create("study_break_reminder", {
-      when: Date.now() + interval,
-    });
-  }
-
-  async endStudySession() {
-    if (!this.isActive || !this.currentSession) return;
-
-    const now = Date.now();
-    const sessionDuration = now - this.currentSession.startTime;
-    const focusTime =
-      sessionDuration - this.currentSession.distractions * 60000; // Subtract distraction time
-
-    // Save session analytics
-    const analytics = await STORAGE.get("studyAnalytics", {
-      totalSessions: 0,
-      totalTime: 0,
-      totalFocusTime: 0,
-      averageSessionLength: 0,
-      distractionRate: 0,
-    });
-
-    analytics.totalSessions++;
-    analytics.totalTime += sessionDuration;
-    analytics.totalFocusTime += focusTime;
-    analytics.averageSessionLength =
-      analytics.totalTime / analytics.totalSessions;
-    analytics.distractionRate =
-      this.currentSession.distractions / (sessionDuration / 60000);
-
-    await STORAGE.set({ studyAnalytics: analytics });
-
-    // Show session summary
-    if (this.settings.showNotifications) {
-      const minutes = Math.round(sessionDuration / 60000);
-      const focusMinutes = Math.round(focusTime / 60000);
-
-      chrome.notifications.create({
-        type: "basic",
-        iconUrl: "icon128.png",
-        title: "📊 Study Session Complete",
-        message: `Session: ${minutes}min | Focus: ${focusMinutes}min | Distractions: ${this.currentSession.distractions}`,
-        priority: 1,
-      });
-    }
-
-    this.isActive = false;
-    this.currentSession = null;
-
-    // Clear session data from storage
-    await STORAGE.set({
-      currentStudySession: null,
-      smartStudyActive: false,
-    });
-
-    console.log("Smart Study Mode ended");
-  }
-
-  async saveSessionData() {
-    if (this.currentSession) {
-      await STORAGE.set({
-        currentStudySession: this.currentSession,
-        smartStudyActive: this.isActive,
-      });
-    }
-  }
-
-  async enableSmartStudy() {
-    this.settings.enabled = true;
-    await STORAGE.set({ smartStudySettings: this.settings });
-    this.setupTabListeners();
-    this.setupActivityTracking();
-    console.log("Smart Study Mode enabled");
-  }
-
-  async disableSmartStudy() {
-    this.settings.enabled = false;
-    await STORAGE.set({ smartStudySettings: this.settings });
-
-    // End current session if active
-    if (this.isActive) {
-      await this.endStudySession();
-    }
-
-    // Remove listeners
-    chrome.tabs.onUpdated.removeListener(this.handleTabUpdate);
-    chrome.tabs.onActivated.removeListener(this.handleTabSwitch);
-
-    console.log("Smart Study Mode disabled");
-  }
-
-  setupActivityTracking() {
-    // Track user activity to detect when they're not studying
-    let lastActivity = Date.now();
-
-    setInterval(async () => {
-      const now = Date.now();
-      const timeSinceActivity = now - lastActivity;
-
-      // If no activity for 5 minutes, end session
-      if (this.isActive && timeSinceActivity > 5 * 60 * 1000) {
-        await this.endStudySession();
-      }
-
-      lastActivity = now;
-    }, 60000); // Check every minute
-  }
-}
-
-// Initialize Smart Study Mode
-const smartStudyMode = new SmartStudyMode();
-
 chrome.runtime.onInstalled.addListener(async () => {
   await scheduleUpdateAlarm();
-  setTimeout(checkUpdateAndNotify, 5000);
+  // Auto update check disabled to avoid GitHub API rate limit
+  // setTimeout(checkUpdateAndNotify, 5000);
   await scheduleClassReminders();
   await initializePomodoroBackground();
 });

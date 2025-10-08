@@ -46,13 +46,18 @@
           <h1>FAP Dashboard</h1>
         </div>
         <div class="header-controls">
-          <div class="search-container">
-            <input
-              type="text"
-              id="globalSearch"
-              placeholder="Tìm kiếm tất cả..."
-            />
-            <div class="search-results" id="searchResults"></div>
+          <div class="login-status-container">
+            <div class="login-status" id="loginStatus">
+              <div class="login-status-icon" id="loginStatusIcon"></div>
+              <div class="login-status-text">
+                <div class="login-status-title" id="loginStatusTitle">
+                  Kiểm tra...
+                </div>
+              </div>
+              <div class="login-status-indicator" id="loginStatusIndicator">
+                <div class="status-dot" id="statusDot"></div>
+              </div>
+            </div>
           </div>
           <div class="top-actions">
             <span id="verBadge" style="opacity: 0.8; margin-right: 8px"></span>
@@ -68,6 +73,25 @@
           </div>
         </div>
       </header>
+
+      <!-- Login Banner -->
+      <div id="loginBanner" class="login-banner" style="display: none">
+        <div class="login-banner-content">
+          <div class="login-banner-icon">🔐</div>
+          <div class="login-banner-text">
+            <strong>Cần đăng nhập FAP</strong>
+            <span
+              >Đang sử dụng dữ liệu cũ. Đăng nhập để cập nhật dữ liệu mới
+              nhất.</span
+            >
+          </div>
+          <div class="login-banner-actions">
+            <button id="btnLoginNow" class="login-btn">Đăng nhập ngay</button>
+            <button id="btnDismissBanner" class="dismiss-btn">×</button>
+          </div>
+        </div>
+      </div>
+
       <nav class="tabs">
         <div class="tab-indicator"></div>
         <button class="active" data-tab="tab-today">Hôm nay</button>
@@ -80,7 +104,6 @@
         <button data-tab="tab-exam">Lịch thi</button>
         <button data-tab="tab-bookmark">Bookmark</button>
         <button data-tab="tab-settings">Cài đặt</button>
-        <button data-tab="tab-smart-study">Smart Study</button>
       </nav>
       <!-- Today's Schedule Tab -->
       <section class="tab active" id="tab-today">
@@ -491,10 +514,6 @@
                   <span class="report-value" id="weeklyPomodoros">0</span>
                 </div>
                 <div class="report-item">
-                  <span class="report-label">Achievements unlocked:</span>
-                  <span class="report-value" id="weeklyAchievements">0</span>
-                </div>
-                <div class="report-item">
                   <span class="report-label">Attendance rate:</span>
                   <span class="report-value" id="weeklyAttendance">--</span>
                 </div>
@@ -560,17 +579,6 @@
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-
-        <!-- Achievement System -->
-        <div class="achievements-section">
-          <h3 class="section-title">🏆 Thành tích</h3>
-          <div class="achievement-stats" id="achievementStats">
-            <!-- Achievement stats will be populated by JavaScript -->
-          </div>
-          <div class="achievements-grid" id="achievementsGrid">
-            <!-- Achievements will be populated by JavaScript -->
           </div>
         </div>
 
@@ -673,42 +681,6 @@
               <div class="progress-content" id="subject-progress">
                 <div class="subject-list" id="subjectList">
                   <!-- Subjects will be populated by JavaScript -->
-                </div>
-              </div>
-            </div>
-
-            <div class="progress-card">
-              <div class="progress-header">
-                <h4>🏆 Achievement Progress</h4>
-                <button
-                  class="progress-btn"
-                  data-progress-action="toggle"
-                  data-progress-id="achievement-progress"
-                >
-                  −
-                </button>
-              </div>
-              <div class="progress-content" id="achievement-progress">
-                <div class="achievement-stats">
-                  <div class="stat-item">
-                    <span class="stat-label">Unlocked:</span>
-                    <span class="stat-value" id="unlockedCount">0</span>
-                  </div>
-                  <div class="stat-item">
-                    <span class="stat-label">In Progress:</span>
-                    <span class="stat-value" id="inProgressCount">0</span>
-                  </div>
-                  <div class="stat-item">
-                    <span class="stat-label">Completion:</span>
-                    <span class="stat-value" id="completionRate">0%</span>
-                  </div>
-                </div>
-                <div class="achievement-progress-bar">
-                  <div
-                    class="achievement-fill"
-                    id="achievementFill"
-                    style="width: 0%"
-                  ></div>
                 </div>
               </div>
             </div>
@@ -877,6 +849,9 @@
         <div class="actions">
           <button id="btnOpenSchedule">Trang Schedule</button>
           <button class="primary" id="btnRefreshSchedule">Làm mới</button>
+          <button id="btnExportScheduleICS" class="export-btn">
+            📅 Export .ics
+          </button>
         </div>
         <div class="table">
           <div class="table-head"><div>Lịch cả tuần</div></div>
@@ -899,6 +874,9 @@
         <div class="actions">
           <button id="btnOpenExams">Trang Lịch thi</button>
           <button class="primary" id="btnRefreshExams">Làm mới</button>
+          <button id="btnExportExamICS" class="export-btn">
+            📝 Export .ics
+          </button>
         </div>
         <div class="table">
           <div class="table-head">
@@ -1180,22 +1158,6 @@
 
                 <div class="notification-option">
                   <div class="option-content">
-                    <div class="option-icon">🏆</div>
-                    <div class="option-text">
-                      <div class="option-title">Achievement notifications</div>
-                      <div class="option-desc">
-                        Thông báo khi đạt thành tích mới
-                      </div>
-                    </div>
-                  </div>
-                  <label class="toggle-switch">
-                    <input type="checkbox" id="achievementNotifs" checked />
-                    <span class="toggle-slider"></span>
-                  </label>
-                </div>
-
-                <div class="notification-option">
-                  <div class="option-content">
                     <div class="option-icon">📊</div>
                     <div class="option-text">
                       <div class="option-title">Daily summary</div>
@@ -1282,124 +1244,55 @@
       </div>
     </div>
 
-    <!-- Smart Study Mode Tab -->
-    <section class="tab" id="tab-smart-study">
-      <div class="smart-study-container">
-        <div class="study-status-card">
-          <div class="status-header">
-            <h3>🧠 Smart Study Mode</h3>
-            <div class="status-indicator" id="studyStatusIndicator">
-              <span class="status-dot inactive"></span>
-              <span class="status-text">Inactive</span>
-            </div>
-          </div>
-          <div class="current-session" id="currentSessionInfo">
-            <div class="session-stats">
-              <div class="stat-item">
-                <span class="stat-label">Session Time:</span>
-                <span class="stat-value" id="sessionTime">--</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-label">Focus Time:</span>
-                <span class="stat-value" id="focusTime">--</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-label">Distractions:</span>
-                <span class="stat-value" id="distractionCount">0</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="study-controls">
-          <div class="control-group">
-            <h4>⚙️ Settings</h4>
-            <div class="setting-item master-toggle">
-              <label>
-                <input type="checkbox" id="smartStudyEnabled" checked />
-                <span class="toggle-label">Enable Smart Study Mode</span>
-                <span class="toggle-description"
-                  >Master switch to completely enable/disable Smart Study
-                  Mode</span
-                >
-              </label>
-            </div>
-            <div class="setting-item">
-              <label>
-                <input type="checkbox" id="autoDetectStudy" checked />
-                Auto-detect study sessions
-              </label>
-            </div>
-            <div class="setting-item">
-              <label>
-                <input type="checkbox" id="blockDistractions" checked />
-                Block distracting websites
-              </label>
-            </div>
-            <div class="setting-item">
-              <label>
-                <input type="checkbox" id="showNotifications" checked />
-                Show notifications
-              </label>
-            </div>
-          </div>
-
-          <div class="control-group">
-            <h4>📊 Analytics</h4>
-            <div class="analytics-grid">
-              <div class="analytics-item">
-                <div class="analytics-label">Total Sessions</div>
-                <div class="analytics-value" id="totalSessions">0</div>
-              </div>
-              <div class="analytics-item">
-                <div class="analytics-label">Total Time</div>
-                <div class="analytics-value" id="totalTime">0h</div>
-              </div>
-              <div class="analytics-item">
-                <div class="analytics-label">Focus Rate</div>
-                <div class="analytics-value" id="focusRate">0%</div>
-              </div>
-              <div class="analytics-item">
-                <div class="analytics-label">Avg Session</div>
-                <div class="analytics-value" id="avgSession">0min</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="study-actions">
-          <button id="btnStartStudy" class="btn btn-primary">
-            🚀 Start Study Session
-          </button>
-          <button
-            id="btnEndStudy"
-            class="btn btn-secondary"
-            style="display: none"
-          >
-            ✅ End Session
-          </button>
-          <button id="btnViewAnalytics" class="btn btn-secondary">
-            📈 View Detailed Analytics
-          </button>
-        </div>
-
-        <div class="study-tips">
-          <h4>💡 Study Tips</h4>
-          <div class="tips-list">
-            <div class="tip-item">🎯 Set specific goals for each session</div>
-            <div class="tip-item">
-              ⏰ Use Pomodoro technique (25min work, 5min break)
-            </div>
-            <div class="tip-item">📱 Keep phone away during study time</div>
-            <div class="tip-item">🌱 Take regular breaks to maintain focus</div>
-          </div>
-        </div>
-      </div>
-    </section>
-
     <!-- Toast Notifications Container -->
     <div class="toast-container" id="toastContainer"></div>
 
+    <!-- Calendar Modal -->
+    <div class="modal-overlay" id="calendarModal" style="display: none">
+      <div class="modal-box">
+        <div class="modal-icon">📅</div>
+        <h3 class="modal-title" id="calendarModalTitle">Xác nhận</h3>
+        <p class="modal-message" id="calendarModalMessage">
+          Bạn có muốn tiếp tục?
+        </p>
+        <div class="modal-actions">
+          <button id="calendarModalConfirm" class="primary">Xác nhận</button>
+          <button id="calendarModalCancel">Hủy</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div class="modal-overlay" id="calendarHelpModal" style="display: none">
+      <div class="modal-box">
+        <div class="modal-icon">📅</div>
+        <h3 class="modal-title">Hướng dẫn sử dụng</h3>
+        <div class="modal-message">
+          <p><strong>📅 Export Google Calendar</strong></p>
+
+          <p><strong>📤 Export .ics:</strong></p>
+          <ol>
+            <li>Nhấp nút "Export .ics"</li>
+            <li>Tải file .ics về máy</li>
+            <li>Mở Google Calendar → Import & Export</li>
+            <li>Chọn file .ics và import</li>
+          </ol>
+
+          <p><strong>💡 Lưu ý:</strong></p>
+          <ul>
+            <li>File .ics chuẩn RFC 5545</li>
+            <li>Tương thích với Google Calendar, Outlook, Apple Calendar</li>
+            <li>Có thể import nhiều lần</li>
+            <li>Bao gồm nhắc nhở tự động</li>
+          </ul>
+        </div>
+        <div class="modal-actions">
+          <button id="modalHelpClose" class="primary">Đã hiểu</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="auto-calendar.js"></script>
     <script src="chart.min.js"></script>
     <script src="popup.js"></script>
   </body>

@@ -75,6 +75,10 @@ async function checkUpdate(force = false) {
   const latestClean = (latest.tag || "").replace(/^v/i, "");
   const cmp = semverCmp(latestClean, curr);
 
+  renderUpdateButton(cmp, curr, latestClean);
+}
+
+function renderUpdateButton(cmp, curr, latestClean) {
   const badge = document.getElementById("verBadge");
   const btn = document.getElementById("btnCheckUpdate");
 
@@ -114,13 +118,9 @@ async function checkUpdate(force = false) {
 async function fetchHTML(url) {
   const res = await fetch(url, { credentials: "include", redirect: "follow" });
   if (res.redirected && /\/Default\.aspx$/i.test(new URL(res.url).pathname)) {
-    const loginUrl = "https://fap.fpt.edu.vn/";
-    Modal.warning(
-      'Bạn chưa đăng nhập FAP.\n\nMình sẽ mở trang FAP. Hãy đăng nhập, rồi quay lại popup và bấm "Làm mới".',
-      "Cần đăng nhập"
-    );
-    chrome.tabs.create({ url: loginUrl });
-    throw new Error("LOGIN_REQUIRED");
+    // Set login banner flag and return null instead of throwing error
+    await STORAGE.set({ show_login_banner: true });
+    return null;
   }
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const html = await res.text();
@@ -363,9 +363,21 @@ function parseScheduleOfWeek(doc) {
 
       const courseCode = codeMatch[1];
 
-      // Extract room (P.112, NVH...)
+      // Extract room (P.112, NVH...) or detect online classes
       const roomMatch = cellText.match(/at\s+(P\.\d+|[A-Z]+\d+|NVH\d+)/i);
-      const room = roomMatch ? roomMatch[1] : "";
+      let room = roomMatch ? roomMatch[1] : "";
+
+      // Nếu không tìm thấy room, kiểm tra xem có phải là lớp online không
+      if (!room) {
+        if (/online/i.test(cellText)) {
+          room = "Online";
+        } else if (/zoom|meet|teams|webex/i.test(cellText)) {
+          room = "Online";
+        } else if (cellText.includes("at") && !roomMatch) {
+          // Nếu có từ "at" nhưng không tìm thấy room pattern, có thể là online
+          room = "Online";
+        }
+      }
 
       // Extract time (12:30-14:45)
       const timeMatch = cellText.match(/\((\d{2}:\d{2}-\d{2}:\d{2})\)/);
@@ -900,9 +912,20 @@ async function loadGPA() {
     rows = cache.rows;
   } else {
     const doc = await fetchHTML(DEFAULT_URLS.transcript);
-    rows = parseTranscriptDoc(doc);
-    await cacheSet("cache_transcript", { rows });
-    await STORAGE.set({ cache_transcript_flat: rows });
+    if (doc === null) {
+      // Use cached data when login is required
+      const cachedRows = await STORAGE.get("cache_transcript_flat", []);
+      rows = cachedRows;
+    } else {
+      rows = parseTranscriptDoc(doc);
+      await cacheSet("cache_transcript", { rows });
+      await STORAGE.set({ cache_transcript_flat: rows });
+      // Clear login banner flag and update last successful fetch time
+      await STORAGE.set({
+        show_login_banner: false,
+        last_successful_fetch: Date.now(),
+      });
+    }
   }
   const excludedCourses = await STORAGE.get("excluded_courses", []);
   renderTranscript(rows, excludedCourses);
@@ -910,10 +933,24 @@ async function loadGPA() {
 
 async function refreshAttendance() {
   const doc = await fetchHTML(DEFAULT_URLS.scheduleOfWeek);
+  if (doc === null) {
+    // Use cached data when login is required
+    const cachedEntries = await STORAGE.get("cache_attendance_flat", []);
+    renderAttendance(cachedEntries);
+    renderScheduleWeek(cachedEntries);
+    updateQuickAttendanceStats(cachedEntries);
+    return;
+  }
+
   const parsed = parseScheduleOfWeek(doc);
   await cacheSet("cache_attendance", parsed);
   await STORAGE.set({
     cache_attendance_flat: parsed && parsed.entries ? parsed.entries : [],
+  });
+  // Clear login banner flag and update last successful fetch time
+  await STORAGE.set({
+    show_login_banner: false,
+    last_successful_fetch: Date.now(),
   });
   renderAttendance(parsed.entries);
   renderScheduleWeek(parsed.entries);
@@ -1073,12 +1110,48 @@ document.getElementById("filterDay")?.addEventListener("change", async () => {
 document
   .getElementById("btnRefreshAttendance")
   ?.addEventListener("click", async function () {
-    await handleRefreshWithLoading(this, refreshAttendance);
+    // Check login status first before loading data
+    const isLoggedIn = await checkLoginStatus();
+
+    if (!isLoggedIn) {
+      // Show login banner and don't load data
+      await checkAndShowLoginBanner();
+
+      // Show notification that user needs to login first
+      showLoginNotification();
+
+      return;
+    }
+
+    // If logged in, proceed with loading data
+    await handleRefreshWithLoading(this, async () => {
+      await refreshAttendance();
+      // Update last successful fetch time
+      await STORAGE.set({ last_successful_fetch: Date.now() });
+    });
   });
 document
   .getElementById("btnRefreshSchedule")
   ?.addEventListener("click", async function () {
-    await handleRefreshWithLoading(this, refreshAttendance);
+    // Check login status first before loading data
+    const isLoggedIn = await checkLoginStatus();
+
+    if (!isLoggedIn) {
+      // Show login banner and don't load data
+      await checkAndShowLoginBanner();
+
+      // Show notification that user needs to login first
+      showLoginNotification();
+
+      return;
+    }
+
+    // If logged in, proceed with loading data
+    await handleRefreshWithLoading(this, async () => {
+      await refreshAttendance();
+      // Update last successful fetch time
+      await STORAGE.set({ last_successful_fetch: Date.now() });
+    });
   });
 
 // Settings buttons
@@ -1352,7 +1425,7 @@ function initLiquidGlassTabs() {
 // Initialize on load
 initLiquidGlassTabs();
 
-// Reinitialize tabs after Smart Study tab is added
+// Reinitialize tabs
 setTimeout(() => {
   initLiquidGlassTabs();
   // Force update indicator position to first tab
@@ -1379,9 +1452,165 @@ setTimeout(() => {
     loadExams(),
   ]);
 
-  try {
-    await checkUpdate();
-  } catch (e) {}
+  // Check login status and show banner if needed
+  await checkLoginStatus();
+  await checkAndShowLoginBanner();
+
+  // Also check for updates on popup open
+  // Auto update check disabled to avoid GitHub API rate limit
+  // try {
+  //   await checkUpdate(true);
+  // } catch (e) {
+  //   console.log("Update check failed:", e);
+  // }
+
+  // Set up periodic login status check (every 5 minutes)
+  setInterval(async () => {
+    await checkLoginStatus();
+    await checkAndShowLoginBanner();
+  }, 5 * 60 * 1000);
+
+  // Check login status when popup becomes visible
+  document.addEventListener("visibilitychange", async () => {
+    if (!document.hidden) {
+      await checkLoginStatus();
+      await checkAndShowLoginBanner();
+    }
+  });
+
+  // Check login status when window gains focus
+  window.addEventListener("focus", async () => {
+    await checkLoginStatus();
+    await checkAndShowLoginBanner();
+  });
+
+  // Check login status when user clicks on any tab
+  document.addEventListener("click", async (e) => {
+    if (e.target.closest(".tabs button[data-tab]")) {
+      setTimeout(async () => {
+        await checkLoginStatus();
+        await checkAndShowLoginBanner();
+      }, 1000); // Check after 1 second
+    }
+  });
+
+  // Check login status when user clicks on any refresh button
+  document.addEventListener("click", async (e) => {
+    if (e.target.closest("[id*='refresh'], [id*='Refresh']")) {
+      const isLoggedIn = await checkLoginStatus();
+      if (!isLoggedIn) {
+        await checkAndShowLoginBanner();
+
+        // Show notification that user needs to login first
+        showLoginNotification();
+      }
+    }
+  });
+
+  // Check login status when user clicks on any open FAP button
+  document.addEventListener("click", async (e) => {
+    if (
+      e.target.closest(
+        "[id*='OpenFAP'], [id*='OpenTranscript'], [id*='OpenAttendance'], [id*='OpenSchedule'], [id*='OpenExams']"
+      )
+    ) {
+      const isLoggedIn = await checkLoginStatus();
+      if (!isLoggedIn) {
+        await checkAndShowLoginBanner();
+
+        // Show notification that user needs to login first
+        showLoginNotification();
+      }
+    }
+  });
+
+  // Check login status when user clicks on any export button
+  document.addEventListener("click", async (e) => {
+    if (e.target.closest("[id*='Export'], [id*='export']")) {
+      const isLoggedIn = await checkLoginStatus();
+      if (!isLoggedIn) {
+        await checkAndShowLoginBanner();
+
+        // Show notification that user needs to login first
+        showLoginNotification();
+      }
+    }
+  });
+
+  // Check login status when user clicks on any copy button
+  document.addEventListener("click", async (e) => {
+    if (e.target.closest("[id*='Copy'], [id*='copy']")) {
+      const isLoggedIn = await checkLoginStatus();
+      if (!isLoggedIn) {
+        await checkAndShowLoginBanner();
+
+        // Show notification that user needs to login first
+        showLoginNotification();
+      }
+    }
+  });
+
+  // Check login status when user clicks on any calculate button
+  document.addEventListener("click", async (e) => {
+    if (e.target.closest("[id*='Calculate'], [id*='calculate']")) {
+      const isLoggedIn = await checkLoginStatus();
+      if (!isLoggedIn) {
+        await checkAndShowLoginBanner();
+
+        // Show notification that user needs to login first
+        showLoginNotification();
+      }
+    }
+  });
+
+  // Check login status when user clicks on any reset button
+  document.addEventListener("click", async (e) => {
+    if (e.target.closest("[id*='Reset'], [id*='reset']")) {
+      const isLoggedIn = await checkLoginStatus();
+      if (!isLoggedIn) {
+        await checkAndShowLoginBanner();
+
+        // Show notification that user needs to login first
+        showLoginNotification();
+      }
+    }
+  });
+
+  // Check login status when user scrolls (indicates activity)
+  let scrollTimeout;
+  document.addEventListener("scroll", () => {
+    clearTimeout(scrollTimeout);
+    scrollTimeout = setTimeout(async () => {
+      await checkLoginStatus();
+      await checkAndShowLoginBanner();
+    }, 2000); // Check after 2 seconds of no scrolling
+  });
+
+  // Login status click handler - Check update and open FAP
+  const loginStatus = document.getElementById("loginStatus");
+  if (loginStatus) {
+    loginStatus.addEventListener("click", async () => {
+      // Check for updates first
+      // Auto update check disabled to avoid GitHub API rate limit
+      // try {
+      //   await checkUpdate(true);
+      // } catch (e) {
+      //   console.log("Update check failed:", e);
+      // }
+
+      // Then open FAP
+      chrome.tabs.create({ url: "https://fap.fpt.edu.vn/" });
+    });
+  }
+
+  // Auto update check disabled to avoid GitHub API rate limit
+  // try {
+  //   await checkUpdate();
+  // } catch (e) {}
+
+  // Render update button without checking for updates
+  const curr = chrome.runtime.getManifest().version;
+  renderUpdateButton(0, curr, curr); // 0 means no update available
 })();
 
 // Refresh-all: clear caches and reload
@@ -1396,11 +1625,28 @@ document
 
     if (!confirmed) return;
 
+    // Check login status first before loading data
+    const isLoggedIn = await checkLoginStatus();
+
+    if (!isLoggedIn) {
+      // Show login banner and don't load data
+      await checkAndShowLoginBanner();
+
+      // Show notification that user needs to login first
+      showLoginNotification();
+
+      return;
+    }
+
+    // If logged in, proceed with loading data
     await handleRefreshWithLoading(this, async () => {
       await STORAGE.remove("cache_transcript");
       await STORAGE.remove("cache_attendance");
       await STORAGE.remove("cache_exams");
       await Promise.all([loadGPA(), refreshAttendance(), loadExams()]);
+
+      // Update last successful fetch time
+      await STORAGE.set({ last_successful_fetch: Date.now() });
     });
   });
 
@@ -1432,12 +1678,20 @@ function renderScheduleWeek(entries) {
 
   sorted.forEach((entry) => {
     const tr = document.createElement("tr");
+
+    // Thêm class cho lớp online
+    if (entry.room === "Online") {
+      tr.classList.add("online-class");
+    }
+
     tr.innerHTML = `
       <td>${dayToVietnamese(entry.day) || ""}</td>
       <td>${entry.slot || ""}</td>
       <td>${entry.time || ""}</td>
       <td>${entry.course || ""}</td>
-      <td>${entry.room || ""}</td>
+      <td class="${entry.room === "Online" ? "online-room" : ""}">${
+      entry.room || ""
+    }</td>
       <td>${entry.status || ""}</td>
     `;
     tbody.appendChild(tr);
@@ -1552,9 +1806,25 @@ document
 document
   .getElementById("btnRefreshExams")
   ?.addEventListener("click", async function () {
+    // Check login status first before loading data
+    const isLoggedIn = await checkLoginStatus();
+
+    if (!isLoggedIn) {
+      // Show login banner and don't load data
+      await checkAndShowLoginBanner();
+
+      // Show notification that user needs to login first
+      showLoginNotification();
+
+      return;
+    }
+
+    // If logged in, proceed with loading data
     await handleRefreshWithLoading(this, async () => {
       await STORAGE.remove("cache_exams");
       await loadExams();
+      // Update last successful fetch time
+      await STORAGE.set({ last_successful_fetch: Date.now() });
     });
   });
 
@@ -1686,10 +1956,254 @@ async function loadExams() {
     exams = cache.exams;
   } else {
     const doc = await fetchHTML(DEFAULT_URLS.examSchedule);
-    exams = parseExamScheduleDoc(doc);
-    await cacheSet("cache_exams", { exams });
+    if (doc === null) {
+      // Use cached data when login is required
+      const cachedExams = await STORAGE.get("cache_exams_flat", []);
+      exams = cachedExams;
+    } else {
+      exams = parseExamScheduleDoc(doc);
+      await cacheSet("cache_exams", { exams });
+      await STORAGE.set({ cache_exams_flat: exams });
+      // Clear login banner flag and update last successful fetch time
+      await STORAGE.set({
+        show_login_banner: false,
+        last_successful_fetch: Date.now(),
+      });
+    }
   }
   renderExamSchedule(exams);
+}
+
+// === Login Banner Functions ===
+async function checkAndShowLoginBanner() {
+  // Check multiple indicators to determine if login is needed
+  const showBanner = await STORAGE.get("show_login_banner", false);
+  const lastFetchTime = await STORAGE.get("last_successful_fetch", 0);
+  const now = Date.now();
+
+  // Show banner if:
+  // 1. Flag is explicitly set to true, OR
+  // 2. No successful fetch in the last 10 minutes (likely means login expired)
+  const shouldShow =
+    showBanner || (lastFetchTime > 0 && now - lastFetchTime > 10 * 60 * 1000);
+
+  if (shouldShow) {
+    showLoginBanner();
+  } else {
+    hideLoginBanner();
+  }
+}
+
+function showLoginBanner() {
+  const banner = document.getElementById("loginBanner");
+  if (banner) {
+    banner.style.display = "block";
+    banner.classList.add("slideDown");
+  }
+}
+
+function hideLoginBanner() {
+  const banner = document.getElementById("loginBanner");
+  if (banner) {
+    banner.style.display = "none";
+    banner.classList.remove("slideDown");
+  }
+}
+
+async function handleLoginNow() {
+  const loginUrl = "https://fap.fpt.edu.vn/";
+  chrome.tabs.create({ url: loginUrl });
+  hideLoginBanner();
+  await STORAGE.set({ show_login_banner: false });
+
+  // Check login status after a delay to see if user logged in
+  setTimeout(async () => {
+    await checkLoginStatus();
+    await checkAndShowLoginBanner();
+  }, 3000); // Check after 3 seconds
+}
+
+async function handleDismissBanner() {
+  hideLoginBanner();
+  await STORAGE.set({ show_login_banner: false });
+}
+
+// Simple notification function
+function showLoginNotification() {
+  // Create a simple notification element
+  const notification = document.createElement("div");
+  notification.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+    padding: 16px 20px;
+    border-radius: 12px;
+    z-index: 10000;
+    font-size: 14px;
+    font-weight: 600;
+    box-shadow: 0 8px 32px rgba(245, 158, 11, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    animation: slideInRight 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    max-width: 350px;
+    word-wrap: break-word;
+  `;
+  notification.innerHTML = `
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <div style="font-size: 20px;">🔐</div>
+      <div>
+        <div style="font-weight: 700; margin-bottom: 4px;">Cần đăng nhập FAP</div>
+        <div style="font-size: 12px; opacity: 0.9;">Bấm "Đăng nhập ngay" để cập nhật dữ liệu</div>
+      </div>
+    </div>
+  `;
+
+  // Add animation CSS if not exists
+  if (!document.getElementById("notificationStyles")) {
+    const style = document.createElement("style");
+    style.id = "notificationStyles";
+    style.textContent = `
+      @keyframes slideInRight {
+        from { 
+          transform: translateX(100%) scale(0.8); 
+          opacity: 0; 
+        }
+        to { 
+          transform: translateX(0) scale(1); 
+          opacity: 1; 
+        }
+      }
+      @keyframes slideOutRight {
+        from { 
+          transform: translateX(0) scale(1); 
+          opacity: 1; 
+        }
+        to { 
+          transform: translateX(100%) scale(0.8); 
+          opacity: 0; 
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  // Add hover effect
+  notification.addEventListener("mouseenter", () => {
+    notification.style.transform = "translateX(-4px) scale(1.02)";
+    notification.style.boxShadow = "0 12px 40px rgba(245, 158, 11, 0.6)";
+  });
+
+  notification.addEventListener("mouseleave", () => {
+    notification.style.transform = "translateX(0) scale(1)";
+    notification.style.boxShadow = "0 8px 32px rgba(245, 158, 11, 0.4)";
+  });
+
+  document.body.appendChild(notification);
+
+  // Auto remove after 4 seconds
+  setTimeout(() => {
+    notification.style.animation = "slideOutRight 0.3s ease forwards";
+    setTimeout(() => {
+      if (notification.parentNode) {
+        notification.parentNode.removeChild(notification);
+      }
+    }, 300);
+  }, 4000);
+
+  // Remove on click
+  notification.addEventListener("click", () => {
+    notification.style.animation = "slideOutRight 0.3s ease forwards";
+    setTimeout(() => {
+      if (notification.parentNode) {
+        notification.parentNode.removeChild(notification);
+      }
+    }, 300);
+  });
+}
+
+// Function to update login status display
+function updateLoginStatusDisplay(isLoggedIn, isChecking = false) {
+  const loginStatus = document.getElementById("loginStatus");
+  const loginStatusIcon = document.getElementById("loginStatusIcon");
+  const loginStatusTitle = document.getElementById("loginStatusTitle");
+  const statusDot = document.getElementById("statusDot");
+
+  if (!loginStatus) return;
+
+  // Remove all status classes
+  loginStatus.classList.remove("logged-in", "logged-out", "checking");
+
+  if (isChecking) {
+    loginStatus.classList.add("checking");
+    loginStatusIcon.textContent = ""; // Clear content for CSS spinner
+    loginStatusTitle.textContent = "Kiểm tra...";
+  } else if (isLoggedIn) {
+    loginStatus.classList.add("logged-in");
+    loginStatusIcon.textContent = "✅";
+    loginStatusTitle.textContent = "Đã đăng nhập";
+  } else {
+    loginStatus.classList.add("logged-out");
+    loginStatusIcon.textContent = "❌";
+    loginStatusTitle.textContent = "Chưa đăng nhập";
+  }
+}
+
+// Function to actively check login status
+async function checkLoginStatus() {
+  // Show checking status
+  updateLoginStatusDisplay(false, true);
+
+  // Also check for updates while checking login status
+  // Auto update check disabled to avoid GitHub API rate limit
+  // try {
+  //   await checkUpdate(true);
+  // } catch (e) {
+  //   console.log("Update check failed:", e);
+  // }
+
+  try {
+    // Try to fetch a simple page to test login status
+    const testUrl = "https://fap.fpt.edu.vn/Student.aspx";
+    const response = await fetch(testUrl, {
+      credentials: "include",
+      redirect: "follow",
+      method: "HEAD", // Just check if we can access, don't download content
+    });
+
+    // If redirected to login page, we're not logged in
+    if (
+      response.redirected &&
+      /\/Default\.aspx$/i.test(new URL(response.url).pathname)
+    ) {
+      await STORAGE.set({ show_login_banner: true });
+      updateLoginStatusDisplay(false, false);
+      return false; // Not logged in
+    }
+
+    // If we get 401 or 403, we're not logged in
+    if (response.status === 401 || response.status === 403) {
+      await STORAGE.set({ show_login_banner: true });
+      updateLoginStatusDisplay(false, false);
+      return false; // Not logged in
+    }
+
+    // If we can access the page, we're logged in
+    await STORAGE.set({
+      show_login_banner: false,
+      last_successful_fetch: Date.now(),
+    });
+    updateLoginStatusDisplay(true, false);
+    return true; // Logged in
+  } catch (error) {
+    // On error, assume we need to login
+    await STORAGE.set({ show_login_banner: true });
+    updateLoginStatusDisplay(false, false);
+    return false;
+  }
 }
 
 // === Loading States cho Refresh Buttons ===
@@ -2303,7 +2817,25 @@ function renderGPAChart(labels, data) {
 document
   .getElementById("btnRefreshStats")
   ?.addEventListener("click", async function () {
-    await handleRefreshWithLoading(this, loadStatistics);
+    // Check login status first before loading data
+    const isLoggedIn = await checkLoginStatus();
+
+    if (!isLoggedIn) {
+      // Show login banner and don't load data
+      await checkAndShowLoginBanner();
+
+      // Show notification that user needs to login first
+      showLoginNotification();
+
+      return;
+    }
+
+    // If logged in, proceed with loading data
+    await handleRefreshWithLoading(this, async () => {
+      await loadStatistics();
+      // Update last successful fetch time
+      await STORAGE.set({ last_successful_fetch: Date.now() });
+    });
   });
 
 // ===== ATTENDANCE STREAK TRACKER =====
@@ -2625,6 +3157,20 @@ function filterExams() {
 document
   .getElementById("btnQuickRefresh")
   ?.addEventListener("click", async function () {
+    // Check login status first before loading data
+    const isLoggedIn = await checkLoginStatus();
+
+    if (!isLoggedIn) {
+      // Show login banner and don't load data
+      await checkAndShowLoginBanner();
+
+      // Show notification that user needs to login first
+      showLoginNotification();
+
+      return;
+    }
+
+    // If logged in, proceed with loading data
     await handleRefreshWithLoading(this, async () => {
       await STORAGE.remove("cache_transcript");
       await STORAGE.remove("cache_attendance");
@@ -2639,6 +3185,9 @@ document
         initGPACalculator(),
         calculateStreak(),
       ]);
+
+      // Update last successful fetch time
+      await STORAGE.set({ last_successful_fetch: Date.now() });
 
       // Update quick stats
       const cache = await cacheGet("cache_transcript", DAY_MS);
@@ -4430,9 +4979,8 @@ class AchievementSystem {
 
   renderAchievements() {
     const grid = document.getElementById("achievementsGrid");
-    console.log("renderAchievements called, grid element:", grid);
     if (!grid) {
-      console.error("achievementsGrid element not found!");
+      // Silently skip if element not found
       return;
     }
 
@@ -4528,9 +5076,8 @@ class AchievementSystem {
 
   renderStats() {
     const statsContainer = document.getElementById("achievementStats");
-    console.log("renderStats called, statsContainer element:", statsContainer);
     if (!statsContainer) {
-      console.error("achievementStats element not found!");
+      // Silently skip if element not found
       return;
     }
 
@@ -4779,6 +5326,17 @@ function setupEventListeners() {
       console.log("Fallback: Tab Reset button event listener added");
     }
   }, 500);
+
+  // Login Banner Event Handlers
+  const btnLoginNow = document.getElementById("btnLoginNow");
+  if (btnLoginNow) {
+    btnLoginNow.addEventListener("click", handleLoginNow);
+  }
+
+  const btnDismissBanner = document.getElementById("btnDismissBanner");
+  if (btnDismissBanner) {
+    btnDismissBanner.addEventListener("click", handleDismissBanner);
+  }
 }
 
 // ===== ADVANCED CUSTOMIZATION SYSTEM =====
@@ -5630,20 +6188,24 @@ class AnalyticsDashboard {
 
     // Weekly study time
     const weeklyTime = this.calculateWeeklyStudyTime(timerData);
-    document.getElementById("weeklyStudyTime").textContent = weeklyTime;
+    const weeklyStudyTimeEl = document.getElementById("weeklyStudyTime");
+    if (weeklyStudyTimeEl) weeklyStudyTimeEl.textContent = weeklyTime;
 
     // Weekly pomodoros
     const weeklyPomodoros = timerData.pomodorosThisWeek || 0;
-    document.getElementById("weeklyPomodoros").textContent = weeklyPomodoros;
+    const weeklyPomodorosEl = document.getElementById("weeklyPomodoros");
+    if (weeklyPomodorosEl) weeklyPomodorosEl.textContent = weeklyPomodoros;
 
     // Weekly achievements
     const weeklyAchievements = this.calculateWeeklyAchievements(achievements);
-    document.getElementById("weeklyAchievements").textContent =
-      weeklyAchievements;
+    const weeklyAchievementsEl = document.getElementById("weeklyAchievements");
+    if (weeklyAchievementsEl)
+      weeklyAchievementsEl.textContent = weeklyAchievements;
 
     // Weekly attendance
     const attendance = attendanceData.rate || 0;
-    document.getElementById("weeklyAttendance").textContent = `${attendance}%`;
+    const weeklyAttendanceEl = document.getElementById("weeklyAttendance");
+    if (weeklyAttendanceEl) weeklyAttendanceEl.textContent = `${attendance}%`;
   }
 
   calculateWeeklyStudyTime(timerData) {
@@ -5756,16 +6318,23 @@ class SmartNotifications {
     });
 
     // Load settings into UI
-    document.getElementById("notifyBeforeClass").value =
-      settings.notifyBeforeClass;
-    document.getElementById("smartReminders").checked = settings.smartReminders;
-    document.getElementById("breakReminders").checked = settings.breakReminders;
-    document.getElementById("goalAlerts").checked = settings.goalAlerts;
-    document.getElementById("achievementNotifs").checked =
-      settings.achievementNotifs;
-    document.getElementById("dailySummary").checked = settings.dailySummary;
-    document.getElementById("notificationSound").value =
-      settings.notificationSound;
+    const notifyBeforeClass = document.getElementById("notifyBeforeClass");
+    const smartReminders = document.getElementById("smartReminders");
+
+    if (notifyBeforeClass) notifyBeforeClass.value = settings.notifyBeforeClass;
+    if (smartReminders) smartReminders.checked = settings.smartReminders;
+    const breakReminders = document.getElementById("breakReminders");
+    const goalAlerts = document.getElementById("goalAlerts");
+    const achievementNotifs = document.getElementById("achievementNotifs");
+    const dailySummary = document.getElementById("dailySummary");
+
+    if (breakReminders) breakReminders.checked = settings.breakReminders;
+    if (goalAlerts) goalAlerts.checked = settings.goalAlerts;
+    if (achievementNotifs)
+      achievementNotifs.checked = settings.achievementNotifs;
+    if (dailySummary) dailySummary.checked = settings.dailySummary;
+    const notificationSound = document.getElementById("notificationSound");
+    if (notificationSound) notificationSound.value = settings.notificationSound;
   }
 
   setupEventListeners() {
@@ -6265,14 +6834,16 @@ class ProgressTracking {
     const inProgress = totalAchievements - unlocked;
     const completionRate = Math.round((unlocked / totalAchievements) * 100);
 
-    document.getElementById("unlockedCount").textContent = unlocked;
-    document.getElementById("inProgressCount").textContent = inProgress;
-    document.getElementById(
-      "completionRate"
-    ).textContent = `${completionRate}%`;
-    document.getElementById(
-      "achievementFill"
-    ).style.width = `${completionRate}%`;
+    const unlockedCount = document.getElementById("unlockedCount");
+    const inProgressCount = document.getElementById("inProgressCount");
+
+    if (unlockedCount) unlockedCount.textContent = unlocked;
+    if (inProgressCount) inProgressCount.textContent = inProgress;
+    const completionRateEl = document.getElementById("completionRate");
+    const achievementFill = document.getElementById("achievementFill");
+
+    if (completionRateEl) completionRateEl.textContent = `${completionRate}%`;
+    if (achievementFill) achievementFill.style.width = `${completionRate}%`;
   }
 }
 
@@ -6450,10 +7021,11 @@ class AdvancedSearch {
   }
 
   setupEventListeners() {
-    const searchInput = document.getElementById("globalSearch");
-    const searchResults = document.getElementById("searchResults");
-
-    // Search input events
+    // Global search has been replaced with login status
+    // const searchInput = document.getElementById("globalSearch");
+    // const searchResults = document.getElementById("searchResults");
+    // Search input events - DISABLED (replaced with login status)
+    /*
     searchInput.addEventListener("input", (e) => {
       this.handleSearch(e.target.value);
     });
@@ -6478,6 +7050,7 @@ class AdvancedSearch {
         searchInput.blur();
       }
     });
+    */
   }
 
   handleSearch(query) {
@@ -6613,12 +7186,13 @@ class AdvancedSearch {
   }
 
   selectResult(type) {
-    const searchInput = document.getElementById("globalSearch");
-    const searchResults = document.getElementById("searchResults");
+    // Global search has been replaced with login status
+    // const searchInput = document.getElementById("globalSearch");
+    // const searchResults = document.getElementById("searchResults");
 
     // Clear search
-    searchInput.value = "";
-    searchResults.classList.remove("show");
+    // searchInput.value = "";
+    // searchResults.classList.remove("show");
 
     // Switch to appropriate tab
     this.switchToTab(this.getTabForType(type));
@@ -7008,17 +7582,19 @@ async function loadWeather() {
       return;
     }
 
-    // Fetch from API if no cache
-    const response = await fetch(
-      "https://api.openweathermap.org/data/2.5/weather?q=Ho%20Chi%20Minh&appid=demo&units=metric"
-    );
+    // Fetch from API if no cache - using free weather API
+    const response = await fetch("https://wttr.in/Ho%20Chi%20Minh?format=j1");
 
     if (!response.ok) {
       // Fallback to mock data for demo
       const mockData = {
-        main: { temp: 28 },
-        weather: [{ description: "Nắng nhẹ" }],
-        name: "Hồ Chí Minh",
+        current_condition: [
+          {
+            temp_C: 28,
+            weatherDesc: [{ value: "Nắng nhẹ" }],
+          },
+        ],
+        nearest_area: [{ areaName: [{ value: "Hồ Chí Minh" }] }],
       };
       updateWeatherDisplay(mockData);
       await STORAGE.set({
@@ -7044,9 +7620,13 @@ async function loadWeather() {
     console.error("Weather fetch error:", error);
     // Show fallback data
     updateWeatherDisplay({
-      main: { temp: "--" },
-      weather: [{ description: "Không có dữ liệu" }],
-      name: "Hồ Chí Minh",
+      current_condition: [
+        {
+          temp_C: "--",
+          weatherDesc: [{ value: "Không có dữ liệu" }],
+        },
+      ],
+      nearest_area: [{ areaName: [{ value: "Hồ Chí Minh" }] }],
     });
   }
 }
@@ -7057,13 +7637,13 @@ function updateWeatherDisplay(data) {
   const locationEl = document.querySelector(".weather-location");
 
   if (tempEl) {
-    tempEl.textContent = `${Math.round(data.main.temp)}°C`;
+    tempEl.textContent = `${Math.round(data.current_condition[0].temp_C)}°C`;
   }
   if (descEl) {
-    descEl.textContent = data.weather[0].description;
+    descEl.textContent = data.current_condition[0].weatherDesc[0].value;
   }
   if (locationEl) {
-    locationEl.textContent = data.name;
+    locationEl.textContent = data.nearest_area[0].areaName[0].value;
   }
 }
 
@@ -7094,374 +7674,6 @@ function updateWeatherDisplay(data) {
     setValue("#attRateQuick", "--");
   }
 })();
-
-// ===== SMART STUDY MODE FUNCTIONALITY =====
-class SmartStudyManager {
-  constructor() {
-    this.isActive = false;
-    this.currentSession = null;
-    this.analytics = null;
-    this.init();
-  }
-
-  async init() {
-    await this.loadSettings();
-    await this.loadSessionData();
-    await this.loadAnalytics();
-    this.setupEventListeners();
-    this.updateUI();
-    this.startSessionTimer();
-  }
-
-  async loadSettings() {
-    this.settings = await STORAGE.get("smartStudySettings", {
-      enabled: true, // Master switch
-      autoDetect: true,
-      blockDistractions: true,
-      showNotifications: true,
-      minSessionTime: 5,
-      breakReminderInterval: 25,
-    });
-  }
-
-  async loadSessionData() {
-    const sessionData = await STORAGE.get("currentStudySession", null);
-    const isActive = await STORAGE.get("smartStudyActive", false);
-
-    this.currentSession = sessionData;
-    this.isActive = isActive;
-  }
-
-  async loadAnalytics() {
-    this.analytics = await STORAGE.get("studyAnalytics", {
-      totalSessions: 0,
-      totalTime: 0,
-      totalFocusTime: 0,
-      averageSessionLength: 0,
-      distractionRate: 0,
-    });
-  }
-
-  setupEventListeners() {
-    // Master toggle for Smart Study Mode
-    document
-      .getElementById("smartStudyEnabled")
-      ?.addEventListener("change", async (e) => {
-        const isEnabled = e.target.checked;
-        this.settings.enabled = isEnabled;
-
-        try {
-          if (isEnabled) {
-            await chrome.runtime.sendMessage({ action: "enableSmartStudy" });
-            Toast.success("Smart Study Mode enabled!");
-          } else {
-            await chrome.runtime.sendMessage({ action: "disableSmartStudy" });
-            Toast.success("Smart Study Mode disabled!");
-          }
-          await this.saveSettings();
-          this.updateUI();
-        } catch (error) {
-          console.error("Error toggling Smart Study Mode:", error);
-          Toast.error("Failed to toggle Smart Study Mode");
-          // Revert checkbox state
-          e.target.checked = !isEnabled;
-        }
-      });
-
-    // Settings checkboxes
-    document
-      .getElementById("autoDetectStudy")
-      ?.addEventListener("change", (e) => {
-        this.settings.autoDetect = e.target.checked;
-        this.saveSettings();
-      });
-
-    document
-      .getElementById("blockDistractions")
-      ?.addEventListener("change", (e) => {
-        this.settings.blockDistractions = e.target.checked;
-        this.saveSettings();
-      });
-
-    document
-      .getElementById("showNotifications")
-      ?.addEventListener("change", (e) => {
-        this.settings.showNotifications = e.target.checked;
-        this.saveSettings();
-      });
-
-    // Action buttons
-    document.getElementById("btnStartStudy")?.addEventListener("click", () => {
-      this.startStudySession();
-    });
-
-    document.getElementById("btnEndStudy")?.addEventListener("click", () => {
-      this.endStudySession();
-    });
-
-    document
-      .getElementById("btnViewAnalytics")
-      ?.addEventListener("click", () => {
-        this.showDetailedAnalytics();
-      });
-  }
-
-  async saveSettings() {
-    await STORAGE.set({ smartStudySettings: this.settings });
-
-    // Send settings to background
-    chrome.runtime.sendMessage({
-      action: "updateSmartStudySettings",
-      settings: this.settings,
-    });
-  }
-
-  async startStudySession() {
-    try {
-      const response = await chrome.runtime.sendMessage({
-        action: "startSmartStudy",
-      });
-
-      if (response && response.success) {
-        this.isActive = true;
-        this.updateUI();
-        this.showToast("Study session started!", "success");
-      }
-    } catch (error) {
-      console.error("Error starting study session:", error);
-      this.showToast("Failed to start study session", "error");
-    }
-  }
-
-  async endStudySession() {
-    try {
-      const response = await chrome.runtime.sendMessage({
-        action: "endSmartStudy",
-      });
-
-      console.log("End study response:", response);
-
-      if (response && response.success) {
-        this.isActive = false;
-        this.currentSession = null;
-
-        // Clear session data from storage
-        await STORAGE.set({
-          currentStudySession: null,
-          smartStudyActive: false,
-        });
-
-        await this.loadAnalytics();
-        this.updateUI();
-        this.showToast("Study session ended!", "success");
-      } else {
-        console.error("Failed to end study session:", response);
-        this.showToast("Failed to end study session", "error");
-      }
-    } catch (error) {
-      console.error("Error ending study session:", error);
-      this.showToast("Failed to end study session", "error");
-    }
-  }
-
-  updateUI() {
-    // Update master toggle
-    const smartStudyEnabled = document.getElementById("smartStudyEnabled");
-    if (smartStudyEnabled) {
-      smartStudyEnabled.checked = this.settings.enabled;
-    }
-
-    // Update status indicator
-    const statusDot = document.querySelector(".status-dot");
-    const statusText = document.querySelector(".status-text");
-    const startBtn = document.getElementById("btnStartStudy");
-    const endBtn = document.getElementById("btnEndStudy");
-
-    // Disable/enable controls based on master toggle
-    const controls = document.querySelectorAll(
-      ".study-controls input, .study-controls button"
-    );
-    controls.forEach((control) => {
-      if (control.id !== "smartStudyEnabled") {
-        control.disabled = !this.settings.enabled;
-        control.style.opacity = this.settings.enabled ? "1" : "0.5";
-      }
-    });
-
-    if (this.isActive && this.settings.enabled) {
-      statusDot?.classList.remove("inactive");
-      statusDot?.classList.add("active");
-      statusText.textContent = "Active";
-      startBtn.style.display = "none";
-      endBtn.style.display = "block";
-    } else {
-      statusDot?.classList.remove("active");
-      statusDot?.classList.add("inactive");
-      statusText.textContent = this.settings.enabled ? "Inactive" : "Disabled";
-      startBtn.style.display = "block";
-      endBtn.style.display = "none";
-    }
-
-    // Update settings checkboxes
-    const autoDetect = document.getElementById("autoDetectStudy");
-    const blockDistractions = document.getElementById("blockDistractions");
-    const showNotifications = document.getElementById("showNotifications");
-
-    if (autoDetect) autoDetect.checked = this.settings.autoDetect;
-    if (blockDistractions)
-      blockDistractions.checked = this.settings.blockDistractions;
-    if (showNotifications)
-      showNotifications.checked = this.settings.showNotifications;
-
-    // Update analytics
-    this.updateAnalyticsUI();
-  }
-
-  updateAnalyticsUI() {
-    if (!this.analytics) return;
-
-    const totalSessions = document.getElementById("totalSessions");
-    const totalTime = document.getElementById("totalTime");
-    const focusRate = document.getElementById("focusRate");
-    const avgSession = document.getElementById("avgSession");
-
-    if (totalSessions) totalSessions.textContent = this.analytics.totalSessions;
-    if (totalTime)
-      totalTime.textContent = this.formatTime(this.analytics.totalTime);
-    if (focusRate) focusRate.textContent = this.calculateFocusRate() + "%";
-    if (avgSession)
-      avgSession.textContent = this.formatTime(
-        this.analytics.averageSessionLength
-      );
-  }
-
-  calculateFocusRate() {
-    if (!this.analytics || this.analytics.totalTime === 0) return 0;
-    return Math.round(
-      (this.analytics.totalFocusTime / this.analytics.totalTime) * 100
-    );
-  }
-
-  formatTime(milliseconds) {
-    if (!milliseconds) return "0min";
-    const minutes = Math.round(milliseconds / 60000);
-    if (minutes < 60) return `${minutes}min`;
-    const hours = Math.floor(minutes / 60);
-    const remainingMinutes = minutes % 60;
-    return `${hours}h ${remainingMinutes}min`;
-  }
-
-  startSessionTimer() {
-    setInterval(async () => {
-      if (this.isActive) {
-        await this.loadSessionData();
-        this.updateSessionInfo();
-      }
-    }, 1000);
-  }
-
-  updateSessionInfo() {
-    if (!this.currentSession) return;
-
-    const now = Date.now();
-    const sessionDuration = now - this.currentSession.startTime;
-    const focusTime =
-      sessionDuration - this.currentSession.distractions * 60000;
-
-    const sessionTime = document.getElementById("sessionTime");
-    const focusTimeEl = document.getElementById("focusTime");
-    const distractionCount = document.getElementById("distractionCount");
-
-    if (sessionTime) sessionTime.textContent = this.formatTime(sessionDuration);
-    if (focusTimeEl) focusTimeEl.textContent = this.formatTime(focusTime);
-    if (distractionCount)
-      distractionCount.textContent = this.currentSession.distractions;
-  }
-
-  showDetailedAnalytics() {
-    // Create modal with detailed analytics
-    const modal = document.createElement("div");
-    modal.className = "modal-overlay active";
-    modal.innerHTML = `
-      <div class="modal-box">
-        <div class="modal-icon">📊</div>
-        <h3 class="modal-title">Study Analytics</h3>
-        <div class="analytics-detail">
-          <div class="analytics-row">
-            <span>Total Study Sessions:</span>
-            <span>${this.analytics.totalSessions}</span>
-          </div>
-          <div class="analytics-row">
-            <span>Total Study Time:</span>
-            <span>${this.formatTime(this.analytics.totalTime)}</span>
-          </div>
-          <div class="analytics-row">
-            <span>Total Focus Time:</span>
-            <span>${this.formatTime(this.analytics.totalFocusTime)}</span>
-          </div>
-          <div class="analytics-row">
-            <span>Average Session Length:</span>
-            <span>${this.formatTime(this.analytics.averageSessionLength)}</span>
-          </div>
-          <div class="analytics-row">
-            <span>Focus Rate:</span>
-            <span>${this.calculateFocusRate()}%</span>
-          </div>
-          <div class="analytics-row">
-            <span>Distraction Rate:</span>
-            <span>${
-              Math.round(this.analytics.distractionRate * 100) / 100
-            } per hour</span>
-          </div>
-        </div>
-        <div class="modal-actions">
-          <button class="primary" id="modal-close-btn">Close</button>
-        </div>
-      </div>
-    `;
-
-    document.body.appendChild(modal);
-
-    // Add event listener for close button
-    const closeBtn = modal.querySelector("#modal-close-btn");
-    if (closeBtn) {
-      closeBtn.addEventListener("click", () => {
-        modal.remove();
-      });
-    }
-  }
-
-  showToast(message, type = "info") {
-    // Create toast notification
-    const toast = document.createElement("div");
-    toast.className = `toast ${type}`;
-    toast.innerHTML = `
-      <div class="toast-icon">${
-        type === "success" ? "✅" : type === "error" ? "❌" : "ℹ️"
-      }</div>
-      <div class="toast-content">
-        <div class="toast-title">Smart Study Mode</div>
-        <div class="toast-message">${message}</div>
-      </div>
-    `;
-
-    const container =
-      document.getElementById("toastContainer") || document.body;
-    container.appendChild(toast);
-
-    // Auto remove after 3 seconds
-    setTimeout(() => {
-      toast.classList.add("removing");
-      setTimeout(() => toast.remove(), 200);
-    }, 3000);
-  }
-}
-
-// Initialize Smart Study Manager
-let smartStudyManager;
-document.addEventListener("DOMContentLoaded", () => {
-  smartStudyManager = new SmartStudyManager();
-});
 
 // ===== TEST FUNCTIONS FOR STREAK CALCULATION =====
 // Test function to verify streak calculation logic
@@ -7612,12 +7824,11 @@ const UpdateModal = {
                 </div>
               </div>
               <div class="update-description" id="updateDescription">
-                Phiên bản mới với nhiều tính năng tuyệt vời và cải tiến hiệu suất đáng kể.
+                Phiên bản mới với nhiều tính năng tuyệt vời và cải tiến hiệu suất đáng kể. File sẽ được tải về và bạn sẽ được hướng dẫn cài đặt.
               </div>
               <ul class="update-features" id="updateFeatures">
                 <li>Giao diện mới với thiết kế hiện đại</li>
                 <li>Cải thiện hiệu suất và tốc độ tải</li>
-                <li>Thêm tính năng Smart Study Mode</li>
                 <li>Tối ưu hóa cho mobile và tablet</li>
                 <li>Sửa lỗi và cải thiện ổn định</li>
               </ul>
@@ -7627,7 +7838,7 @@ const UpdateModal = {
             </div>
             <div class="update-actions">
               <button class="update-btn secondary" id="updateCancelBtn">Hủy</button>
-              <button class="update-btn primary" id="updateDownloadBtn">Tải về và Cài đặt</button>
+              <button class="update-btn primary" id="updateDownloadBtn">Tải về</button>
             </div>
             <div class="update-progress" id="updateProgress">
               <div class="progress-bar">
@@ -7681,10 +7892,14 @@ const UpdateModal = {
   async checkForUpdates() {
     try {
       const latestReleaseUrl = `https://api.github.com/repos/${this.config.repoOwner}/${this.config.repoName}/releases/latest`;
+      console.log("🔍 Fetching release info from:", latestReleaseUrl);
       const response = await fetch(latestReleaseUrl);
 
       if (response.ok) {
         const releaseData = await response.json();
+        console.log("📦 Release data:", releaseData);
+        console.log("📦 Assets:", releaseData.assets);
+
         const latestVersion = releaseData.tag_name;
         const currentVersion = this.getCurrentVersion();
 
@@ -7699,6 +7914,12 @@ const UpdateModal = {
           // Already up to date
           this.showUpToDate(currentVersion);
         }
+      } else {
+        console.error(
+          "GitHub API error:",
+          response.status,
+          response.statusText
+        );
       }
     } catch (error) {
       console.log("Could not fetch latest version info:", error.message);
@@ -7737,13 +7958,13 @@ const UpdateModal = {
     // Update modal title with latest version
     const titleEl = document.querySelector(".update-modal-title");
     if (titleEl && this.config.repoOwner === "longurara") {
-      titleEl.textContent = `Cập nhật FAP-GPA-Viewer ${latestVersion}`;
+      titleEl.textContent = `Cập nhật FAP-Dashboard ${latestVersion}`;
     }
 
     // Update app name with latest version
     const appNameEl = document.getElementById("updateAppName");
     if (appNameEl && this.config.repoOwner === "longurara") {
-      appNameEl.textContent = `FAP-GPA-Viewer ${latestVersion}`;
+      appNameEl.textContent = `FAP-Dashboard ${latestVersion}`;
     }
 
     // Update with real release data if available
@@ -7755,7 +7976,7 @@ const UpdateModal = {
     const downloadBtn = document.getElementById("updateDownloadBtn");
     if (downloadBtn) {
       downloadBtn.style.display = "block";
-      downloadBtn.textContent = "Tải về và Cài đặt";
+      downloadBtn.textContent = "Tải về";
       // Ensure download functionality is restored
       downloadBtn.replaceWith(downloadBtn.cloneNode(true));
       const newDownloadBtn = document.getElementById("updateDownloadBtn");
@@ -7764,10 +7985,12 @@ const UpdateModal = {
   },
 
   updateModalWithRealData(releaseData) {
+    console.log("📦 Release data received:", releaseData);
+
     // Update description with simple text
     const descriptionEl = document.getElementById("updateDescription");
     if (descriptionEl) {
-      descriptionEl.textContent = "Test download";
+      descriptionEl.textContent = "";
     }
 
     // Hide features list
@@ -7786,10 +8009,31 @@ const UpdateModal = {
         console.log(`📦 Real file size: ${asset.size} bytes = ${sizeInMB} MB`);
         sizeEl.innerHTML = `<strong>Kích thước:</strong> ${sizeInMB} MB`;
       } else {
-        console.log("❌ No assets found, using default size");
-        sizeEl.innerHTML = `<strong>Kích thước:</strong> ~0.2 MB`;
+        console.log("📦 No assets found in release data");
+        // Try to fetch size from repository or use estimated size
+        this.fetchEstimatedSize().then((size) => {
+          sizeEl.innerHTML = `<strong>Kích thước:</strong> ${size}`;
+        });
       }
     }
+  },
+
+  async fetchEstimatedSize() {
+    try {
+      // Try to get repository size or estimate based on common extension sizes
+      const repoUrl = `https://api.github.com/repos/${this.config.repoOwner}/${this.config.repoName}`;
+      const response = await fetch(repoUrl);
+      if (response.ok) {
+        const repoData = await response.json();
+        if (repoData.size) {
+          const sizeInMB = (repoData.size / 1024 / 1024).toFixed(1);
+          return `${sizeInMB} MB (ước tính)`;
+        }
+      }
+    } catch (error) {
+      console.log("Could not fetch repository size:", error);
+    }
+    return "~2.0 MB (ước tính)";
   },
 
   extractFeaturesFromReleaseNotes(releaseNotes) {
@@ -7828,7 +8072,6 @@ const UpdateModal = {
     // If no features found, use default ones
     if (features.length === 0) {
       return [
-        "Smart Study Mode với auto-detection",
         "Pomodoro Timer Material Design 3",
         "Dynamic GPA Calculation",
         "Clean Scrollbar Design",
@@ -7843,7 +8086,7 @@ const UpdateModal = {
     // Update modal title
     const titleEl = document.querySelector(".update-modal-title");
     if (titleEl) {
-      titleEl.textContent = `FAP-GPA-Viewer ${currentVersion}`;
+      titleEl.textContent = `FAP-Dashboard ${currentVersion}`;
     }
 
     // Update subtitle
@@ -7855,14 +8098,14 @@ const UpdateModal = {
     // Update app name
     const appNameEl = document.getElementById("updateAppName");
     if (appNameEl) {
-      appNameEl.textContent = `FAP-GPA-Viewer ${currentVersion}`;
+      appNameEl.textContent = `FAP-Dashboard ${currentVersion}`;
     }
 
     // Update description
     const descriptionEl = document.getElementById("updateDescription");
     if (descriptionEl) {
       descriptionEl.textContent =
-        "Extension của bạn đã được cập nhật lên phiên bản mới nhất. Cảm ơn bạn đã sử dụng FAP-GPA-Viewer!";
+        "Extension của bạn đã được cập nhật lên phiên bản mới nhất. Cảm ơn bạn đã sử dụng FAP Dashboard!";
     }
 
     // Hide features list
@@ -7965,7 +8208,6 @@ const UpdateModal = {
         featuresEl.innerHTML = `
           <li>Giao diện mới với thiết kế hiện đại</li>
           <li>Cải thiện hiệu suất và tốc độ tải</li>
-          <li>Thêm tính năng Smart Study Mode</li>
           <li>Tối ưu hóa cho mobile và tablet</li>
           <li>Sửa lỗi và cải thiện ổn định</li>
         `;
@@ -7983,7 +8225,7 @@ const UpdateModal = {
     this.progressFill.style.width = "0%";
     this.progressText.textContent = "Đang tải về...";
     if (this.downloadBtn) {
-      this.downloadBtn.textContent = "Tải về và Cài đặt";
+      this.downloadBtn.textContent = "Tải về";
       this.downloadBtn.disabled = false;
       this.downloadBtn.style.display = "block";
     }
@@ -8003,20 +8245,14 @@ const UpdateModal = {
         await this.fallbackDownload();
       }
 
-      // After download, show installation
-      this.progressText.textContent = "Đang cài đặt...";
-      await this.simulateInstallation();
-
-      // Complete
+      // After download, show installation instructions instead of simulating installation
+      this.progressText.textContent = "Tải về hoàn thành!";
       this.progressFill.style.width = "100%";
-      this.progressText.textContent = "Hoàn thành!";
 
       setTimeout(() => {
         this.close();
-        // Show success notification
-        Toast.success(
-          "Cập nhật thành công! Vui lòng tải lại trang để sử dụng phiên bản mới."
-        );
+        // Show detailed installation instructions
+        this.showInstallationInstructions();
       }, 1000);
     } catch (error) {
       console.error("Download failed:", error);
@@ -8036,6 +8272,131 @@ const UpdateModal = {
       Toast.error(
         "Không thể tải về trực tiếp. Nhấn 'Mở GitHub' để tải về thủ công."
       );
+    }
+  },
+
+  showInstallationInstructions() {
+    // Create installation instructions modal
+    const instructionsHTML = `
+      <div class="update-modal-overlay" id="installInstructionsOverlay">
+        <div class="update-modal-box" style="max-width: 500px;">
+          <div class="update-modal-header">
+            <div class="update-modal-icon">
+              <div style="font-size: 48px;">📥</div>
+            </div>
+            <h2 class="update-modal-title">Hướng dẫn cài đặt</h2>
+            <p class="update-modal-subtitle">File đã được tải về. Làm theo các bước sau để cài đặt extension</p>
+          </div>
+          <div class="update-modal-content">
+            <div class="install-steps">
+              <div class="install-step">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                  <h4>File đã tải về</h4>
+                  <p>File <strong>FAP-GPA-Viewer-*.zip</strong> đã được tải về thư mục Downloads</p>
+                </div>
+              </div>
+              <div class="install-step">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                  <h4>Giải nén file</h4>
+                  <p>Giải nén file .zip vào một thư mục trên máy tính</p>
+                </div>
+              </div>
+              <div class="install-step">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                  <h4>Mở Chrome Extensions</h4>
+                  <p>Vào <strong>chrome://extensions/</strong> hoặc <strong>edge://extensions/</strong></p>
+                </div>
+              </div>
+              <div class="install-step">
+                <div class="step-number">4</div>
+                <div class="step-content">
+                  <h4>Bật Developer Mode</h4>
+                  <p>Bật chế độ "Developer mode" ở góc trên bên phải</p>
+                </div>
+              </div>
+              <div class="install-step">
+                <div class="step-number">5</div>
+                <div class="step-content">
+                  <h4>Load Extension</h4>
+                  <p>Nhấn "Load unpacked" và chọn thư mục đã giải nén</p>
+                </div>
+              </div>
+            </div>
+            <div class="update-actions">
+              <button class="update-btn secondary" id="installCloseBtn">Đã hiểu</button>
+              <button class="update-btn primary" id="installOpenExtensionsBtn">Mở Extensions</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Add to body
+    document.body.insertAdjacentHTML("beforeend", instructionsHTML);
+
+    // Add event listeners
+    document.getElementById("installCloseBtn").addEventListener("click", () => {
+      document.getElementById("installInstructionsOverlay").remove();
+    });
+
+    document
+      .getElementById("installOpenExtensionsBtn")
+      .addEventListener("click", () => {
+        // Open extensions page
+        if (navigator.userAgent.includes("Edg")) {
+          window.open("edge://extensions/", "_blank");
+        } else {
+          window.open("chrome://extensions/", "_blank");
+        }
+        document.getElementById("installInstructionsOverlay").remove();
+      });
+
+    // Add CSS for installation steps
+    if (!document.getElementById("installStepsCSS")) {
+      const style = document.createElement("style");
+      style.id = "installStepsCSS";
+      style.textContent = `
+        .install-steps {
+          margin: 20px 0;
+        }
+        .install-step {
+          display: flex;
+          align-items: flex-start;
+          margin-bottom: 20px;
+          padding: 15px;
+          background: var(--card-bg);
+          border-radius: 12px;
+          border: 1px solid var(--border);
+        }
+        .step-number {
+          width: 32px;
+          height: 32px;
+          background: var(--accent);
+          color: white;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: bold;
+          margin-right: 15px;
+          flex-shrink: 0;
+        }
+        .step-content h4 {
+          margin: 0 0 8px 0;
+          color: var(--text);
+          font-size: 16px;
+        }
+        .step-content p {
+          margin: 0;
+          color: var(--text-secondary);
+          font-size: 14px;
+          line-height: 1.5;
+        }
+      `;
+      document.head.appendChild(style);
     }
   },
 
@@ -8086,7 +8447,7 @@ const UpdateModal = {
       // Check if there are assets
       if (!releaseData.assets || releaseData.assets.length === 0) {
         console.log("📦 Release data:", releaseData);
-        console.log("❌ No assets found in release");
+        // No assets found in release - this is normal for some releases
         throw new Error(
           "Không tìm thấy file tải về trong release này. Release có thể chưa có file đính kèm."
         );
@@ -8343,7 +8704,7 @@ window.testRealReleaseData = async function () {
         });
       });
     } else {
-      console.log("❌ No assets found in release");
+      // No assets found in release - this is normal for some releases
     }
 
     // Show modal with real data
@@ -8392,3 +8753,149 @@ window.demoUpdateNeeded = function () {
     UpdateModal.getCurrentVersion = originalGetCurrentVersion;
   }, 1000);
 };
+
+// ===== CALENDAR INTEGRATION =====
+let calendarService = null;
+
+function initCalendarService() {
+  if (!calendarService) {
+    calendarService = new CalendarService();
+  }
+}
+
+// Toast function for auto calendar
+function showToast(message, type = "info") {
+  if (typeof Toast !== "undefined") {
+    switch (type) {
+      case "success":
+        Toast.success(message);
+        break;
+      case "error":
+        Toast.error(message);
+        break;
+      case "info":
+        Toast.info(message);
+        break;
+      default:
+        Toast.info(message);
+    }
+  } else {
+    // Fallback to console if Toast is not available
+    console.log(`[${type.toUpperCase()}] ${message}`);
+  }
+}
+
+// ===== EXPORT FUNCTIONS =====
+
+// Export lịch học
+async function exportScheduleICS() {
+  try {
+    initCalendarService();
+
+    const btn = document.getElementById("btnExportScheduleICS");
+    btn.classList.add("loading");
+    btn.disabled = true;
+
+    const result = await calendarService.exportScheduleICS();
+
+    if (result.success) {
+      showToast(
+        `Đã export ${result.count} sự kiện lịch học thành file .ics!`,
+        "success"
+      );
+    }
+  } catch (error) {
+    console.error("Export schedule failed:", error);
+    showToast(`Lỗi: ${error.message}`, "error");
+  } finally {
+    const btn = document.getElementById("btnExportScheduleICS");
+    btn.classList.remove("loading");
+    btn.disabled = false;
+  }
+}
+
+// Export lịch thi
+async function exportExamICS() {
+  try {
+    initCalendarService();
+
+    const btn = document.getElementById("btnExportExamICS");
+    btn.classList.add("loading");
+    btn.disabled = true;
+
+    const result = await calendarService.exportExamICS();
+
+    if (result.success) {
+      showToast(
+        `Đã export ${result.count} sự kiện lịch thi thành file .ics!`,
+        "success"
+      );
+    }
+  } catch (error) {
+    console.error("Export exam failed:", error);
+    showToast(`Lỗi: ${error.message}`, "error");
+  } finally {
+    const btn = document.getElementById("btnExportExamICS");
+    btn.classList.remove("loading");
+    btn.disabled = false;
+  }
+}
+
+// Hiển thị modal hướng dẫn
+function showCalendarHelp() {
+  const modal = document.getElementById("calendarHelpModal");
+  modal.style.display = "flex";
+}
+
+// Đóng modal hướng dẫn
+function closeCalendarHelp() {
+  const modal = document.getElementById("calendarHelpModal");
+  modal.style.display = "none";
+}
+
+// Thêm event listeners cho Calendar
+document.addEventListener("DOMContentLoaded", function () {
+  // Export buttons
+  document
+    .getElementById("btnExportScheduleICS")
+    ?.addEventListener("click", exportScheduleICS);
+  document
+    .getElementById("btnExportExamICS")
+    ?.addEventListener("click", exportExamICS);
+
+  // Help modal
+  document
+    .getElementById("modalHelpClose")
+    ?.addEventListener("click", closeCalendarHelp);
+
+  // Close modal when clicking outside
+  document
+    .getElementById("calendarHelpModal")
+    ?.addEventListener("click", function (e) {
+      if (e.target === this) {
+        closeCalendarHelp();
+      }
+    });
+
+  // Add help button to schedule and exam tabs
+  const scheduleActions = document.querySelector("#tab-schedule .actions");
+  const examActions = document.querySelector("#tab-exam .actions");
+
+  if (scheduleActions && !scheduleActions.querySelector("#btnCalendarHelp")) {
+    const helpBtn = document.createElement("button");
+    helpBtn.id = "btnCalendarHelp";
+    helpBtn.className = "secondary";
+    helpBtn.innerHTML = "❓ Hướng dẫn";
+    helpBtn.addEventListener("click", showCalendarHelp);
+    scheduleActions.appendChild(helpBtn);
+  }
+
+  if (examActions && !examActions.querySelector("#btnCalendarHelp2")) {
+    const helpBtn = document.createElement("button");
+    helpBtn.id = "btnCalendarHelp2";
+    helpBtn.className = "secondary";
+    helpBtn.innerHTML = "❓ Hướng dẫn";
+    helpBtn.addEventListener("click", showCalendarHelp);
+    examActions.appendChild(helpBtn);
+  }
+});

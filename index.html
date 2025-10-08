@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>FAP GPA Viewer - Xem điểm thông minh hơn</title>
+    <title>FAP Dashboard - Trung tâm quản lý học tập thông minh</title>
     <style>
       * {
         margin: 0;
@@ -154,6 +154,144 @@
         background: white;
         text-align: center;
         font-size: 3rem;
+      }
+
+      .showcase-section {
+        padding: 6rem 5%;
+        background: #fafafa;
+      }
+
+      .showcase-container {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      .showcase-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        margin-top: 3rem;
+      }
+
+      .showcase-card {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        border: 1px solid rgba(0, 0, 0, 0.06);
+        text-align: center;
+        transition: all 0.3s ease;
+      }
+
+      .showcase-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      }
+
+      .showcase-icon {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        display: block;
+      }
+
+      .showcase-card h3 {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+        color: #37352f;
+        font-weight: 600;
+      }
+
+      .showcase-card p {
+        color: rgba(55, 53, 47, 0.65);
+        line-height: 1.6;
+        margin-bottom: 1.5rem;
+      }
+
+      .showcase-stats {
+        display: flex;
+        justify-content: space-around;
+        margin-top: 1.5rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid rgba(0, 0, 0, 0.06);
+      }
+
+      .stat {
+        text-align: center;
+      }
+
+      .stat-number {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #37352f;
+        display: block;
+      }
+
+      .stat-label {
+        font-size: 0.9rem;
+        color: rgba(55, 53, 47, 0.65);
+        margin-top: 0.25rem;
+      }
+
+      .testimonials-section {
+        padding: 6rem 5%;
+        background: white;
+      }
+
+      .testimonials-container {
+        max-width: 1000px;
+        margin: 0 auto;
+      }
+
+      .testimonials-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        margin-top: 3rem;
+      }
+
+      .testimonial-card {
+        background: #fafafa;
+        padding: 2rem;
+        border-radius: 12px;
+        border-left: 4px solid #37352f;
+        position: relative;
+      }
+
+      .testimonial-text {
+        font-style: italic;
+        color: rgba(55, 53, 47, 0.8);
+        line-height: 1.6;
+        margin-bottom: 1.5rem;
+        font-size: 1.1rem;
+      }
+
+      .testimonial-author {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      .author-avatar {
+        width: 50px;
+        height: 50px;
+        background: #37352f;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 1.2rem;
+      }
+
+      .author-info h4 {
+        color: #37352f;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+      }
+
+      .author-info p {
+        color: rgba(55, 53, 47, 0.65);
+        font-size: 0.9rem;
       }
 
       .features {
@@ -383,7 +521,7 @@
   </head>
   <body>
     <nav>
-      <div class="logo">FAP GPA Viewer</div>
+      <div class="logo">FAP Dashboard</div>
       <ul class="nav-links">
         <li><a href="#features">Tính năng</a></li>
         <li><a href="#install">Cài đặt</a></li>
@@ -398,15 +536,22 @@
     <section class="hero">
       <div class="hero-content">
         <h1>
-          Xem điểm <span class="gradient-text">thông minh hơn</span><br />cho
-          sinh viên FPT
+          Trung tâm quản lý học tập <span class="gradient-text">thông minh</span
+          ><br />cho sinh viên FPT
         </h1>
         <p class="subtitle">
-          Extension Chrome giúp bạn xem GPA tự động, trực quan và đầy đủ. Miễn
-          phí, an toàn và dễ sử dụng.
+          Extension Chrome toàn diện với GPA, điểm danh, lịch học, lịch thi,
+          thống kê, thời tiết và nhiều tính năng nâng cao. Miễn phí, an toàn và
+          dễ sử dụng.
         </p>
         <div class="cta-buttons">
-          <a href="#install" class="btn btn-primary"> Bắt đầu ngay → </a>
+          <a
+            href="https://github.com/longurara/FAP-GPA-Viewer/releases"
+            target="_blank"
+            class="btn btn-primary"
+          >
+            🚀 Tải ngay →
+          </a>
           <a
             href="https://github.com/longurara/FAP-GPA-Viewer"
             target="_blank"
@@ -415,45 +560,159 @@
             ⭐ Xem trên GitHub
           </a>
         </div>
+        <div class="hero-image">
+          🎓 FAP Dashboard v<span id="version-display">4.5.0</span><br />
+          <small
+            style="
+              font-size: 1.5rem;
+              color: #666;
+              margin-top: 1rem;
+              display: block;
+            "
+          >
+            Trung tâm quản lý học tập toàn diện
+          </small>
+        </div>
+      </div>
+    </section>
+
+    <section class="showcase-section">
+      <div class="showcase-container">
+        <div class="section-header">
+          <h2 class="section-title">Tại sao chọn FAP Dashboard?</h2>
+          <p class="section-subtitle">
+            Giải pháp toàn diện cho việc quản lý học tập của sinh viên FPT
+          </p>
+        </div>
+        <div class="showcase-grid">
+          <div class="showcase-card">
+            <span class="showcase-icon">🎯</span>
+            <h3>Tất cả trong một</h3>
+            <p>
+              Không cần mở nhiều tab, tất cả thông tin học tập được tập trung
+              tại một nơi duy nhất.
+            </p>
+            <div class="showcase-stats">
+              <div class="stat">
+                <span class="stat-number">9+</span>
+                <span class="stat-label">Tính năng</span>
+              </div>
+              <div class="stat">
+                <span class="stat-number">1</span>
+                <span class="stat-label">Click</span>
+              </div>
+            </div>
+          </div>
+          <div class="showcase-card">
+            <span class="showcase-icon">⚡</span>
+            <h3>Nhanh chóng</h3>
+            <p>
+              Tự động cập nhật dữ liệu, không cần refresh trang. Tiết kiệm thời
+              gian quý báu của bạn.
+            </p>
+            <div class="showcase-stats">
+              <div class="stat">
+                <span class="stat-number">3s</span>
+                <span class="stat-label">Load time</span>
+              </div>
+              <div class="stat">
+                <span class="stat-number">0</span>
+                <span class="stat-label">Manual work</span>
+              </div>
+            </div>
+          </div>
+          <div class="showcase-card">
+            <span class="showcase-icon">📱</span>
+            <h3>Đa nền tảng</h3>
+            <p>
+              Hoạt động mượt mà trên mọi thiết bị và nền tảng. Từ macbook,
+              windows đến chromebook, trải nghiệm luôn hoàn hảo.
+            </p>
+            <div class="showcase-stats">
+              <div class="stat">
+                <span class="stat-number">100%</span>
+                <span class="stat-label">Compatible</span>
+              </div>
+              <div class="stat">
+                <span class="stat-number">24/7</span>
+                <span class="stat-label">Available</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
     <section id="features" class="features">
       <div class="section-header">
-        <h2 class="section-title">Được thiết kế cho sinh viên</h2>
-        <p class="section-subtitle">Đơn giản, nhanh chóng và hiệu quả</p>
+        <h2 class="section-title">Tính năng toàn diện</h2>
+        <p class="section-subtitle">
+          Tất cả công cụ bạn cần để quản lý học tập hiệu quả
+        </p>
       </div>
       <div class="feature-grid">
         <div class="feature-card">
-          <div class="feature-icon">⚡</div>
-          <h3>Tính toán tự động</h3>
+          <div class="feature-icon">📊</div>
+          <h3>GPA & Thống kê</h3>
           <p>
-            Tự động phân tích và tính GPA ngay khi bạn mở trang FAP. Không cần
-            thao tác thủ công.
+            Tính toán GPA tự động, xem điểm từng môn, thống kê chi tiết và xu
+            hướng học tập. Theo dõi tiến độ học tập một cách trực quan.
+          </p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📅</div>
+          <h3>Lịch học & Lịch thi</h3>
+          <p>
+            Xem lịch học hôm nay, lịch thi sắp tới. Tích hợp Google Calendar để
+            đồng bộ lịch trình học tập với các ứng dụng khác.
+          </p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">✅</div>
+          <h3>Điểm danh thông minh</h3>
+          <p>
+            Theo dõi tỷ lệ chuyên cần, cảnh báo khi tỷ lệ thấp. Tính toán streak
+            học tập để duy trì động lực.
+          </p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🌤️</div>
+          <h3>Thời tiết</h3>
+          <p>
+            Hiển thị thông tin thời tiết Hồ Chí Minh ngay trên dashboard. Giúp
+            bạn chuẩn bị trang phục phù hợp cho ngày học.
           </p>
         </div>
         <div class="feature-card">
           <div class="feature-icon">🎨</div>
-          <h3>Giao diện rõ ràng</h3>
+          <h3>Giao diện hiện đại</h3>
           <p>
-            Hiển thị điểm số với giao diện sạch đẹp, dễ đọc. Tất cả thông tin
-            quan trọng đều có sẵn.
+            Dashboard đẹp mắt với dark/light mode, responsive design. Tất cả
+            thông tin quan trọng được hiển thị rõ ràng và dễ đọc.
           </p>
         </div>
         <div class="feature-card">
           <div class="feature-icon">🔒</div>
-          <h3>Bảo mật tuyệt đối</h3>
+          <h3>Bảo mật & Riêng tư</h3>
           <p>
             Hoạt động hoàn toàn trên trình duyệt. Không lưu trữ hay gửi dữ liệu
-            đi bất kỳ đâu.
+            đi bất kỳ đâu. Dữ liệu của bạn luôn an toàn.
           </p>
         </div>
         <div class="feature-card">
           <div class="feature-icon">📈</div>
-          <h3>Theo dõi chi tiết</h3>
+          <h3>Báo cáo & Xuất dữ liệu</h3>
           <p>
-            Xem điểm từng môn, điểm trung bình kỳ và GPA tổng. Quản lý học tập
-            hiệu quả hơn.
+            Tạo báo cáo chi tiết, xuất dữ liệu ra Excel/CSV. Phân tích xu hướng
+            học tập và đưa ra quyết định tốt hơn.
+          </p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">⚡</div>
+          <h3>Tự động hóa</h3>
+          <p>
+            Tự động cập nhật dữ liệu, thông báo nhắc nhở. Tiết kiệm thời gian và
+            không bao giờ bỏ lỡ thông tin quan trọng.
           </p>
         </div>
         <div class="feature-card">
@@ -461,16 +720,58 @@
           <h3>Hoàn toàn miễn phí</h3>
           <p>
             Open source và miễn phí mãi mãi. Được phát triển bởi sinh viên, dành
-            cho sinh viên.
+            cho sinh viên với tình yêu và đam mê.
           </p>
         </div>
-        <div class="feature-card">
-          <div class="feature-icon">⚙️</div>
-          <h3>Cài đặt dễ dàng</h3>
-          <p>
-            Chỉ mất vài phút để cài đặt. Không cần kiến thức kỹ thuật, ai cũng
-            làm được.
-          </p>
+      </div>
+    </section>
+
+    <section class="testimonials-section">
+      <div class="testimonials-container">
+        <div class="section-header">
+          <h2 class="section-title">Sinh viên nói gì về FAP Dashboard?</h2>
+          <p class="section-subtitle">Phản hồi từ những người đã sử dụng</p>
+        </div>
+        <div class="testimonials-grid">
+          <div class="testimonial-card">
+            <p class="testimonial-text">
+              "FAP Dashboard đã thay đổi hoàn toàn cách mình quản lý học tập.
+              Tất cả thông tin đều ở một nơi, không cần mở nhiều tab nữa!"
+            </p>
+            <div class="testimonial-author">
+              <div class="author-avatar">N</div>
+              <div class="author-info">
+                <h4>Yến Nhi</h4>
+                <p>Sinh viên K21 - SE</p>
+              </div>
+            </div>
+          </div>
+          <div class="testimonial-card">
+            <p class="testimonial-text">
+              "Tính năng thời tiết và lịch học thật sự hữu ích. Mình không bao
+              giờ quên mang áo mưa nữa!"
+            </p>
+            <div class="testimonial-author">
+              <div class="author-avatar">T</div>
+              <div class="author-info">
+                <h4>Lê Hoàng Gia Bảo</h4>
+                <p>Sinh viên K20 - AI</p>
+              </div>
+            </div>
+          </div>
+          <div class="testimonial-card">
+            <p class="testimonial-text">
+              "Giao diện đẹp, dễ sử dụng và hoàn toàn miễn phí. Đây là extension
+              tốt nhất cho sinh viên FPT!"
+            </p>
+            <div class="testimonial-author">
+              <div class="author-avatar">L</div>
+              <div class="author-info">
+                <h4>Nguyễn Hoàng Phúc</h4>
+                <p>Sinh viên K19 - IT</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -485,17 +786,21 @@
           <div class="step">
             <div class="step-number">1</div>
             <div class="step-content">
-              <h3>Tải source code</h3>
+              <h3>Tải release</h3>
               <p>
-                Truy cập GitHub repository và tải về source code. Bạn có thể
-                clone bằng Git hoặc download ZIP.
+                Truy cập trang Releases trên GitHub và tải về phiên bản mới
+                nhất. Release đã được build sẵn và sẵn sàng sử dụng.
               </p>
               <div class="code-block">
-                git clone https://github.com/longurara/FAP-GPA-Viewer.git
+                https://github.com/longurara/FAP-GPA-Viewer/releases
               </div>
               <p style="margin-top: 0.75rem">
-                Hoặc nhấn nút "Code" → "Download ZIP" trên GitHub, sau đó giải
+                Nhấn "Assets" → tải file ZIP của phiên bản mới nhất, sau đó giải
                 nén.
+              </p>
+              <p style="margin-top: 0.75rem; color: #eb5757; font-weight: 500">
+                ⚠️ Lưu ý: Tải từ Releases để có phiên bản ổn định nhất, không
+                tải từ Source code!
               </p>
             </div>
           </div>
@@ -528,7 +833,7 @@
             <div class="step-content">
               <h3>Tải extension</h3>
               <p>
-                Nhấn "Load unpacked" và chọn thư mục source code vừa tải.
+                Nhấn "Load unpacked" và chọn thư mục release vừa giải nén.
                 Extension sẽ được cài ngay lập tức.
               </p>
             </div>
@@ -539,7 +844,7 @@
             <div class="step-content">
               <h3>Bắt đầu sử dụng</h3>
               <p>
-                Truy cập fap.fpt.edu.vn và xem điểm như bình thường. Extension
+                Truy cập fap.fpt.edu.vn và đăng nhập như bình thường. Extension
                 sẽ tự động hiển thị GPA của bạn!
               </p>
             </div>
@@ -551,9 +856,12 @@
     <section class="cta-section">
       <div class="cta-box">
         <h2>Sẵn sàng bắt đầu?</h2>
-        <p>Tham gia cùng hàng trăm sinh viên FPT đang sử dụng FAP GPA Viewer</p>
-        <a href="https://github.com/longurara/FAP-GPA-Viewer" class="btn"
-          >Cài đặt ngay</a
+        <p>Tham gia cùng hàng trăm sinh viên FPT đang sử dụng FAP Dashboard</p>
+        <a
+          href="https://github.com/longurara/FAP-GPA-Viewer/releases"
+          target="_blank"
+          class="btn"
+          >Tải ngay</a
         >
       </div>
     </section>
@@ -564,11 +872,89 @@
         <a href="https://github.com/longurara/FAP-GPA-Viewer" target="_blank"
           >GitHub</a
         >
-        • Open Source & Miễn phí
+        • Open Source & Miễn phí • Version
+        <span id="footer-version">4.5.0</span>
       </p>
     </footer>
 
     <script>
+      // ===== AUTO UPDATE VERSION FROM GITHUB API =====
+      async function updateVersionFromGitHub() {
+        try {
+          // Add cache busting to ensure fresh data
+          const response = await fetch(
+            `https://api.github.com/repos/longurara/FAP-GPA-Viewer/releases/latest?t=${Date.now()}`,
+            {
+              headers: {
+                Accept: "application/vnd.github.v3+json",
+                "User-Agent": "FAP-Dashboard-Website",
+              },
+            }
+          );
+
+          if (response.ok) {
+            const data = await response.json();
+            const latestVersion = data.tag_name.replace(/^v/, ""); // Remove 'v' prefix if exists
+
+            // Update version displays with smooth transition
+            const versionElements = document.querySelectorAll(
+              "#version-display, #footer-version"
+            );
+            versionElements.forEach((element) => {
+              if (element && element.textContent !== latestVersion) {
+                // Add fade effect for version update
+                element.style.opacity = "0.5";
+                setTimeout(() => {
+                  element.textContent = latestVersion;
+                  element.style.opacity = "1";
+                }, 200);
+              }
+            });
+
+            // Store version in localStorage for offline fallback
+            localStorage.setItem("fap-dashboard-version", latestVersion);
+            localStorage.setItem(
+              "fap-dashboard-version-timestamp",
+              Date.now().toString()
+            );
+
+            console.log(`✅ Version updated to: ${latestVersion}`);
+          } else {
+            console.warn("⚠️ Could not fetch latest version from GitHub API");
+            loadCachedVersion();
+          }
+        } catch (error) {
+          console.warn("⚠️ Error fetching version from GitHub:", error);
+          loadCachedVersion();
+        }
+      }
+
+      // ===== LOAD CACHED VERSION =====
+      function loadCachedVersion() {
+        const cachedVersion = localStorage.getItem("fap-dashboard-version");
+        const timestamp = localStorage.getItem(
+          "fap-dashboard-version-timestamp"
+        );
+
+        // Use cached version if it's less than 24 hours old
+        if (
+          cachedVersion &&
+          timestamp &&
+          Date.now() - parseInt(timestamp) < 24 * 60 * 60 * 1000
+        ) {
+          const versionElements = document.querySelectorAll(
+            "#version-display, #footer-version"
+          );
+          versionElements.forEach((element) => {
+            if (element) {
+              element.textContent = cachedVersion;
+            }
+          });
+          console.log(`📦 Using cached version: ${cachedVersion}`);
+        }
+      }
+
+      // ===== SMOOTH SCROLLING NAVIGATION =====
       document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
         anchor.addEventListener("click", function (e) {
           e.preventDefault();
@@ -582,6 +968,7 @@
         });
       });
 
+      // ===== INTERSECTION OBSERVER ANIMATIONS =====
       const observerOptions = {
         threshold: 0.1,
         rootMargin: "0px 0px -50px 0px",
@@ -604,6 +991,16 @@
         el.style.transition = "opacity 0.5s ease, transform 0.5s ease";
         observer.observe(el);
       });
+
+      // ===== INITIALIZE VERSION UPDATE =====
+      // Load cached version first for immediate display
+      loadCachedVersion();
+
+      // Then update from GitHub API
+      updateVersionFromGitHub();
+
+      // Optional: Update version every 5 minutes (for long sessions)
+      setInterval(updateVersionFromGitHub, 5 * 60 * 1000);
     </script>
   </body>
 </html>
