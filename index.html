@@ -294,6 +294,106 @@
         font-size: 0.9rem;
       }
 
+      .privacy-section {
+        padding: 6rem 5%;
+        background: #f8f9fa;
+      }
+
+      .privacy-container {
+        max-width: 1000px;
+        margin: 0 auto;
+      }
+
+      .privacy-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        margin-top: 3rem;
+      }
+
+      .privacy-card {
+        background: white;
+        padding: 2.5rem;
+        border-radius: 12px;
+        border: 1px solid rgba(0, 0, 0, 0.06);
+        text-align: center;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .privacy-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #4caf50, #2196f3);
+      }
+
+      .privacy-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      }
+
+      .privacy-icon {
+        font-size: 3rem;
+        margin-bottom: 1.5rem;
+        display: block;
+      }
+
+      .privacy-card h3 {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+        color: #37352f;
+        font-weight: 600;
+      }
+
+      .privacy-card p {
+        color: rgba(55, 53, 47, 0.65);
+        line-height: 1.6;
+        margin-bottom: 1.5rem;
+      }
+
+      .privacy-highlight {
+        background: #e8f5e8;
+        border: 1px solid #4caf50;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-top: 2rem;
+        text-align: left;
+      }
+
+      .privacy-highlight h4 {
+        color: #2e7d32;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .privacy-highlight ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      .privacy-highlight li {
+        color: #2e7d32;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .privacy-highlight li::before {
+        content: "✓";
+        color: #4caf50;
+        font-weight: bold;
+      }
+
       .features {
         padding: 6rem 5%;
         max-width: 1200px;
@@ -516,6 +616,18 @@
         .feature-grid {
           grid-template-columns: 1fr;
         }
+
+        .privacy-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .showcase-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .testimonials-grid {
+          grid-template-columns: 1fr;
+        }
       }
     </style>
   </head>
@@ -524,6 +636,7 @@
       <div class="logo">FAP Dashboard</div>
       <ul class="nav-links">
         <li><a href="#features">Tính năng</a></li>
+        <li><a href="#privacy">Bảo mật</a></li>
         <li><a href="#install">Cài đặt</a></li>
         <li>
           <a href="https://github.com/longurara/FAP-GPA-Viewer" target="_blank"
@@ -772,6 +885,62 @@
               </div>
             </div>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="privacy" class="privacy-section">
+      <div class="privacy-container">
+        <div class="section-header">
+          <h2 class="section-title">Cam kết bảo vệ quyền riêng tư</h2>
+          <p class="section-subtitle">
+            Dữ liệu của bạn được bảo vệ tuyệt đối và không bao giờ rời khỏi
+            thiết bị
+          </p>
+        </div>
+        <div class="privacy-grid">
+          <div class="privacy-card">
+            <span class="privacy-icon">🔒</span>
+            <h3>Không thu thập dữ liệu</h3>
+            <p>
+              FAP Dashboard hoàn toàn không thu thập, lưu trữ hay gửi bất kỳ
+              thông tin cá nhân nào của bạn đến server bên ngoài. Tất cả dữ liệu
+              chỉ tồn tại trên thiết bị của bạn.
+            </p>
+          </div>
+          <div class="privacy-card">
+            <span class="privacy-icon">🏠</span>
+            <h3>Hoạt động local</h3>
+            <p>
+              Extension hoạt động hoàn toàn trên trình duyệt của bạn. Tất cả
+              tính toán GPA, phân tích dữ liệu và lưu trữ cache đều diễn ra
+              locally, không cần kết nối internet.
+            </p>
+          </div>
+          <div class="privacy-card">
+            <span class="privacy-icon">🔐</span>
+            <h3>Mã nguồn mở</h3>
+            <p>
+              Toàn bộ mã nguồn được công khai trên GitHub. Bạn có thể kiểm tra,
+              đánh giá và đóng góp vào quá trình phát triển. Không có gì ẩn
+              giấu.
+            </p>
+          </div>
+        </div>
+
+        <div class="privacy-highlight">
+          <h4>🛡️ Cam kết bảo mật của chúng tôi</h4>
+          <ul>
+            <li>Không thu thập thông tin cá nhân (tên, email, mật khẩu)</li>
+            <li>Không gửi dữ liệu học tập đến server bên ngoài</li>
+            <li>Không sử dụng tracking cookies hay analytics</li>
+            <li>Không chia sẻ dữ liệu với bên thứ ba</li>
+            <li>Không lưu trữ dữ liệu trên cloud hay server</li>
+            <li>Mã nguồn hoàn toàn minh bạch và có thể kiểm tra</li>
+            <li>
+              Tuân thủ nghiêm ngặt các nguyên tắc bảo mật của Chrome Extension
+            </li>
+          </ul>
         </div>
       </div>
     </section>
