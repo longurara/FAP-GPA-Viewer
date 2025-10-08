@@ -21,8 +21,10 @@
   <!-- Privacy -->
   <img src="https://img.shields.io/badge/Privacy-Local%20Only-green.svg" alt="Privacy: Local Only">
   <!-- Status -->
-  <a href="https://chromewebstore.google.com/detail/fpt-academic-portal-dashb/pkfcnophcekokdfobdkbliaainejbdhn?authuser=1&hl=vi">
-    <img src="https://img.shields.io/badge/Status-official-lightgrey.svg">
+<a href="https://chromewebstore.google.com/detail/fpt-academic-portal-dashb/pkfcnophcekokdfobdkbliaainejbdhn?authuser=1&hl=vi" target="_blank">
+  <img src="https://img.shields.io/badge/Status-official-lightgrey.svg" alt="Official Status Badge">
+</a>
+
   <!-- Stars -->
   <a href="https://github.com/longurara/FAP-GPA-Viewer/stargazers">
     <img src="https://img.shields.io/github/stars/longurara/FAP-GPA-Viewer?style=social" alt="GitHub Stars">
