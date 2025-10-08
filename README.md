@@ -10,26 +10,33 @@
 </p>
 
 <p align="center">
+
   <!-- Version -->
   <img src="https://img.shields.io/badge/version-4.5.0-blue.svg" alt="Version: 4.5.0">
+
   <!-- License -->
   <a href="LICENSE.md">
     <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License: MIT">
   </a>
+
   <!-- Chrome -->
   <img src="https://img.shields.io/badge/Chrome-Extension-orange.svg" alt="Chrome Extension">
+
   <!-- Privacy -->
   <img src="https://img.shields.io/badge/Privacy-Local%20Only-green.svg" alt="Privacy: Local Only">
-  <!-- Status -->
-[![Status](https://img.shields.io/badge/Status-official-lightgrey.svg)](https://chromewebstore.google.com/detail/fpt-academic-portal-dashb/pkfcnophcekokdfobdkbliaainejbdhn?authuser=1&hl=vi)
 
-</a>
+  <!-- Status -->
+  <a href="https://chromewebstore.google.com/detail/fpt-academic-portal-dashb/pkfcnophcekokdfobdkbliaainejbdhn?hl=vi" target="_blank">
+    <img src="https://img.shields.io/badge/Status-Official-lightgrey.svg" alt="Official Status">
+  </a>
 
   <!-- Stars -->
   <a href="https://github.com/longurara/FAP-GPA-Viewer/stargazers">
     <img src="https://img.shields.io/github/stars/longurara/FAP-GPA-Viewer?style=social" alt="GitHub Stars">
   </a>
+
 </p>
+
 
 ---
 
