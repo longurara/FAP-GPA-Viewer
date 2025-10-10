@@ -854,7 +854,7 @@
             <div class="testimonial-author">
               <div class="author-avatar">N</div>
               <div class="author-info">
-                <h4>Yến Nhi</h4>
+                <h4>Nguyễn Minh Trường</h4>
                 <p>Sinh viên K21 - SE</p>
               </div>
             </div>
@@ -949,23 +949,15 @@
       <div class="install-container">
         <div class="section-header">
           <h2 class="section-title">Hướng dẫn cài đặt</h2>
-          <p class="section-subtitle">5 bước đơn giản để bắt đầu</p>
         </div>
         <div class="install-steps">
           <div class="step">
             <div class="step-number">1</div>
             <div class="step-content">
-              <h3>Tải release</h3>
+              <h3></h3>
               <p>
-                Truy cập trang Releases trên GitHub và tải về phiên bản mới
-                nhất. Release đã được build sẵn và sẵn sàng sử dụng.
-              </p>
-              <div class="code-block">
-                https://github.com/longurara/FAP-GPA-Viewer/releases
-              </div>
-              <p style="margin-top: 0.75rem">
-                Nhấn "Assets" → tải file ZIP của phiên bản mới nhất, sau đó giải
-                nén.
+                Truy cập trang Chrome Web Store và tìm FAP Dashboard, sau đó
+                nhấp cài đặt
               </p>
               <p style="margin-top: 0.75rem; color: #eb5757; font-weight: 500">
                 ⚠️ Lưu ý: Tải từ Chrome Store để có phiên bản ổn định nhất,
@@ -988,51 +980,6 @@
                 style="height: 40px; margin-right: 10px"
               />
             </a>
-          </div>
-
-          <div class="step">
-            <div class="step-number">2</div>
-            <div class="step-content">
-              <h3>Mở trang Extensions</h3>
-              <p>Mở Chrome và truy cập trang quản lý extensions:</p>
-              <div class="code-block">chrome://extensions/</div>
-              <p style="margin-top: 0.75rem">
-                Hoặc vào Menu (⋮) → Extensions → Manage Extensions
-              </p>
-            </div>
-          </div>
-
-          <div class="step">
-            <div class="step-number">3</div>
-            <div class="step-content">
-              <h3>Bật Developer mode</h3>
-              <p>
-                Ở góc trên bên phải, bật công tắc "Developer mode". Bạn sẽ thấy
-                các nút mới xuất hiện.
-              </p>
-            </div>
-          </div>
-
-          <div class="step">
-            <div class="step-number">4</div>
-            <div class="step-content">
-              <h3>Tải extension</h3>
-              <p>
-                Nhấn "Load unpacked" và chọn thư mục release vừa giải nén.
-                Extension sẽ được cài ngay lập tức.
-              </p>
-            </div>
-          </div>
-
-          <div class="step">
-            <div class="step-number">5</div>
-            <div class="step-content">
-              <h3>Bắt đầu sử dụng</h3>
-              <p>
-                Truy cập fap.fpt.edu.vn và đăng nhập như bình thường. Extension
-                sẽ tự động hiển thị GPA của bạn!
-              </p>
-            </div>
           </div>
         </div>
       </div>
@@ -1184,7 +1131,6 @@
       // Then update from GitHub API
       updateVersionFromGitHub();
 
-      // Optional: Update version every 5 minutes (for long sessions)
       setInterval(updateVersionFromGitHub, 5 * 60 * 1000);
     </script>
   </body>
