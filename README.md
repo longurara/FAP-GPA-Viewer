@@ -22,7 +22,7 @@
   </a>
 
   <!-- Chrome (clickable) -->
-  <a href="https://chromewebstore.google.com/detail/fpt-academic-portal-dashb/pkfcnophcekokdfobdkbliaainejbdhn?hl=vi" target="_blank">
+  <a href="https://chromewebstore.google.com/detail/cngofiaoddikgpdlibjgkjggiihjaoln?utm_source=item-share-cb" target="_blank">
     <img src="https://img.shields.io/badge/Chrome-Extension-orange.svg" alt="Chrome Extension">
   </a>
 
