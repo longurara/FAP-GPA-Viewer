@@ -200,8 +200,20 @@ async function pollOnce() {
     delayMax: 30,
     pollEvery: 30,
   });
-  if (!within(cfg.activeFrom, cfg.activeTo)) return;
+
+  // Always poll, but with different intervals based on time
+  const now = new Date();
+  const currentHour = now.getHours();
+  const isActiveTime = within(cfg.activeFrom, cfg.activeTo);
+
+  // If outside active hours, poll less frequently (every 2 hours)
+  if (!isActiveTime) {
+    console.log("🕐 Outside active hours, skipping detailed polling");
+    return;
+  }
+
   try {
+    console.log("🔄 Background polling schedule data...");
     const html = await fetchHtml(SCHEDULE_OF_WEEK);
     const fp = extractFingerprint(html);
     const prevFp = await STORAGE.get("att_fp", null);
@@ -218,8 +230,13 @@ async function pollOnce() {
         newlyAttended.push(e.course);
       }
     }
-    // persist latest snapshot
-    await STORAGE.set({ att_entries: newEntries, att_fp: fp });
+
+    // Always update cache, even if no changes detected
+    await STORAGE.set({
+      att_entries: newEntries,
+      att_fp: fp,
+      last_poll_time: Date.now(),
+    });
 
     if (prevFp && prevFp !== fp && newlyAttended.length) {
       const delay = Math.floor(
@@ -239,26 +256,55 @@ async function pollOnce() {
         pending_msgs: pending,
         last_reason: `Attendance changed (detected ${courses.length})`,
       });
-      // also update popup cache silently
-      await STORAGE.set({
-        cache_attendance: {
-          ts: Date.now(),
-          data: { entries: newEntries, todayRows: [] },
-        },
-      });
-    } else if (!prevFp) {
-      await STORAGE.set({ att_fp: fp });
     }
+
+    // Always update popup cache with latest data
+    await STORAGE.set({
+      cache_attendance: {
+        ts: Date.now(),
+        data: { entries: newEntries, todayRows: [] },
+      },
+      cache_attendance_flat: newEntries,
+    });
+
+    console.log(
+      `✅ Background polling completed: ${newEntries.length} entries`
+    );
   } catch (e) {
-    /* ignore */
+    console.error("❌ Background polling failed:", e);
+
+    // If it's a login error, don't spam retries
+    if (e.message === "LOGIN_REQUIRED") {
+      console.log("🔐 Login required, will retry later");
+      return;
+    }
+
+    // For other errors, schedule a retry
+    const retryDelay = 5 * 60 * 1000; // 5 minutes
+    setTimeout(() => {
+      console.log("🔄 Retrying background poll after error...");
+      pollOnce();
+    }, retryDelay);
   }
 }
 
 async function schedulePollAlarm() {
   const cfg = await STORAGE.get("cfg", { pollEvery: 30 });
-  chrome.alarms.create("att_poll", {
-    periodInMinutes: Math.max(5, cfg.pollEvery),
+
+  // Create multiple alarms for different polling frequencies
+  chrome.alarms.create("att_poll_active", {
+    periodInMinutes: Math.max(5, cfg.pollEvery), // Active hours: every 5-30 minutes
   });
+
+  chrome.alarms.create("att_poll_inactive", {
+    periodInMinutes: 120, // Inactive hours: every 2 hours
+  });
+
+  console.log(
+    "⏰ Scheduled polling alarms: active every",
+    Math.max(5, cfg.pollEvery),
+    "min, inactive every 120 min"
+  );
 }
 
 chrome.runtime.onInstalled.addListener(async () => {
@@ -536,7 +582,11 @@ chrome.alarms.create("SCHEDULE_REMINDERS", { periodInMinutes: 120 });
 
 chrome.alarms.onAlarm.addListener(async (alarm) => {
   // Existing alarm handlers
-  if (alarm.name === "att_poll") {
+  if (
+    alarm.name === "att_poll" ||
+    alarm.name === "att_poll_active" ||
+    alarm.name === "att_poll_inactive"
+  ) {
     await pollOnce();
   } else if (alarm.name.startsWith("att_notify_")) {
     const pending = await STORAGE.get("pending_msgs", {});

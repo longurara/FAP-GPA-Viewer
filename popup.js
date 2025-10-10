@@ -2435,47 +2435,122 @@ window.handleRefreshWithLoading = handleRefreshWithLoading;
 
 // ===== TODAY'S SCHEDULE WITH COUNTDOWN =====
 async function loadTodaySchedule() {
-  const cache = await cacheGet("cache_attendance", 10 * 60 * 1000);
-  const entries = cache?.entries || [];
+  try {
+    console.log("🔄 Loading today's schedule...");
 
-  const today = new Date();
-  const dd = String(today.getDate()).padStart(2, "0");
-  const mm = String(today.getMonth() + 1).padStart(2, "0");
-  const todayDate = `${dd}/${mm}`;
+    // Check if widget container exists, retry if not
+    const container = document.getElementById("todayClasses");
+    if (!container) {
+      console.warn(
+        "⚠️ Today's schedule container not found, retrying in 1s..."
+      );
+      setTimeout(loadTodaySchedule, 1000);
+      return;
+    }
 
-  const todayClasses = entries
-    .filter((e) => e.date === todayDate)
-    .sort((a, b) => {
+    // Try multiple cache sources with better fallback
+    let entries = [];
+
+    // Try main cache first (increased TTL to 30 minutes)
+    const cache = await cacheGet("cache_attendance", 30 * 60 * 1000);
+    if (cache?.entries && cache.entries.length > 0) {
+      entries = cache.entries;
+      console.log(`📦 Using main cache: ${entries.length} entries`);
+    } else {
+      // Fallback to flat cache
+      entries = await STORAGE.get("cache_attendance_flat", []);
+      console.log(`📦 Using flat cache: ${entries.length} entries`);
+
+      // If still empty, try to refresh
+      if (entries.length === 0) {
+        console.log("🔄 No cache data, attempting refresh...");
+        try {
+          await refreshAttendance();
+          // Retry with fresh data
+          const newCache = await cacheGet("cache_attendance", 30 * 60 * 1000);
+          entries = newCache?.entries || [];
+          console.log(`🔄 After refresh: ${entries.length} entries`);
+        } catch (refreshError) {
+          console.error("❌ Refresh failed:", refreshError);
+          // Show error message instead of silent fail
+          container.innerHTML =
+            '<div class="no-class">⚠️ Không thể tải lịch học. Vui lòng thử lại.</div>';
+          return;
+        }
+      }
+    }
+
+    // Improved date parsing with multiple format support
+    const todayClasses = findTodayClasses(entries);
+    console.log(`📅 Found ${todayClasses.length} classes for today`);
+
+    if (todayClasses.length === 0) {
+      container.innerHTML =
+        '<div class="no-class">🎉 Hôm nay không có lịch học!</div>';
+      return;
+    }
+
+    // Sort classes by slot
+    const sortedClasses = todayClasses.sort((a, b) => {
       const slotA = parseInt((a.slot || "").replace(/\D/g, "") || "999");
       const slotB = parseInt((b.slot || "").replace(/\D/g, "") || "999");
       return slotA - slotB;
     });
 
-  const container = document.getElementById("todayClasses");
-  if (!container) return;
+    container.innerHTML = "";
+    sortedClasses.forEach((cls) => {
+      const item = document.createElement("div");
+      item.className = "class-item";
 
-  if (todayClasses.length === 0) {
-    container.innerHTML =
-      '<div class="no-class">🎉 Hôm nay không có lịch học!</div>';
-    return;
+      const countdown = getTimeUntilClass(cls.time);
+
+      item.innerHTML = `
+        <div class="class-info">
+          <div class="class-time">${cls.time || cls.slot}</div>
+          <div class="class-course">${cls.course} - ${cls.room || "N/A"}</div>
+        </div>
+        <div class="class-countdown">${countdown}</div>
+      `;
+      container.appendChild(item);
+    });
+
+    console.log("✅ Today's schedule loaded successfully");
+  } catch (error) {
+    console.error("❌ Error loading today's schedule:", error);
+    const container = document.getElementById("todayClasses");
+    if (container) {
+      container.innerHTML =
+        '<div class="no-class">⚠️ Lỗi tải lịch học. Vui lòng thử lại.</div>';
+    }
+  }
+}
+
+// Helper function to find today's classes with multiple date format support
+function findTodayClasses(entries) {
+  const today = new Date();
+  const dd = String(today.getDate()).padStart(2, "0");
+  const mm = String(today.getMonth() + 1).padStart(2, "0");
+
+  // Try different date formats
+  const formats = [
+    `${dd}/${mm}`, // 15/12
+    `${today.getDate()}/${mm}`, // 15/12 (no padding)
+    `${dd}/${today.getMonth() + 1}`, // 15/12 (no padding)
+    `${today.getDate()}/${today.getMonth() + 1}`, // 15/12 (no padding)
+  ];
+
+  console.log("🔍 Searching for today's classes with formats:", formats);
+
+  for (const format of formats) {
+    const matches = entries.filter((e) => e.date === format);
+    if (matches.length > 0) {
+      console.log(`✅ Found ${matches.length} classes with format: ${format}`);
+      return matches;
+    }
   }
 
-  container.innerHTML = "";
-  todayClasses.forEach((cls) => {
-    const item = document.createElement("div");
-    item.className = "class-item";
-
-    const countdown = getTimeUntilClass(cls.time);
-
-    item.innerHTML = `
-      <div class="class-info">
-        <div class="class-time">${cls.time || cls.slot}</div>
-        <div class="class-course">${cls.course} - ${cls.room || "N/A"}</div>
-      </div>
-      <div class="class-countdown">${countdown}</div>
-    `;
-    container.appendChild(item);
-  });
+  console.log("❌ No classes found for any date format");
+  return [];
 }
 
 function getTimeUntilClass(timeStr) {
@@ -5901,6 +5976,41 @@ class WidgetSystem {
         });
       }
     }
+
+    // Ensure today's schedule widget is visible and loaded
+    await this.ensureTodayScheduleWidget();
+  }
+
+  async ensureTodayScheduleWidget() {
+    const widget = document.querySelector('[data-widget="today-schedule"]');
+    if (!widget) {
+      console.warn("⚠️ Today's schedule widget not found in DOM");
+      return;
+    }
+
+    if (widget.style.display === "none") {
+      console.log(
+        "🔄 Today's schedule widget is hidden, attempting to restore..."
+      );
+
+      // Remove from hidden list
+      const hiddenWidgets = await STORAGE.get("hidden_widgets", []);
+      const updatedHidden = hiddenWidgets.filter(
+        (id) => id !== "today-schedule"
+      );
+      await STORAGE.set({ hidden_widgets: updatedHidden });
+
+      // Show widget
+      widget.style.display = "block";
+      console.log("✅ Today's schedule widget restored");
+    }
+
+    // Ensure widget content is loaded
+    const container = document.getElementById("todayClasses");
+    if (container && container.innerHTML.includes("Đang tải...")) {
+      console.log("🔄 Loading today's schedule content...");
+      await loadTodaySchedule();
+    }
   }
 
   async saveWidgetOrder() {
@@ -7649,6 +7759,9 @@ function updateWeatherDisplay(data) {
 
 // ===== INITIALIZE ALL NEW FEATURES =====
 (async function initializeNewFeatures() {
+  // Ensure today's schedule widget is properly loaded first
+  await ensureTodayScheduleWidget();
+
   await loadTodaySchedule();
   await loadWeather();
   await initGPACalculator();
@@ -7666,7 +7779,7 @@ function updateWeatherDisplay(data) {
     );
   }
 
-  const attCache = await cacheGet("cache_attendance", 10 * 60 * 1000);
+  const attCache = await cacheGet("cache_attendance", 30 * 60 * 1000); // Increased TTL
   if (attCache?.entries && attCache.entries.length > 0) {
     const stats = summarizeAttendance(attCache.entries);
     setValue("#attRateQuick", stats.rate + "%");
@@ -7674,6 +7787,41 @@ function updateWeatherDisplay(data) {
     setValue("#attRateQuick", "--");
   }
 })();
+
+// Global function to ensure today's schedule widget is working
+async function ensureTodayScheduleWidget() {
+  const widget = document.querySelector('[data-widget="today-schedule"]');
+  if (!widget) {
+    console.warn("⚠️ Today's schedule widget not found in DOM");
+    return;
+  }
+
+  if (widget.style.display === "none") {
+    console.log(
+      "🔄 Today's schedule widget is hidden, attempting to restore..."
+    );
+
+    // Remove from hidden list
+    const hiddenWidgets = await STORAGE.get("hidden_widgets", []);
+    const updatedHidden = hiddenWidgets.filter((id) => id !== "today-schedule");
+    await STORAGE.set({ hidden_widgets: updatedHidden });
+
+    // Show widget
+    widget.style.display = "block";
+    console.log("✅ Today's schedule widget restored");
+  }
+
+  // Ensure widget content is loaded
+  const container = document.getElementById("todayClasses");
+  if (
+    container &&
+    (container.innerHTML.includes("Đang tải...") ||
+      container.innerHTML.trim() === "")
+  ) {
+    console.log("🔄 Loading today's schedule content...");
+    await loadTodaySchedule();
+  }
+}
 
 // ===== TEST FUNCTIONS FOR STREAK CALCULATION =====
 // Test function to verify streak calculation logic
