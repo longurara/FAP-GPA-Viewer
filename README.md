@@ -298,24 +298,34 @@ Nếu bạn thấy tiện ích này hữu ích, hãy ⭐ dự án trên GitHub n
 </p>
 
 <p align="center">
+
   <!-- Version -->
-  <img src="https://img.shields.io/badge/version-4.1.0-blue.svg" alt="Version: 4.1.0">
+  <img src="https://img.shields.io/badge/version-4.5.0-blue.svg" alt="Version: 4.5.0">
+
   <!-- License -->
   <a href="LICENSE.md">
     <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License: MIT">
   </a>
-  <!-- Chrome -->
-  <img src="https://img.shields.io/badge/Chrome-Extension-orange.svg" alt="Chrome Extension">
+
+  <!-- Chrome (clickable) -->
+  <a href="https://chromewebstore.google.com/detail/cngofiaoddikgpdlibjgkjggiihjaoln?utm_source=item-share-cb" target="_blank">
+    <img src="https://img.shields.io/badge/Chrome-Extension-orange.svg" alt="Chrome Extension">
+  </a>
+
   <!-- Privacy -->
   <img src="https://img.shields.io/badge/Privacy-Local%20Only-green.svg" alt="Privacy: Local Only">
+
   <!-- Status -->
-  <img src="https://img.shields.io/badge/Status-Unofficial-lightgrey.svg" alt="Unofficial">
+  <a href="https://chromewebstore.google.com/detail/fpt-academic-portal-dashb/pkfcnophcekokdfobdkbliaainejbdhn?hl=vi" target="_blank">
+    <img src="https://img.shields.io/badge/Status-Official-lightgrey.svg" alt="Official Status">
+  </a>
+
   <!-- Stars -->
   <a href="https://github.com/longurara/FAP-GPA-Viewer/stargazers">
     <img src="https://img.shields.io/github/stars/longurara/FAP-GPA-Viewer?style=social" alt="GitHub Stars">
   </a>
-</p>
 
+</p>
 ---
 
 <p align="center">
