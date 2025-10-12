@@ -30,7 +30,7 @@
   <img src="https://img.shields.io/badge/Privacy-Local%20Only-green.svg" alt="Privacy: Local Only">
 
   <!-- Status -->
-  <a href="https://chromewebstore.google.com/detail/fpt-academic-portal-dashb/pkfcnophcekokdfobdkbliaainejbdhn?hl=vi" target="_blank">
+  <a href="https://chromewebstore.google.com/detail/cngofiaoddikgpdlibjgkjggiihjaoln?utm_source=item-share-cb" target="_blank">
     <img src="https://img.shields.io/badge/Status-Official-lightgrey.svg" alt="Official Status">
   </a>
 
@@ -316,7 +316,7 @@ Nếu bạn thấy tiện ích này hữu ích, hãy ⭐ dự án trên GitHub n
   <img src="https://img.shields.io/badge/Privacy-Local%20Only-green.svg" alt="Privacy: Local Only">
 
   <!-- Status -->
-  <a href="https://chromewebstore.google.com/detail/fpt-academic-portal-dashb/pkfcnophcekokdfobdkbliaainejbdhn?hl=vi" target="_blank">
+  <a href="https://chromewebstore.google.com/detail/cngofiaoddikgpdlibjgkjggiihjaoln?utm_source=item-share-cb" target="_blank">
     <img src="https://img.shields.io/badge/Status-Official-lightgrey.svg" alt="Official Status">
   </a>
 
