@@ -7,7 +7,7 @@
 
 ## 1. Overview
 
-FAP-GPA-Viewer is an **unofficial, open-source browser extension** created by [Lê Hoàng Long (longurara)](https://github.com/longurara) to enhance the user experience for FPT University students.
+FAP-GPA-Viewer is an **unofficial, open-source browser extension** created by [longurara](https://github.com/longurara) to enhance the user experience for FPT University students.
 This tool is **not affiliated with, endorsed by, or maintained by FPT University or fap.fpt.edu.vn**.
 
 By installing or using this extension, you agree to the following terms.
