@@ -198,7 +198,7 @@ FAP-GPA-Viewer/
 | `storage` | Save preferences and cached data locally |
 | `notifications` | Class reminders and exam alerts |
 | `alarms` | Background polling and timer functionality |
-| `scripting` | Execute scripts on FAP pages for data fetching |
+| `scripting` | Inject fetch requests into FAP tabs to retrieve data with user's session cookies (bypasses CORS) |
 
 ### Cache TTL
 

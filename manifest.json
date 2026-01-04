@@ -23,10 +23,7 @@
   ],
   "host_permissions": [
     "https://fap.fpt.edu.vn/*",
-    "https://api.github.com/*",
-    "https://github.com/*",
-    "https://lms-hcm.fpt.edu.vn/*",
-    "https://it-hcm.fpt.edu.vn/*"
+    "https://api.github.com/*"
   ],
   "web_accessible_resources": [
     {
@@ -40,9 +37,7 @@
         "scripts/auto-calendar.js"
       ],
       "matches": [
-        "https://fap.fpt.edu.vn/*",
-        "https://lms-hcm.fpt.edu.vn/*",
-        "https://it-hcm.fpt.edu.vn/*"
+        "https://fap.fpt.edu.vn/*"
       ]
     }
   ]
