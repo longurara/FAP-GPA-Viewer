@@ -1,293 +1,195 @@
 ﻿// ====== FAP Dashboard (popup) with caching + ScheduleOfWeek attendance ======
-const STORAGE = {
-  get: (k, d) =>
-    new Promise((r) => chrome.storage.local.get({ [k]: d }, (v) => r(v[k]))),
-  set: (obj) => new Promise((r) => chrome.storage.local.set(obj, r)),
-  remove: (k) => new Promise((r) => chrome.storage.local.remove(k, r)),
-};
+// NOTE: Core functions are now provided by modules loaded before this script:
+// - utils.js: $, setValue, toNum, NORM, debounce
+// - storage.js: STORAGE, cacheGet, cacheSet
+// - api.js: DEFAULT_URLS, fetchViaContentScript, looksLikeLoginPage, fetchHTML
 
-const DEFAULT_URLS = {
-  transcript: "https://fap.fpt.edu.vn/Grade/StudentTranscript.aspx",
-  scheduleOfWeek: "https://fap.fpt.edu.vn/Report/ScheduleOfWeek.aspx",
-  examSchedule: "https://fap.fpt.edu.vn/Exam/ScheduleExams.aspx",
-};
-
-function $(sel) {
-  return document.querySelector(sel);
+// Fallback definitions if modules not loaded (backward compatibility)
+if (!window.STORAGE) {
+  window.STORAGE = {
+    get: (k, d) => new Promise((r) => chrome.storage.local.get({ [k]: d }, (v) => r(v[k]))),
+    set: (obj) => new Promise((r) => chrome.storage.local.set(obj, r)),
+    remove: (k) => new Promise((r) => chrome.storage.local.remove(k, r)),
+  };
 }
-function setValue(selector, value) {
+const STORAGE = window.STORAGE;
+
+if (!window.DEFAULT_URLS) {
+  window.DEFAULT_URLS = {
+    transcript: "https://fap.fpt.edu.vn/Grade/StudentTranscript.aspx",
+    scheduleOfWeek: "https://fap.fpt.edu.vn/Report/ScheduleOfWeek.aspx",
+    examSchedule: "https://fap.fpt.edu.vn/Exam/ScheduleExams.aspx",
+  };
+}
+const DEFAULT_URLS = window.DEFAULT_URLS;
+
+// Utility function fallbacks
+if (!window.$) window.$ = (sel) => document.querySelector(sel);
+if (!window.setValue) window.setValue = (selector, value) => {
   const el = document.querySelector(selector);
   if (el) el.textContent = value;
-}
-function toNum(txt) {
+};
+if (!window.toNum) window.toNum = (txt) => {
   const m = (txt || "").match(/-?\d+(?:[.,]\d+)?/);
   return m ? parseFloat(m[0].replace(",", ".")) : NaN;
-}
-function NORM(s) {
-  return (s || "").replace(/\s+/g, " ").trim().toUpperCase();
-}
+};
+if (!window.NORM) window.NORM = (s) => (s || "").replace(/\s+/g, " ").trim().toUpperCase();
 
-// ===== Update checker (GitHub Releases) =====
-const REPO = "longurara/FAP-GPA-Viewer";
-const LATEST_API = `https://api.github.com/repos/${REPO}/releases/latest`;
-const RELEASE_PAGE =
-  "https://github.com/longurara/FAP-GPA-Viewer/releases/latest";
+const $ = window.$;
+const setValue = window.setValue;
+const toNum = window.toNum;
+const NORM = window.NORM;
 
-function semverParts(v) {
-  const m = String(v || "")
-    .trim()
-    .replace(/^v/i, "")
-    .match(/^(\d+)\.(\d+)\.(\d+)(.*)?$/);
-  if (!m) return [0, 0, 0, ""];
-  return [parseInt(m[1]), parseInt(m[2]), parseInt(m[3]), m[4] || ""];
-}
-function semverCmp(a, b) {
-  const A = semverParts(a),
-    B = semverParts(b);
-  for (let i = 0; i < 3; i++) {
-    if ((A[i] || 0) !== (B[i] || 0)) return (A[i] || 0) - (B[i] || 0);
-  }
-  return 0;
-}
-
-async function checkUpdate(force = false) {
-  const CACHE_KEY = "__gh_latest_release__";
-  const now = Date.now();
-  const cached = await STORAGE.get(CACHE_KEY, null);
-  let latest = null;
-  if (!force && cached && now - cached.ts < 6 * 60 * 60 * 1000) {
-    latest = cached.data;
-  } else {
-    const res = await fetch(LATEST_API, {
-      headers: { Accept: "application/vnd.github+json" },
-    });
-    if (!res.ok) throw new Error("GitHub API error " + res.status);
-    const j = await res.json();
-    latest = {
-      tag: j.tag_name || j.name || "",
-      url: j.html_url || RELEASE_PAGE,
-      published_at: j.published_at || "",
-    };
-    await STORAGE.set({ [CACHE_KEY]: { ts: now, data: latest } });
-  }
-
-  const curr = chrome.runtime.getManifest().version;
-  const latestClean = (latest.tag || "").replace(/^v/i, "");
-  const cmp = semverCmp(latestClean, curr);
-
-  renderUpdateButton(cmp, curr, latestClean);
-}
-
-function renderUpdateButton(cmp, curr, latestClean) {
-  const badge = document.getElementById("verBadge");
-  const btn = document.getElementById("btnCheckUpdate");
-
-  if (badge) {
-    badge.textContent = `v${curr}`;
-  }
-
-  if (cmp > 0) {
-    if (badge) {
-      badge.innerHTML = `v${curr} ? <strong>v${latestClean}</strong>`;
-      badge.style.color = "var(--accent)";
+// API function fallbacks
+if (!window.waitForTabComplete) {
+  window.waitForTabComplete = async function (tabId, timeoutMs = 8000) {
+    const start = Date.now();
+    while (Date.now() - start < timeoutMs) {
+      const tab = await chrome.tabs.get(tabId);
+      if (tab.status === "complete") return true;
+      await new Promise((r) => setTimeout(r, 150));
     }
-    if (btn) {
-      btn.textContent = "C?p nh?t";
-      btn.addEventListener("click", () => {
-        // Show update modal instead of redirecting to GitHub
-        UpdateModal.show();
-      });
-      btn.classList.add("primary");
+    return false;
+  };
+}
+
+if (!window.fetchViaContentScript) {
+  window.fetchViaContentScript = async function (url) {
+    const parsedUrl = new URL(url);
+    const targetOrigin = parsedUrl.origin;
+    const tabs = await chrome.tabs.query({ url: `${targetOrigin}/*`, status: "complete" });
+    let tabId, createdTab = false;
+
+    if (tabs && tabs.length > 0) {
+      tabId = tabs[0].id;
+    } else {
+      const tab = await chrome.tabs.create({ url: targetOrigin, active: false });
+      tabId = tab.id;
+      createdTab = true;
+      await window.waitForTabComplete(tabId);
     }
-  } else {
-    if (btn) {
-      btn.textContent = "Check update";
-      btn.addEventListener("click", async () => {
+
+    const [result] = await chrome.scripting.executeScript({
+      target: { tabId },
+      args: [url],
+      func: async (targetUrl) => {
         try {
-          await checkUpdate(true);
-          // Show iPadOS style update modal
-          UpdateModal.show();
-        } catch (e) {
-          Modal.error("Kh�ng ki?m tra du?c c?p nh?t" + e.message);
+          const res = await fetch(targetUrl, { credentials: "include" });
+          const text = await res.text();
+          return { status: res.status, redirected: res.redirected, url: res.url, text };
+        } catch (err) {
+          return { error: err?.message || String(err) };
         }
-      });
-    }
-  }
+      },
+    });
+
+    if (createdTab) await chrome.tabs.remove(tabId);
+    return result?.result || null;
+  };
 }
 
-async function waitForTabComplete(tabId, timeoutMs = 8000) {
-  const start = Date.now();
-  while (Date.now() - start < timeoutMs) {
-    const tab = await chrome.tabs.get(tabId);
-    if (tab.status === "complete") return true;
-    await new Promise((r) => setTimeout(r, 150));
-  }
-  return false;
+if (!window.looksLikeLoginPage) {
+  window.looksLikeLoginPage = function (doc) {
+    if (!doc) return true;
+    const title = (doc.querySelector("title")?.textContent || "").toLowerCase();
+    if (title.includes("login") || title.includes("dang nh?p")) return true;
+    const bodyText = (doc.body?.textContent || "").slice(0, 500).toLowerCase();
+    if (bodyText.includes("login") || bodyText.includes("dang nh?p")) return true;
+    return false;
+  };
 }
 
-async function fetchViaContentScript(url) {
-  const parsedUrl = new URL(url);
-  const targetOrigin = parsedUrl.origin;
-
-  // Prefer an existing FAP tab to reuse logged-in session
-  const tabs = await chrome.tabs.query({ url: `${targetOrigin}/*`, status: "complete" });
-  let tabId;
-  let createdTab = false;
-
-  if (tabs && tabs.length > 0) {
-    tabId = tabs[0].id;
-  } else {
-    const tab = await chrome.tabs.create({ url: targetOrigin, active: false });
-    tabId = tab.id;
-    createdTab = true;
-    await waitForTabComplete(tabId);
-  }
-
-  const [result] = await chrome.scripting.executeScript({
-    target: { tabId },
-    args: [url],
-    func: async (targetUrl) => {
-      try {
-        const res = await fetch(targetUrl, { credentials: "include" });
-        const text = await res.text();
-        return { status: res.status, redirected: res.redirected, url: res.url, text };
-      } catch (err) {
-        return { error: err?.message || String(err) };
+if (!window.fetchHTML) {
+  window.fetchHTML = async function (url) {
+    try {
+      const csResult = await window.fetchViaContentScript(url);
+      if (csResult?.text) {
+        const doc = new DOMParser().parseFromString(csResult.text, "text/html");
+        if (!window.looksLikeLoginPage(doc)) return doc;
       }
-    },
-  });
 
-  if (createdTab) {
-    await chrome.tabs.remove(tabId);
-  }
-
-  if (!result || !result.result) return null;
-  return result.result;
-}
-
-function looksLikeLoginPage(doc) {
-  if (!doc) return true;
-  const title = (doc.querySelector("title")?.textContent || "").toLowerCase();
-  if (title.includes("login") || title.includes("dang nh?p")) return true;
-  const bodyText = (doc.body?.textContent || "").slice(0, 500).toLowerCase();
-  if (bodyText.includes("login") || bodyText.includes("dang nh?p")) return true;
-  return false;
-}
-
-async function fetchHTML(url) {
-  try {
-    // Prefer content-script fetch first to stay in first-party context (avoid 403)
-    const csResult = await fetchViaContentScript(url);
-    if (csResult?.text) {
-      const doc = new DOMParser().parseFromString(csResult.text, "text/html");
-      if (!looksLikeLoginPage(doc)) {
-        return doc;
+      const res = await fetch(url, { credentials: "include", redirect: "follow" });
+      if (res.redirected && /\/Default\.aspx$/i.test(new URL(res.url).pathname)) {
+        await STORAGE.set({ show_login_banner: true });
+        return null;
       }
-    }
-
-    // Fallback to direct fetch
-    const res = await fetch(url, { credentials: "include", redirect: "follow" });
-    if (res.redirected && /\/Default\.aspx$/i.test(new URL(res.url).pathname)) {
+      if (res.status === 401 || res.status === 403) {
+        await STORAGE.set({ show_login_banner: true });
+        return null;
+      }
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const html = await res.text();
+      const doc = new DOMParser().parseFromString(html, "text/html");
+      if (window.looksLikeLoginPage(doc)) {
+        await STORAGE.set({ show_login_banner: true });
+        return null;
+      }
+      return doc;
+    } catch (error) {
+      console.error("fetchHTML error:", error);
       await STORAGE.set({ show_login_banner: true });
       return null;
     }
-    if (res.status === 401 || res.status === 403) {
-      await STORAGE.set({ show_login_banner: true });
-      return null;
-    }
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const html = await res.text();
-    const doc = new DOMParser().parseFromString(html, "text/html");
-    if (looksLikeLoginPage(doc)) {
-      await STORAGE.set({ show_login_banner: true });
-      return null;
-    }
-    return doc;
-  } catch (error) {
-    console.error("fetchHTML error:", error);
-    await STORAGE.set({ show_login_banner: true });
-    return null;
-  }
+  };
 }
+const fetchHTML = window.fetchHTML;
 
-// ---------- Simple cache (ms TTL) ----------
-async function cacheGet(key, maxAgeMs) {
-  const obj = await STORAGE.get(key, null);
-  if (!obj) return null;
-  const { ts, data } = obj;
-  if (!ts || Date.now() - ts > maxAgeMs) return null;
-  return data;
+// Cache function fallbacks
+if (!window.cacheGet) {
+  window.cacheGet = async function (key, maxAgeMs) {
+    const obj = await STORAGE.get(key, null);
+    if (!obj) return null;
+    const { ts, data } = obj;
+    if (!ts || Date.now() - ts > maxAgeMs) return null;
+    return data;
+  };
 }
-async function cacheSet(key, data) {
-  await STORAGE.set({ [key]: { ts: Date.now(), data } });
+if (!window.cacheSet) {
+  window.cacheSet = async function (key, data) {
+    await STORAGE.set({ [key]: { ts: Date.now(), data } });
+  };
 }
+const cacheGet = window.cacheGet;
+const cacheSet = window.cacheSet;
 
-// ---------- Transcript parsing ----------
-function parseTranscriptDoc(doc) {
-  const tables = [...doc.querySelectorAll("table")];
-  for (const t of tables) {
-    const trs = [...t.querySelectorAll("tr")];
-    for (const tr of trs) {
-      const labels = [...tr.children].map((td) => NORM(td.textContent));
-      if (labels.includes("CREDIT") && labels.includes("GRADE")) {
-        const header = [...tr.children].map((x) => NORM(x.textContent));
-        const idx = {
-          term: header.findIndex((v) => v === "TERM"),
-          semester: header.findIndex((v) => v === "SEMESTER"),
-          code: header.findIndex((v) => v.includes("SUBJECT CODE")),
-          name: header.findIndex(
-            (v) => v.includes("SUBJECT NAME") || v.includes("SUBJECT")
-          ),
-          credit: header.indexOf("CREDIT"),
-          grade: header.indexOf("GRADE"),
-          status: header.findIndex((v) => v === "STATUS"),
-        };
-        const all = [...t.querySelectorAll("tr")];
-        const start = all.indexOf(tr) + 1;
-        const rows = [];
-        for (const r of all.slice(start)) {
-          const tds = [...r.querySelectorAll("td")];
-          if (!tds.length) continue;
-          const row = {
-            term: idx.term >= 0 ? tds[idx.term]?.textContent.trim() : "",
-            semester:
-              idx.semester >= 0 ? tds[idx.semester]?.textContent.trim() : "",
-            code: idx.code >= 0 ? tds[idx.code]?.textContent.trim() : "",
-            name: idx.name >= 0 ? tds[idx.name]?.textContent.trim() : "",
-            credit: idx.credit >= 0 ? toNum(tds[idx.credit]?.textContent) : NaN,
-            grade: idx.grade >= 0 ? toNum(tds[idx.grade]?.textContent) : NaN,
-            status: idx.status >= 0 ? tds[idx.status]?.textContent.trim() : "",
-          };
-          if (!row.code && !row.name && !Number.isFinite(row.credit)) continue;
-          rows.push(row);
-        }
-        return rows;
-      }
-    }
-  }
-  return [];
-}
-
-function computeGPA(items, excluded) {
-  let sumC = 0,
-    sumP = 0;
-  for (const it of items) {
-    const c = it.credit,
-      g = it.grade,
-      code = (it.code || "").toUpperCase();
-    if (!Number.isFinite(c) || !Number.isFinite(g) || c <= 0 || g <= 0)
-      continue;
-    if (excluded.includes(code)) continue;
-    sumC += c;
-    sumP += c * g;
-  }
-  const g10 = sumC > 0 ? sumP / sumC : NaN;
-  const g4 = Number.isFinite(g10) ? (g10 / 10) * 4 : NaN;
-  return { gpa10: g10, gpa4: g4, credits: sumC };
-}
+// ---------- Transcript parsing - use TranscriptService from module ----------
+// parseTranscriptDoc, computeGPA moved to modules/transcript.js
+const parseTranscriptDoc = window.parseTranscriptDoc || ((doc) => window.TranscriptService?.parseTranscriptDoc(doc) || []);
+const computeGPA = window.computeGPA || ((items, excluded) => window.TranscriptService?.computeGPA(items, excluded) || { gpa10: NaN, gpa4: NaN, credits: 0 });
 
 // ---------- Attendance moved to modules/attendance.js ----------
 const { parseScheduleOfWeek, renderAttendance, renderScheduleWeek, refreshAttendance, loadAttendanceAndSchedule, debugAttendanceData } = window.Attendance || {};
+
+// ---------- Module references for init() - must be defined before init() is called ----------
+// Today Schedule - from modules/today-schedule.js
+const loadTodaySchedule = window.loadTodaySchedule || (() => window.TodayScheduleService?.loadTodaySchedule());
+
+// Statistics - from modules/statistics.js
+const loadStatistics = window.loadStatistics || (() => window.StatisticsService?.loadStatistics());
+
+// GPA Calculator - from modules/gpa-calculator.js
+const initGPACalculator = window.initGPACalculator || (() => {
+  window.GPACalculatorService?.initGPACalculator();
+  window.GPACalculatorService?.init();
+});
+
+// Settings - from modules/settings.js
+const loadSettingsUI = window.loadSettingsUI || (() => window.SettingsService?.loadSettingsUI());
+
+// Exams - from modules/exams.js
+const loadExams = window.loadExams || (() => window.ExamService?.loadExams());
+const parseExamScheduleDoc = window.parseExamScheduleDoc || ((doc) => window.ExamService?.parseExamScheduleDoc(doc) || []);
+const renderExamSchedule = window.renderExamSchedule || ((exams) => window.ExamService?.renderExamSchedule(exams));
+
+// Tabs - from modules/tabs.js
+const initLiquidGlassTabs = window.initLiquidGlassTabs || (() => window.TabsService?.initLiquidGlassTabs());
+
+// Constants
+const DAY_MS = window.DAY_MS || 24 * 60 * 60 * 1000;
+const EXCLUDED_KEY = window.EXCLUDED_KEY || "__FAP_EXCLUDED_CODES__";
+const EXCLUDED_DEFAULT = window.EXCLUDED_DEFAULT || ["TRS501", "ENT503", "VOV114", "VOV124", "VOV134", "OTP101"];
+const DEFAULT_CFG = window.DEFAULT_CFG || window.SettingsService?.DEFAULT_CFG || { activeFrom: "07:00", activeTo: "17:40", delayMin: 10, delayMax: 30, pollEvery: 15 };
+const debounce = window.debounce || ((fn, wait) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), wait); }; });
 
 // ---------- Renderers ----------
 async function renderTranscript(rows, excluded) {
@@ -295,6 +197,9 @@ async function renderTranscript(rows, excluded) {
   setValue("#gpa10", Number.isFinite(g.gpa10) ? g.gpa10.toFixed(2) : "--");
   setValue("#gpa4", Number.isFinite(g.gpa4) ? g.gpa4.toFixed(2) : "--");
   setValue("#credits", g.credits || "--");
+
+  // Sync to Today tab
+  setValue("#gpa10Quick", Number.isFinite(g.gpa10) ? g.gpa10.toFixed(2) : "--");
 
   const tbody = document.querySelector("#tblCourses tbody");
   tbody.innerHTML = "";
@@ -514,127 +419,68 @@ async function updateAttendanceQuickStats() {
 
 // renderAttendance moved to modules/attendance.js
 
-function _renderScheduleToday_DEPRECATED(rows) {
-  const tbody = document.querySelector("#tblScheduleToday tbody");
-  tbody.innerHTML = "";
-  if (!rows.length) {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td colspan="4">Hôm nay không có tiết nào  (hoặc trang lịch khác định dạng).</td>`;
-    tbody.appendChild(tr);
-    return;
-  }
-  rows.forEach((r) => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${r.time || ""}</td><td>${r.course || ""}</td><td>${r.room || ""
-      }</td><td>${r.note || ""}</td>`;
-    tbody.appendChild(tr);
-  });
-}
+// _renderScheduleToday_DEPRECATED removed - use TodayScheduleService
 
-// ---------- Loaders with caching ----------
-const EXCLUDED_KEY = "__FAP_EXCLUDED_CODES__";
-const EXCLUDED_DEFAULT = [
-  "TRS501",
-  "ENT503",
-  "VOV114",
-  "VOV124",
-  "VOV134",
-  "OTP101",
-];
-
-const DAY_MS = 24 * 60 * 60 * 1000;
+// EXCLUDED_KEY, EXCLUDED_DEFAULT, DAY_MS already defined at top of file
 
 async function loadGPA() {
-  // 24h cache: if cached data exists, use it; otherwise fetch and cache
-  const cache = await cacheGet("cache_transcript", DAY_MS);
-  let rows;
-  if (cache && Array.isArray(cache.rows)) {
-    rows = cache.rows;
-  } else {
-    const doc = await fetchHTML(DEFAULT_URLS.transcript);
-    if (doc === null) {
-      // Use cached data when login is required
-      const cachedRows = await STORAGE.get("cache_transcript_flat", []);
-      await STORAGE.set({ cache_transcript_fallback_ts: Date.now() });
-      rows = cachedRows;
-    } else {
-      rows = parseTranscriptDoc(doc);
-      await cacheSet("cache_transcript", { rows });
-      await STORAGE.set({
-        cache_transcript_flat: rows,
-        cache_transcript_fallback_ts: null,
-      });
-      // Clear login banner flag and update last successful fetch time
-      await STORAGE.set({
-        show_login_banner: false,
-        last_successful_fetch: Date.now(),
-      });
+  // Stale-While-Revalidate pattern
+  const CACHE_KEY = "cache_transcript";
+  const cachedObj = await STORAGE.get(CACHE_KEY, null);
+  const cachedData = cachedObj ? cachedObj.data : null;
+  const cachedTs = cachedObj ? cachedObj.ts : 0;
+  const excludedCourses = await STORAGE.get("excluded_courses", []);
+
+  // 1. Render immediately if we have ANY data (even stale)
+  if (cachedData && Array.isArray(cachedData.rows)) {
+    console.log("[SWR] Rendering cached GPA data");
+    renderTranscript(cachedData.rows, excludedCourses);
+  }
+
+  // 2. Check if we need to revalidate (is stale?)
+  const isStale = !cachedObj || Date.now() - cachedTs > DAY_MS;
+
+  if (isStale) {
+    console.log("[SWR] GPA data is stale or missing, fetching...");
+    try {
+      const doc = await fetchHTML(DEFAULT_URLS.transcript);
+
+      if (doc) {
+        const rows = parseTranscriptDoc(doc);
+
+        // Update caches
+        await cacheSet(CACHE_KEY, { rows });
+        await STORAGE.set({
+          cache_transcript_flat: rows,
+          cache_transcript_fallback_ts: null,
+          show_login_banner: false,
+          last_successful_fetch: Date.now(),
+        });
+
+        // Re-render with fresh data
+        console.log("[SWR] Fetched fresh GPA data, re-rendering");
+        renderTranscript(rows, excludedCourses);
+      } else {
+        // If fetch failed (e.g. login required), but we didn't have parsed cache, 
+        // try the flat fallback cache if we haven't rendered yet
+        if (!cachedData) {
+          const fallbackRows = await STORAGE.get("cache_transcript_flat", []);
+          renderTranscript(fallbackRows, excludedCourses);
+        }
+      }
+    } catch (e) {
+      console.error("[SWR] Error fetching GPA:", e);
     }
   }
-  const excludedCourses = await STORAGE.get("excluded_courses", []);
-  renderTranscript(rows, excludedCourses);
 }
 
 // refreshAttendance moved to modules/attendance.js
 
 // loadAttendanceAndSchedule moved to modules/attendance.js
 
-// ---------- Settings (UI <-> storage) ----------
-const DEFAULT_CFG = {
-  activeFrom: "07:00",
-  activeTo: "17:40",
-  delayMin: 10,
-  delayMax: 30,
-  pollEvery: 15,
-};
-
-async function loadSettingsUI() {
-  const cfg = await STORAGE.get("cfg", DEFAULT_CFG);
-  const get = (id) => document.getElementById(id);
-  get("setActiveFrom").value = cfg.activeFrom || DEFAULT_CFG.activeFrom;
-  get("setActiveTo").value = cfg.activeTo || DEFAULT_CFG.activeTo;
-  get("setDelayMin").value = Number.isFinite(cfg.delayMin)
-    ? cfg.delayMin
-    : DEFAULT_CFG.delayMin;
-  get("setDelayMax").value = Number.isFinite(cfg.delayMax)
-    ? cfg.delayMax
-    : DEFAULT_CFG.delayMax;
-  get("setPollEvery").value = Number.isFinite(cfg.pollEvery)
-    ? cfg.pollEvery
-    : DEFAULT_CFG.pollEvery;
-}
-
-async function saveSettingsUI() {
-  const get = (id) => document.getElementById(id);
-  const currentCfg = await STORAGE.get("cfg", DEFAULT_CFG);
-  const cfg = {
-    ...currentCfg,
-    activeFrom: get("setActiveFrom").value || DEFAULT_CFG.activeFrom,
-    activeTo: get("setActiveTo").value || DEFAULT_CFG.activeTo,
-    delayMin: Math.max(
-      0,
-      parseInt(get("setDelayMin").value || DEFAULT_CFG.delayMin, 10)
-    ),
-    delayMax: Math.max(
-      0,
-      parseInt(get("setDelayMax").value || DEFAULT_CFG.delayMax, 10)
-    ),
-    pollEvery: Math.max(
-      5,
-      parseInt(get("setPollEvery").value || DEFAULT_CFG.pollEvery, 10)
-    ),
-  };
-  if (cfg.delayMax < cfg.delayMin) {
-    const t = cfg.delayMin;
-    cfg.delayMin = cfg.delayMax;
-    cfg.delayMax = t;
-  }
-  await STORAGE.set({ cfg });
-  // ping background to reschedule
-  chrome.runtime.sendMessage({ type: "CFG_UPDATED" });
-  Toast.success("�� luu c�i d?t");
-
-}
+// ---------- Settings - use SettingsService from module ----------
+// DEFAULT_CFG, loadSettingsUI, saveSettingsUI already defined at top of file
+const saveSettingsUI = window.saveSettingsUI || (() => window.SettingsService?.saveSettingsUI());
 
 // ---------- Buttons & Filters ----------
 document
@@ -676,18 +522,7 @@ document
     chrome.tabs.create({ url: DEFAULT_URLS.scheduleOfWeek })
   );
 
-// Debounce helper for search inputs
-function debounce(func, wait) {
-  let timeout;
-  return function executedFunction(...args) {
-    const later = () => {
-      clearTimeout(timeout);
-      func(...args);
-    };
-    clearTimeout(timeout);
-    timeout = setTimeout(later, wait);
-  };
-}
+// Debounce - already defined at top of file
 
 // Apply debounced search
 document
@@ -762,290 +597,21 @@ document
     chrome.runtime.sendMessage({ type: "TEST_NOTIFY" })
   );
 
-// Tabs
-// Liquid Glass Tab Indicator - iOS 26 Style with Draggable
-function initLiquidGlassTabs() {
-  const indicator = document.querySelector(".tab-indicator");
-  const tabsContainer = document.querySelector(".tabs");
-  const buttons = document.querySelectorAll(".tabs button");
+// Tabs - initLiquidGlassTabs already defined at top of file
 
-  if (!indicator || !tabsContainer || buttons.length === 0) {
-    console.error("Tabs not initialized properly");
-    return;
-  }
-
-  let isDragging = false;
-  let dragStartX = 0;
-  let indicatorStartLeft = 0;
-
-  // Function to move indicator to active tab
-  function moveIndicator(button, instant = false) {
-    // Get scroll position
-    const scrollLeft = tabsContainer.scrollLeft;
-
-    // Get button position relative to tabs container
-    const buttonRect = button.getBoundingClientRect();
-    const tabsRect = tabsContainer.getBoundingClientRect();
-
-    // Calculate left position (accounting for scroll and padding)
-    const left = buttonRect.left - tabsRect.left + scrollLeft;
-    const width = buttonRect.width;
-
-    if (instant) {
-      indicator.style.transition = "none";
-    }
-
-    indicator.style.left = `${left}px`;
-    indicator.style.width = `${width}px`;
-
-    if (instant) {
-      // Force reflow to apply no-transition
-      indicator.offsetHeight;
-      indicator.style.transition = "all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)";
-    }
-  }
-
-  // Function to set indicator position by pixel value
-  function setIndicatorPosition(left, width) {
-    indicator.style.left = `${left}px`;
-    indicator.style.width = `${width}px`;
-  }
-
-  // Find closest tab to a given x position
-  function findClosestTab(xPos) {
-    let closestBtn = null;
-    let minDistance = Infinity;
-
-    buttons.forEach((btn) => {
-      const rect = btn.getBoundingClientRect();
-      const tabsRect = tabsContainer.getBoundingClientRect();
-      const btnCenter =
-        rect.left - tabsRect.left + rect.width / 2 + tabsContainer.scrollLeft;
-      const distance = Math.abs(btnCenter - xPos);
-
-      if (distance < minDistance) {
-        minDistance = distance;
-        closestBtn = btn;
-      }
-    });
-
-    return closestBtn;
-  }
-
-  // Initialize indicator position on first active tab
-  const activeButton = document.querySelector(".tabs button.active");
-  if (activeButton) {
-    moveIndicator(activeButton, true);
-  }
-
-  // Handle clicks anywhere on tabs - indicator flies to clicked position
-  tabsContainer.addEventListener("click", (e) => {
-    if (isDragging) return; // Don't handle clicks while dragging
-
-    // Don't handle if clicking on indicator itself
-    if (e.target === indicator || indicator.contains(e.target)) return;
-
-    // Create ripple effect at click position
-    const ripple = document.createElement("div");
-    ripple.style.cssText = `
-      position: absolute;
-      width: 20px;
-      height: 20px;
-      background: rgba(96, 165, 250, 0.4);
-      border-radius: 50%;
-      pointer-events: none;
-      animation: rippleEffect 0.6s ease-out;
-      left: ${e.clientX - tabsContainer.getBoundingClientRect().left - 10}px;
-      top: ${e.clientY - tabsContainer.getBoundingClientRect().top - 10}px;
-      z-index: 5;
-    `;
-    tabsContainer.appendChild(ripple);
-    setTimeout(() => ripple.remove(), 600);
-
-    // Get click position relative to tabs container
-    const tabsRect = tabsContainer.getBoundingClientRect();
-    const clickX = e.clientX - tabsRect.left + tabsContainer.scrollLeft;
-
-    // Find closest tab to click position
-    const closestButton = findClosestTab(clickX);
-
-    if (!closestButton) return;
-
-    // Remove active class from all buttons
-    buttons.forEach((b) => b.classList.remove("active"));
-
-    // Add active class to closest button
-    closestButton.classList.add("active");
-
-    // Move indicator to closest button with animation
-    moveIndicator(closestButton);
-
-    // Scroll button into view if needed
-    closestButton.scrollIntoView({
-      behavior: "smooth",
-      block: "nearest",
-      inline: "center",
-    });
-
-    // Get the tab ID from data-tab attribute
-    const id = closestButton.dataset.tab;
-
-    // Hide all tab content sections
-    document
-      .querySelectorAll(".tab")
-      .forEach((s) => s.classList.remove("active"));
-
-    // Show the selected tab content
-    document.getElementById(id).classList.add("active");
-  });
-
-  // Draggable indicator functionality
-  indicator.addEventListener("mousedown", (e) => {
-    isDragging = true;
-    dragStartX = e.clientX;
-    indicatorStartLeft = parseFloat(indicator.style.left) || 0;
-
-    // Disable transition while dragging
-    indicator.style.transition = "none";
-    indicator.style.cursor = "grabbing";
-    document.body.style.userSelect = "none";
-
-    e.preventDefault();
-  });
-
-  document.addEventListener("mousemove", (e) => {
-    if (!isDragging) return;
-
-    const deltaX = e.clientX - dragStartX;
-    const newLeft = indicatorStartLeft + deltaX;
-
-    // Get bounds
-    const tabsRect = tabsContainer.getBoundingClientRect();
-    const maxLeft =
-      tabsContainer.scrollWidth - parseFloat(indicator.style.width);
-
-    // Constrain within bounds
-    const constrainedLeft = Math.max(0, Math.min(newLeft, maxLeft));
-
-    setIndicatorPosition(constrainedLeft, parseFloat(indicator.style.width));
-
-    // Highlight closest tab while dragging
-    const closestTab = findClosestTab(
-      constrainedLeft + parseFloat(indicator.style.width) / 2
-    );
-    if (closestTab) {
-      buttons.forEach((b) => b.classList.remove("hover-preview"));
-      closestTab.classList.add("hover-preview");
-    }
-  });
-
-  document.addEventListener("mouseup", () => {
-    if (!isDragging) return;
-
-    isDragging = false;
-    indicator.style.cursor = "grab";
-    document.body.style.userSelect = "";
-
-    // Find closest tab and snap to it
-    const currentLeft = parseFloat(indicator.style.left);
-    const currentWidth = parseFloat(indicator.style.width);
-    const centerX = currentLeft + currentWidth / 2;
-
-    const closestTab = findClosestTab(centerX);
-
-    if (closestTab) {
-      // Remove active from all
-      buttons.forEach((b) => {
-        b.classList.remove("active");
-        b.classList.remove("hover-preview");
-      });
-
-      // Set new active
-      closestTab.classList.add("active");
-
-      // Re-enable transition
-      indicator.style.transition = "all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)";
-
-      // Snap to closest tab
-      moveIndicator(closestTab);
-
-      // Switch tab content
-      const id = closestTab.dataset.tab;
-      document
-        .querySelectorAll(".tab")
-        .forEach((s) => s.classList.remove("active"));
-      document.getElementById(id).classList.add("active");
-
-      // Scroll into view
-      closestTab.scrollIntoView({
-        behavior: "smooth",
-        block: "nearest",
-        inline: "center",
-      });
-    }
-  });
-
-  // Update indicator position on window resize
-  let resizeTimeout;
-  window.addEventListener("resize", () => {
-    clearTimeout(resizeTimeout);
-    resizeTimeout = setTimeout(() => {
-      const activeBtn = document.querySelector(".tabs button.active");
-      if (activeBtn) {
-        moveIndicator(activeBtn, true);
-      }
-    }, 100);
-  });
-
-  // Update indicator position on tabs scroll - REALTIME!
-  tabsContainer.addEventListener("scroll", () => {
-    if (isDragging) return; // Don't update while dragging
-
-    const activeBtn = document.querySelector(".tabs button.active");
-    if (activeBtn) {
-      // Disable transition for smooth scroll following
-      indicator.style.transition = "none";
-      moveIndicator(activeBtn);
-
-      // Re-enable transition after a short delay
-      clearTimeout(tabsContainer._scrollTimer);
-      tabsContainer._scrollTimer = setTimeout(() => {
-        indicator.style.transition =
-          "all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)";
-      }, 150);
-    }
-  });
-
-  // Set initial cursor
-  indicator.style.cursor = "grab";
-}
-
-// Initialize on load
-initLiquidGlassTabs();
-
-// Reinitialize tabs
-setTimeout(() => {
+// Initialize tabs from module
+if (window.TabsService) {
+  window.TabsService.init();
+} else {
   initLiquidGlassTabs();
-  // Force update indicator position to first tab
-  const firstTab = document.querySelector(".tabs button.active");
-  if (firstTab) {
-    const indicator = document.querySelector(".tab-indicator");
-    const tabsContainer = document.querySelector(".tabs");
-    if (indicator && tabsContainer) {
-      const buttonRect = firstTab.getBoundingClientRect();
-      const tabsRect = tabsContainer.getBoundingClientRect();
-      const left = buttonRect.left - tabsRect.left + tabsContainer.scrollLeft;
-      const width = buttonRect.width;
-      indicator.style.left = `${left}px`;
-      indicator.style.width = `${width}px`;
-    }
-  }
-}, 100);
+  setTimeout(() => initLiquidGlassTabs(), 100);
+}
 
 (async function init() {
   await Promise.all([
     loadGPA(),
     loadAttendanceAndSchedule(),
+    loadTodaySchedule(),
     loadSettingsUI(),
     loadExams(),
     loadStatistics(),
@@ -1056,13 +622,7 @@ setTimeout(() => {
   await checkLoginStatus();
   await checkAndShowLoginBanner();
 
-  // Also check for updates on popup open
-  // Auto update check disabled to avoid GitHub API rate limit
-  // try {
-  //   await checkUpdate(true);
-  // } catch (e) {
-  //   console.log("Update check failed:", e);
-  // }
+
 
   // Set up periodic login status check (every 5 minutes)
   setInterval(async () => {
@@ -1191,26 +751,21 @@ setTimeout(() => {
   if (loginStatus) {
     loginStatus.addEventListener("click", async () => {
       // Check for updates first
-      // Auto update check disabled to avoid GitHub API rate limit
-      // try {
-      //   await checkUpdate(true);
-      // } catch (e) {
-      //   console.log("Update check failed:", e);
-      // }
+
 
       // Then open FAP
       chrome.tabs.create({ url: "https://fap.fpt.edu.vn/" });
     });
   }
 
-  // Auto update check disabled to avoid GitHub API rate limit
-  // try {
-  //   await checkUpdate();
-  // } catch (e) {}
+
 
   // Render update button without checking for updates
   const curr = chrome.runtime.getManifest().version;
-  renderUpdateButton(0, curr, curr); // 0 means no update available
+  const badge = document.getElementById("verBadge");
+  if (badge) {
+    badge.textContent = `v${curr}`;
+  }
 })();
 
 // Refresh-all: clear caches and reload
@@ -1268,7 +823,7 @@ async function exportAllPDF() {
       doc.setPage(i);
       doc.setFontSize(10);
       doc.setTextColor(100);
-      doc.text(`FAP GPA Viewer � Dashboard | Xu?t ng�y: ${today}`, 14, 10);
+      doc.text(`FAP GPA Viewer  Dashboard | Xu?t ngy: ${today}`, 14, 10);
       doc.text(
         `Trang ${i} / ${pageCount}`,
         doc.internal.pageSize.getWidth() - 40,
@@ -1290,10 +845,10 @@ async function exportAllPDF() {
     );
   doc.addImage(logo, "PNG", 15, 20, 30, 30);
   doc.setFontSize(18);
-  doc.text("FAP GPA Viewer � Dashboard", 55, 30);
+  doc.text("FAP GPA Viewer  Dashboard", 55, 30);
   doc.setFontSize(12);
   doc.text(
-    "M?t Chrome Extension gi�p sinh vi�n FPT University theo d�i GPA, l?ch h?c, di?m danh v� nh?c nh? t? d?ng.",
+    "M?t Chrome Extension gip sinh vin FPT University theo di GPA, l?ch h?c, di?m danh v nh?c nh? t? d?ng.",
     15,
     60
   );
@@ -1354,7 +909,7 @@ async function exportAllPDF() {
   doc.save("fap_dashboard_all.pdf");
 }
 
-// G?n v�o n�t Export PDF n?u c�
+// G?n vo nt Export PDF n?u c
 const btnExportPDF = document.getElementById("btnExportPDF");
 if (btnExportPDF) btnExportPDF.addEventListener("click", exportAllPDF);
 
@@ -1392,14 +947,15 @@ document
 
 function dayToVietnamese(day) {
   const map = {
-    MON: "Th? 2",
-    TUE: "Th? 3",
-    WED: "Th? 4",
-    THU: "Th? 5",
-    FRI: "Th? 6",
-    SAT: "Th? 7",
-    SUN: "Ch? nh?t",
+    MON: "Thứ 2",
+    TUE: "Thứ 3",
+    WED: "Thứ 4",
+    THU: "Thứ 5",
+    FRI: "Thứ 6",
+    SAT: "Thứ 7",
+    SUN: "Chủ nhật",
   };
+
   return map[day] || day;
 }
 // === Export PDF via printable report page (no external libs needed) ===
@@ -1414,132 +970,7 @@ function dayToVietnamese(day) {
   }
 })();
 
-// ---------- Parse Exam Schedule ----------
-function parseExamScheduleDoc(doc) {
-  const exams = [];
-  const tables = [...doc.querySelectorAll("table")];
-  let examTable = null;
-
-  // 1. T�m d�ng b?ng ch?a l?ch thi
-  for (const table of tables) {
-    const tableText = (table.textContent || "").toLowerCase();
-    if (
-      tableText.includes("subjectcode") &&
-      tableText.includes("date of publication")
-    ) {
-      examTable = table;
-      break;
-    }
-  }
-
-  if (!examTable) {
-    console.log("Không tìm thấy bảng lịch thi.");
-    return [];
-  }
-
-  // 2. L?y t?t c? c�c h�ng, t�m h�ng ti�u d? v� ch? x? l� c�c h�ng d? li?u sau d�
-  const allRows = [...examTable.querySelectorAll("tr")];
-  let headerRowIndex = -1;
-
-  // T�m v? tr� c?a h�ng ti�u d? (h�ng ch?a "SubjectCode")
-  for (let i = 0; i < allRows.length; i++) {
-    const rowText = (allRows[i].textContent || "").toLowerCase();
-    if (rowText.includes("subjectcode")) {
-      headerRowIndex = i;
-      break;
-    }
-  }
-
-  // N?u kh�ng t�m th?y header, kh�ng l�m g� c?
-  if (headerRowIndex === -1) {
-    console.log("Kh�ng t�m th?y h�ng ti�u d? trong b?ng l?ch thi.");
-    return [];
-  }
-
-  const dataRows = allRows.slice(headerRowIndex + 1); // Ch? l?y c�c h�ng sau h�ng ti�u d?
-  // 3. Trích xuất dữ liệu từ các hàng đã lọc
-  for (const row of dataRows) {
-    const cells = [...row.querySelectorAll("td")];
-    if (cells.length < 9) continue; // B? qua n?u h�ng kh�ng d? 9 c?t nhu tr�n web
-
-    const examData = {
-      no: cells[0]?.textContent.trim() || "",
-      code: cells[1]?.textContent.trim() || "",
-      name: cells[2]?.textContent.trim() || "",
-      date: cells[3]?.textContent.trim() || "",
-      room: cells[4]?.textContent.trim() || "",
-      time: cells[5]?.textContent.trim() || "",
-      form: cells[6]?.textContent.trim() || "",
-      type: cells[7]?.textContent.trim() || "",
-      publishDate: cells[8]?.textContent.trim() || "",
-    };
-
-    // Ch? th�m v�o n?u c� m� m�n h?c
-    if (examData.code) {
-      exams.push(examData);
-    }
-  }
-  return exams;
-}
-
-// ---------- Renderer for Exam Schedule ----------
-function renderExamSchedule(exams) {
-  const tbody = document.querySelector("#tblExams tbody");
-  if (!tbody) return;
-
-  tbody.innerHTML = "";
-
-  if (!exams || exams.length === 0) {
-    const tr = document.createElement("tr");
-    tr.innerHTML =
-      '<td colspan="6" style="text-align: center; color: var(--muted)">Kh�ng c� l?ch thi.</td>';
-    tbody.appendChild(tr);
-    return;
-  }
-
-  exams.forEach((exam) => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${exam.code}</td>
-      <td>${exam.name}</td>
-      <td>${exam.date}</td>
-      <td>${exam.time}</td>
-      <td>${exam.room}</td>
-      <td>${exam.form}</td>
-    `;
-    tbody.appendChild(tr);
-  });
-}
-
-// ---------- Loader for Exams with caching ----------
-async function loadExams() {
-  const cache = await cacheGet("cache_exams", DAY_MS); // Cache 24h
-  let exams;
-  if (cache && Array.isArray(cache.exams)) {
-    exams = cache.exams;
-  } else {
-    const doc = await fetchHTML(DEFAULT_URLS.examSchedule);
-    if (doc === null) {
-      // Use cached data when login is required
-      const cachedExams = await STORAGE.get("cache_exams_flat", []);
-      await STORAGE.set({ cache_exams_fallback_ts: Date.now() });
-      exams = cachedExams;
-    } else {
-      exams = parseExamScheduleDoc(doc);
-      await cacheSet("cache_exams", { exams });
-      await STORAGE.set({
-        cache_exams_flat: exams,
-        cache_exams_fallback_ts: null,
-      });
-      // Clear login banner flag and update last successful fetch time
-      await STORAGE.set({
-        show_login_banner: false,
-        last_successful_fetch: Date.now(),
-      });
-    }
-  }
-  renderExamSchedule(exams);
-}
+// ---------- Exam functions - already defined at top of file ----------
 
 // === Login Banner Functions ===
 async function checkAndShowLoginBanner() {
@@ -1603,28 +1034,22 @@ function showLoginNotification() {
 
 // Function to update login status display
 function updateLoginStatusDisplay(isLoggedIn, isChecking = false) {
-  const loginStatus = document.getElementById("loginStatus");
-  const loginStatusIcon = document.getElementById("loginStatusIcon");
-  const loginStatusTitle = document.getElementById("loginStatusTitle");
-  const statusDot = document.getElementById("statusDot");
+  const dot = document.getElementById("statusDot");
+  const container = document.getElementById("loginStatusIndicator");
+  if (!dot) return;
 
-  if (!loginStatus) return;
-
-  // Remove all status classes
-  loginStatus.classList.remove("logged-in", "logged-out", "checking");
+  // Remove old classes
+  dot.classList.remove("logged-in", "logged-out", "checking");
 
   if (isChecking) {
-    loginStatus.classList.add("checking");
-    loginStatusIcon.textContent = ""; // Clear content for CSS spinner
-    loginStatusTitle.textContent = "Ki?m tra...";
+    dot.classList.add("checking");
+    if (container) container.title = "Đang kiểm tra đăng nhập...";
   } else if (isLoggedIn) {
-    loginStatus.classList.add("logged-in");
-    loginStatusIcon.textContent = "?";
-    loginStatusTitle.textContent = "�� dang nh?p";
+    dot.classList.add("logged-in");
+    if (container) container.title = "Đã đăng nhập FAP";
   } else {
-    loginStatus.classList.add("logged-out");
-    loginStatusIcon.textContent = "?";
-    loginStatusTitle.textContent = "Chua dang nh?p";
+    dot.classList.add("logged-out");
+    if (container) container.title = "Chưa đăng nhập (Click để mở FAP, dữ liệu có thể cũ)";
   }
 }
 
@@ -1895,149 +1320,10 @@ window.handleRefreshWithLoading = handleRefreshWithLoading;
   }
 })();
 
-// ===== TODAY'S SCHEDULE WITH COUNTDOWN =====
-async function loadTodaySchedule() {
-  try {
-    console.log("🔄 Loading today's schedule...");
-
-    // Check if widget container exists, retry if not
-    const container = document.getElementById("todayClasses");
-    if (!container) {
-      console.warn(
-        "⚠️ Today's schedule container not found, retrying in 1s..."
-      );
-      setTimeout(loadTodaySchedule, 1000);
-      return;
-    }
-
-    // Try multiple cache sources with better fallback
-    let entries = [];
-
-    // Try main cache first (increased TTL to 30 minutes)
-    const cache = await cacheGet("cache_attendance", 30 * 60 * 1000);
-    if (cache?.entries && cache.entries.length > 0) {
-      entries = cache.entries;
-      console.log(`📦 Using main cache: ${entries.length} entries`);
-    } else {
-      // Fallback to flat cache
-      entries = await STORAGE.get("cache_attendance_flat", []);
-      await STORAGE.set({ cache_attendance_fallback_ts: Date.now() });
-      console.log(`?? Using flat cache: ${entries.length} entries`);
-
-      // If still empty, try to refresh
-      if (entries.length === 0) {
-        console.log("?? No cache data, attempting refresh...");
-        try {
-          await refreshAttendance();
-          // Retry with fresh data
-          const newCache = await cacheGet("cache_attendance", 30 * 60 * 1000);
-          entries = newCache?.entries || [];
-          console.log(`🔄 After refresh: ${entries.length} entries`);
-        } catch (refreshError) {
-          console.error("❌ Refresh failed:", refreshError);
-          // Show error message instead of silent fail
-          container.innerHTML =
-            '<div class="no-class">❌ Không thể tải lịch học. Vui lòng thử lại.</div>';
-          return;
-        }
-      }
-    }
-
-    // Improved date parsing with multiple format support
-    const todayClasses = findTodayClasses(entries);
-    console.log(`📅 Found ${todayClasses.length} classes for today`);
-
-    if (todayClasses.length === 0) {
-      container.innerHTML =
-        '<div class="no-class">Hôm nay không có lịch học!</div>';
-      return;
-    }
-
-    // Sort classes by slot
-    const sortedClasses = todayClasses.sort((a, b) => {
-      const slotA = parseInt((a.slot || "").replace(/\D/g, "") || "999");
-      const slotB = parseInt((b.slot || "").replace(/\D/g, "") || "999");
-      return slotA - slotB;
-    });
-
-    container.innerHTML = "";
-    sortedClasses.forEach((cls) => {
-      const item = document.createElement("div");
-      item.className = "class-item";
-
-      const countdown = getTimeUntilClass(cls.time);
-
-      item.innerHTML = `
-        <div class="class-info">
-          <div class="class-time">${cls.time || cls.slot}</div>
-          <div class="class-course">${cls.course} - ${cls.room || "N/A"}</div>
-        </div>
-        <div class="class-countdown">${countdown}</div>
-      `;
-      container.appendChild(item);
-    });
-
-    console.log("✅ Today's schedule loaded successfully");
-  } catch (error) {
-    console.error("❌ Error loading today's schedule:", error);
-    const container = document.getElementById("todayClasses");
-    if (container) {
-      container.innerHTML =
-        '<div class="no-class">?? L?i t?i l?ch h?c. Vui l�ng th? l?i.</div>';
-    }
-  }
-}
-
-// Helper function to find today's classes with multiple date format support
-function findTodayClasses(entries) {
-  const today = new Date();
-  const dd = String(today.getDate()).padStart(2, "0");
-  const mm = String(today.getMonth() + 1).padStart(2, "0");
-
-  // Try different date formats
-  const formats = [
-    `${dd}/${mm}`, // 15/12
-    `${today.getDate()}/${mm}`, // 15/12 (no padding)
-    `${dd}/${today.getMonth() + 1}`, // 15/12 (no padding)
-    `${today.getDate()}/${today.getMonth() + 1}`, // 15/12 (no padding)
-  ];
-
-  console.log("?? Searching for today's classes with formats:", formats);
-
-  for (const format of formats) {
-    const matches = entries.filter((e) => e.date === format);
-    if (matches.length > 0) {
-      console.log(`? Found ${matches.length} classes with format: ${format}`);
-      return matches;
-    }
-  }
-
-  console.log("? No classes found for any date format");
-  return [];
-}
-
-function getTimeUntilClass(timeStr) {
-  if (!timeStr || !timeStr.includes("-")) return "?";
-
-  const startTime = timeStr.split("-")[0].trim();
-  const [hour, minute] = startTime.split(":").map(Number);
-
-  const now = new Date();
-  const classTime = new Date();
-  classTime.setHours(hour, minute, 0, 0);
-
-  const diff = classTime - now;
-
-  if (diff < 0) {
-    return "⏰ đã qua";
-  } else if (diff < 60 * 60 * 1000) {
-    const minutes = Math.floor(diff / 60000);
-    return `⏰ ${minutes} phút nữa`;
-  } else {
-    const hours = Math.floor(diff / 3600000);
-    return `⏰ ${hours}h nữa`;
-  }
-}
+// ===== TODAY'S SCHEDULE - loadTodaySchedule already defined at top of file =====
+const renderTodayWidget = window.renderTodayWidget || ((entries, container) => window.TodayScheduleService?.renderTodayWidget(entries, container));
+const findTodayClasses = window.findTodayClasses || ((entries) => window.TodayScheduleService?.findTodayClasses(entries) || []);
+const getTimeUntilClass = window.getTimeUntilClass || ((timeStr) => window.TodayScheduleService?.getTimeUntilClass(timeStr) || "?");
 
 // Update countdown every minute
 setInterval(() => {
@@ -2047,458 +1333,35 @@ setInterval(() => {
   }
 }, 60000);
 
-// ===== GPA CALCULATOR =====
-async function initGPACalculator() {
-  const cache = await cacheGet("cache_transcript", DAY_MS);
-  if (!cache || !cache.rows) return;
+// ===== GPA CALCULATOR - initGPACalculator already defined at top of file =====
 
-  const excludedCourses = await STORAGE.get("excluded_courses", []);
-  const gpa = computeGPA(cache.rows, excludedCourses);
-
-  setValue(
-    "#calcCurrentGPA",
-    Number.isFinite(gpa.gpa10) ? gpa.gpa10.toFixed(2) : "--"
-  );
-  setValue("#calcCurrentCredits", gpa.credits || "--");
-}
-
-document
-  .getElementById("btnCalculateGPA")
-  ?.addEventListener("click", async () => {
-    const currentGPA = parseFloat(
-      document.getElementById("calcCurrentGPA").textContent
-    );
-    const currentCredits = parseFloat(
-      document.getElementById("calcCurrentCredits").textContent
-    );
-    const targetGPA = parseFloat(
-      document.getElementById("calcTargetGPA")?.value || "0"
-    );
-    const newCredits = parseFloat(
-      document.getElementById("calcNewCredits")?.value || "0"
-    );
-
-    if (
-      isNaN(currentGPA) ||
-      isNaN(currentCredits) ||
-      isNaN(targetGPA) ||
-      isNaN(newCredits)
-    ) {
-      document.getElementById("calcResult").textContent = "Nhập đầy đủ!";
-      return;
-    }
-
-    if (targetGPA < 0 || targetGPA > 10) {
-      document.getElementById("calcResult").textContent = "GPA 0-10!";
-      return;
-    }
-
-    // Formula: (current_gpa * current_credits + required_grade * new_credits) / (current_credits + new_credits) = target_gpa
-    // => required_grade = (target_gpa * (current_credits + new_credits) - current_gpa * current_credits) / new_credits
-
-    const requiredGrade =
-      (targetGPA * (currentCredits + newCredits) -
-        currentGPA * currentCredits) /
-      newCredits;
-
-    const resultEl = document.getElementById("calcResult");
-    // Remove old color classes
-    resultEl.classList.remove("calc-success", "calc-warning", "calc-error");
-
-    if (requiredGrade > 10) {
-      resultEl.textContent = "Không khả thi 😢";
-      resultEl.classList.add("calc-error");
-    } else {
-      // Always show the required grade, even if it's negative or very low
-      resultEl.textContent = requiredGrade.toFixed(2);
-      
-      if (requiredGrade < 0) {
-        // If negative, it means target is already achieved
-        resultEl.classList.add("calc-success");
-      } else if (requiredGrade >= 8) {
-        resultEl.classList.add("calc-warning");
-      } else {
-        resultEl.classList.add("calc-success");
-      }
-    }
-  });
-
-document.getElementById("btnResetCalc")?.addEventListener("click", () => {
-  const targetGPAEl = document.getElementById("calcTargetGPA");
-  const newCreditsEl = document.getElementById("calcNewCredits");
-  const resultEl = document.getElementById("calcResult");
-
-  if (targetGPAEl) targetGPAEl.value = "";
-  if (newCreditsEl) newCreditsEl.value = "3";
-  if (resultEl) {
-    resultEl.textContent = "--";
-    resultEl.classList.remove("calc-success", "calc-warning", "calc-error");
-  }
-});
-
-// ===== STATISTICS & GPA TREND CHART =====
-let gpaChartInstance = null;
-
-async function loadStatistics() {
-  const cache = await cacheGet("cache_transcript", DAY_MS);
-  if (!cache || !cache.rows) return;
-
-  const rows = cache.rows.filter(
-    (r) => Number.isFinite(r.grade) && r.grade > 0
-  );
-
-  if (rows.length === 0) return;
-
-  // Calculate statistics
-  const grades = rows.map((r) => r.grade);
-  const avgGrade = grades.reduce((a, b) => a + b, 0) / grades.length;
-
-  const best = rows.reduce(
-    (max, r) => (r.grade > max.grade ? r : max),
-    rows[0]
-  );
-  const worst = rows.reduce(
-    (min, r) => (r.grade < min.grade ? r : min),
-    rows[0]
-  );
-
-  const passed = rows.filter(
-    (r) => r.status?.toLowerCase() !== "failed" && r.grade >= 5
-  ).length;
-  const passRate = ((passed / rows.length) * 100).toFixed(1);
-
-  setValue("#statAvgGrade", avgGrade.toFixed(2));
-  setValue("#statBestGrade", best.grade.toFixed(2));
-  setValue("#statBestCourse", best.code || "--");
-  setValue("#statWorstGrade", worst.grade.toFixed(2));
-  setValue("#statWorstCourse", worst.code || "--");
-  setValue("#statPassRate", passRate + "%");
-
-  // Build GPA trend by semester
-  const semesterMap = new Map();
-  rows.forEach((r) => {
-    const sem = r.semester || r.term || "Unknown";
-    if (!semesterMap.has(sem)) {
-      semesterMap.set(sem, []);
-    }
-    semesterMap.get(sem).push(r);
-  });
-
-  const excludedCourses = await STORAGE.get("excluded_courses", []);
-  const semesters = Array.from(semesterMap.keys()).sort();
-  const gpaData = semesters.map((sem) => {
-    const semRows = semesterMap.get(sem);
-    const gpa = computeGPA(semRows, excludedCourses);
-    return Number.isFinite(gpa.gpa10) ? gpa.gpa10 : 0;
-  });
-
-  renderGPAChart(semesters, gpaData);
-}
-
-function renderGPAChart(labels, data) {
-  const canvas = document.getElementById("gpaChart");
-  if (!canvas) return;
-
-  const ctx = canvas.getContext("2d");
-
-  if (gpaChartInstance) {
-    gpaChartInstance.destroy();
-  }
-
-  const isDark = document.documentElement.getAttribute("data-theme") === "dark";
-  const textColor = isDark ? "#9ca3af" : "#6b7280";
-  const gridColor = isDark
-    ? "rgba(55, 65, 81, 0.3)"
-    : "rgba(229, 231, 235, 0.5)";
-
-  // Create gradient for line
-  const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-  if (isDark) {
-    gradient.addColorStop(0, "rgba(96, 165, 250, 0.4)");
-    gradient.addColorStop(0.5, "rgba(129, 140, 248, 0.2)");
-    gradient.addColorStop(1, "rgba(139, 92, 246, 0.05)");
-  } else {
-    gradient.addColorStop(0, "rgba(96, 165, 250, 0.3)");
-    gradient.addColorStop(1, "rgba(96, 165, 250, 0.05)");
-  }
-
-  gpaChartInstance = new Chart(ctx, {
-    type: "line",
-    data: {
-      labels: labels,
-      datasets: [
-        {
-          label: "GPA theo kỳ",
-          data: data,
-          borderColor: isDark
-            ? "rgba(96, 165, 250, 0.9)"
-            : "rgba(96, 165, 250, 1)",
-          backgroundColor: gradient,
-          borderWidth: 3,
-          fill: true,
-          tension: 0.4,
-          pointRadius: 6,
-          pointHoverRadius: 8,
-          pointBackgroundColor: isDark ? "#60a5fa" : "#3b82f6",
-          pointBorderColor: isDark ? "#1e293b" : "#ffffff",
-          pointBorderWidth: 3,
-          pointHoverBackgroundColor: "#60a5fa",
-          pointHoverBorderColor: isDark ? "#0f172a" : "#ffffff",
-          pointHoverBorderWidth: 3,
-          // Add shadow effect
-          shadowOffsetX: 0,
-          shadowOffsetY: 4,
-          shadowBlur: 8,
-          shadowColor: "rgba(96, 165, 250, 0.3)",
-        },
-      ],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: {
-        intersect: false,
-        mode: "index",
-      },
-      plugins: {
-        legend: {
-          display: true,
-          position: "top",
-          align: "start",
-          labels: {
-            color: textColor,
-            font: {
-              size: 13,
-              weight: "600",
-              family: "'Inter', 'SF Pro', -apple-system, sans-serif",
-            },
-            padding: 16,
-            usePointStyle: true,
-            pointStyle: "circle",
-          },
-        },
-        tooltip: {
-          enabled: true,
-          backgroundColor: isDark
-            ? "rgba(15, 23, 42, 0.95)"
-            : "rgba(255, 255, 255, 0.95)",
-          titleColor: isDark ? "#e5e7eb" : "#0f172a",
-          bodyColor: isDark ? "#60a5fa" : "#3b82f6",
-          borderColor: isDark
-            ? "rgba(96, 165, 250, 0.3)"
-            : "rgba(96, 165, 250, 0.2)",
-          borderWidth: 1,
-          padding: 12,
-          displayColors: true,
-          boxPadding: 6,
-          usePointStyle: true,
-          titleFont: {
-            size: 13,
-            weight: "600",
-          },
-          bodyFont: {
-            size: 14,
-            weight: "700",
-          },
-          callbacks: {
-            label: (context) => ` GPA: ${context.parsed.y.toFixed(2)}`,
-          },
-        },
-      },
-      scales: {
-        y: {
-          beginAtZero: true,
-          max: 10,
-          ticks: {
-            color: textColor,
-            font: {
-              size: 11,
-              weight: "500",
-            },
-            padding: 8,
-            stepSize: 2,
-          },
-          grid: {
-            color: gridColor,
-            lineWidth: 1,
-            drawBorder: false,
-            drawTicks: false,
-          },
-          border: {
-            display: false,
-          },
-        },
-        x: {
-          ticks: {
-            color: textColor,
-            font: {
-              size: 11,
-              weight: "500",
-            },
-            padding: 8,
-            maxRotation: 0,
-            minRotation: 0,
-          },
-          grid: {
-            color: gridColor,
-            lineWidth: 1,
-            drawBorder: false,
-            drawTicks: false,
-          },
-          border: {
-            display: false,
-          },
-        },
-      },
-    },
-  });
-}
+// ===== STATISTICS - loadStatistics already defined at top of file =====
+const renderGPAChart = window.renderGPAChart || ((labels, data) => window.StatisticsService?.renderGPAChart(labels, data));
 
 document
   .getElementById("btnRefreshStats")
   ?.addEventListener("click", async function () {
-    // Check login status first before loading data
     const isLoggedIn = await checkLoginStatus();
-
     if (!isLoggedIn) {
-      // Show login banner and don't load data
       await checkAndShowLoginBanner();
-
-      // Show notification that user needs to login first
       showLoginNotification();
-
       return;
     }
-
-    // If logged in, proceed with loading data
     await handleRefreshWithLoading(this, async () => {
       await loadStatistics();
-      // Update last successful fetch time
       await STORAGE.set({ last_successful_fetch: Date.now() });
     });
   });
 
-// ===== EXAM COUNTDOWN =====
-function parseExamDate(dateStr) {
-  // Parse "31/12/2024" or "31-12-2024"
-  const parts = dateStr.split(/[\/\-]/);
-  if (parts.length !== 3) return null;
+// ===== EXAM COUNTDOWN & FILTERS - use ExamService from module =====
+// parseExamDate, addExamCountdown, filterExams moved to modules/exams.js
+const parseExamDate = window.parseExamDate || ((dateStr) => window.ExamService?.parseExamDate(dateStr));
+const addExamCountdown = window.addExamCountdown || (() => window.ExamService?.addExamCountdown());
+const filterExams = window.filterExams || (() => window.ExamService?.filterExams());
 
-  const day = parseInt(parts[0]);
-  const month = parseInt(parts[1]) - 1;
-  const year = parseInt(parts[2]);
-
-  return new Date(year, month, day);
-}
-
-function addExamCountdown() {
-  const table = document.querySelector("#tblExams tbody");
-  if (!table) return;
-
-  const rows = table.querySelectorAll("tr");
-  const now = new Date();
-  now.setHours(0, 0, 0, 0);
-
-  rows.forEach((row) => {
-    const cells = row.querySelectorAll("td");
-    if (cells.length < 3) return;
-
-    const dateCell = cells[2];
-    const dateStr = dateCell.textContent.trim();
-    const examDate = parseExamDate(dateStr);
-
-    if (!examDate) return;
-
-    const diff = Math.ceil((examDate - now) / (1000 * 60 * 60 * 24));
-
-    if (diff < 0) return; // Past exam
-
-    let badge = "";
-    if (diff === 0) {
-      badge =
-        '<span class="exam-days" style="background: #ef4444; color: white;">HÔM NAY! </span>';
-      row.classList.add("exam-urgent");
-    } else if (diff <= 3) {
-      badge = `<span class="exam-days">${diff} ngày nữa</span>`;
-      row.classList.add("exam-urgent");
-    } else if (diff <= 7) {
-      badge = `<span class="exam-days" style="background: rgba(245, 158, 11, 0.2); color: #f59e0b;">${diff} ngày nữa</span>`;
-      row.classList.add("exam-soon");
-    }
-
-    if (badge) {
-      dateCell.innerHTML = dateStr + " " + badge;
-    }
-  });
-}
-
-// Add countdown when exams are loaded
-const originalLoadExams = loadExams;
-loadExams = async function () {
-  await originalLoadExams();
-  setTimeout(addExamCountdown, 100);
-};
-
-// ===== ADVANCED EXAM FILTERS =====
-document
-  .getElementById("filterExamTime")
-  ?.addEventListener("change", filterExams);
-document
-  .getElementById("searchExam")
-  ?.addEventListener("input", debounce(filterExams, 300));
-
-function filterExams() {
-  const filterValue = document.getElementById("filterExamTime")?.value || "ALL";
-  const searchValue = (
-    document.getElementById("searchExam")?.value || ""
-  ).toLowerCase();
-
-  const tbody = document.querySelector("#tblExams tbody");
-  if (!tbody) return;
-
-  const rows = tbody.querySelectorAll("tr");
-  const now = new Date();
-  now.setHours(0, 0, 0, 0);
-
-  rows.forEach((row) => {
-    const cells = row.querySelectorAll("td");
-    if (cells.length < 3) return;
-
-    const code = cells[0].textContent.toLowerCase();
-    const name = cells[1].textContent.toLowerCase();
-    const dateStr = cells[2].textContent.trim().split(" ")[0]; // Remove countdown badge text
-
-    // Search filter
-    let matchSearch = true;
-    if (searchValue) {
-      matchSearch = code.includes(searchValue) || name.includes(searchValue);
-    }
-
-    // Time filter
-    let matchTime = true;
-    if (filterValue !== "ALL") {
-      const examDate = parseExamDate(dateStr);
-      if (!examDate) {
-        matchTime = false;
-      } else {
-        const diffDays = Math.ceil((examDate - now) / (1000 * 60 * 60 * 24));
-
-        switch (filterValue) {
-          case "THIS_WEEK":
-            matchTime = diffDays >= 0 && diffDays <= 7;
-            break;
-          case "THIS_MONTH":
-            matchTime = diffDays >= 0 && diffDays <= 30;
-            break;
-          case "UPCOMING":
-            matchTime = diffDays >= 0;
-            break;
-        }
-      }
-    }
-
-    row.style.display = matchSearch && matchTime ? "" : "none";
-  });
+// Initialize exam filters from module
+if (window.ExamService) {
+  window.ExamService.init();
 }
 
 // ===== QUICK REFRESH ALL =====
@@ -2621,288 +1484,31 @@ document.getElementById("btnExportCSV")?.addEventListener("click", exportToCSV);
 // ===== CUSTOM MODAL & TOAST SYSTEM =====
 // Moved to modules/ui.js
 
-// ===== THEME CUSTOMIZATION =====
-const THEME_COLORS = {
-  blue: "#60a5fa",
-  green: "#10b981",
-  purple: "#a78bfa",
-  pink: "#f472b6",
-  orange: "#fb923c",
-  red: "#ef4444",
-};
+// ===== THEME & BACKGROUND SYSTEM - use ThemeService from module =====
+// THEME_COLORS, PRESET_BACKGROUNDS, initThemeCustomization, applyAccentColor,
+// initBackgroundSystem, applyBackground, showPresetBackgrounds, 
+// applyFrameOpacity, initFrameOpacity moved to modules/theme.js
+const THEME_COLORS = window.THEME_COLORS || window.ThemeService?.THEME_COLORS || {};
+const PRESET_BACKGROUNDS = window.PRESET_BACKGROUNDS || window.ThemeService?.PRESET_BACKGROUNDS || [];
+const initThemeCustomization = window.initThemeCustomization || (() => window.ThemeService?.initThemeCustomization());
+const applyAccentColor = window.applyAccentColor || ((c) => window.ThemeService?.applyAccentColor(c));
+const initBackgroundSystem = window.initBackgroundSystem || (() => window.ThemeService?.initBackgroundSystem());
+const applyBackground = window.applyBackground || ((u, o) => window.ThemeService?.applyBackground(u, o));
+const updateBackgroundPreview = window.updateBackgroundPreview || ((u) => window.ThemeService?.updateBackgroundPreview(u));
+const showPresetBackgrounds = window.showPresetBackgrounds || (() => window.ThemeService?.showPresetBackgrounds());
+const applyFrameOpacity = window.applyFrameOpacity || ((o) => window.ThemeService?.applyFrameOpacity(o));
+const initFrameOpacity = window.initFrameOpacity || (() => window.ThemeService?.initFrameOpacity());
+const updateOverlayOpacity = window.updateOverlayOpacity || ((o) => window.ThemeService?.updateOverlayOpacity(o));
+const updateActivePreset = window.updateActivePreset || ((c) => window.ThemeService?.updateActivePreset(c));
 
-async function initThemeCustomization() {
-  const savedColor = await STORAGE.get("accent_color", THEME_COLORS.blue);
-  applyAccentColor(savedColor);
-
-  // Update color picker value
-  const colorPicker = document.getElementById("customAccentColor");
-  if (colorPicker) {
-    colorPicker.value = savedColor;
-  }
-
-  // Mark active preset
-  updateActivePreset(savedColor);
-
-  // Theme preset buttons
-  document.querySelectorAll(".theme-preset").forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      const themeColor = THEME_COLORS[btn.dataset.theme];
-      applyAccentColor(themeColor);
-      await STORAGE.set({ accent_color: themeColor });
-      updateActivePreset(themeColor);
-      
-    });
-  });
-
-  // Custom color picker
-  if (colorPicker) {
-    colorPicker.addEventListener("change", async () => {
-      const color = colorPicker.value;
-      applyAccentColor(color);
-      await STORAGE.set({ accent_color: color });
-      updateActivePreset(color);
-      Toast.success("Đã đổi màu");
-    });
-  }
+// Initialize theme from module
+if (window.ThemeService) {
+  window.ThemeService.init();
+} else {
+  initThemeCustomization();
+  initBackgroundSystem();
+  initFrameOpacity();
 }
-
-function applyAccentColor(color) {
-  document.documentElement.style.setProperty("--accent", color);
-
-  // Update chart if exists
-  if (gpaChartInstance) {
-    loadStatistics();
-  }
-}
-
-function updateActivePreset(color) {
-  document.querySelectorAll(".theme-preset").forEach((btn) => {
-    const themeColor = THEME_COLORS[btn.dataset.theme];
-    btn.classList.toggle("active", themeColor === color);
-  });
-}
-
-// Initialize on load
-initThemeCustomization();
-
-// ===== BACKGROUND IMAGE SYSTEM =====
-const PRESET_BACKGROUNDS = [
-  {
-    name: "Gradient Blue",
-    url: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-  },
-  {
-    name: "Gradient Purple",
-    url: "linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)",
-  },
-  {
-    name: "Gradient Orange",
-    url: "linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)",
-  },
-  {
-    name: "Gradient Green",
-    url: "linear-gradient(135deg, #a8caba 0%, #5d4e75 100%)",
-  },
-  {
-    name: "Gradient Pink",
-    url: "linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)",
-  },
-  {
-    name: "Gradient Dark",
-    url: "linear-gradient(135deg, #2c3e50 0%, #34495e 100%)",
-  },
-];
-
-async function initBackgroundSystem() {
-  let savedBg = await STORAGE.get("background_image", "");
-  let savedOpacity = await STORAGE.get("background_opacity", 20);
-
-  // Apply saved background
-  if (savedBg) {
-    applyBackground(savedBg, savedOpacity);
-  }
-
-  // Apply frame opacity
-  applyFrameOpacity(savedOpacity);
-
-  // Update UI
-  updateBackgroundPreview(savedBg);
-  document.getElementById("bgOpacity").value = savedOpacity;
-  document.getElementById("bgOpacityValue").textContent = savedOpacity + "%";
-
-  // File input
-  const fileInput = document.getElementById("bgImageInput");
-  const selectBtn = document.getElementById("btnSelectBg");
-  const removeBtn = document.getElementById("btnRemoveBg");
-  const presetBtn = document.getElementById("btnPresetBg");
-  const opacitySlider = document.getElementById("bgOpacity");
-
-  selectBtn.addEventListener("click", () => fileInput.click());
-
-  fileInput.addEventListener("change", async (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.addEventListener("load", async (e) => {
-        const dataUrl = e.target.result;
-        await STORAGE.set({ background_image: dataUrl });
-        savedBg = dataUrl;
-        applyBackground(dataUrl, savedOpacity);
-        updateBackgroundPreview(dataUrl);
-        Toast.success("Đã đặt ảnh nền");
-      });
-      reader.readAsDataURL(file);
-    }
-  });
-
-  removeBtn.addEventListener("click", async () => {
-    await STORAGE.set({ background_image: "" });
-    savedBg = "";
-    applyBackground("", savedOpacity);
-    updateBackgroundPreview("");
-    Toast.success("Đã xóa ảnh nền");
-  });
-
-  presetBtn.addEventListener("click", () => {
-    showPresetBackgrounds();
-  });
-
-  opacitySlider.addEventListener("input", async (e) => {
-    const opacity = parseInt(e.target.value);
-    document.getElementById("bgOpacityValue").textContent = opacity + "%";
-    await STORAGE.set({ background_opacity: opacity });
-    savedOpacity = opacity;
-    applyBackground(savedBg, opacity);
-    applyFrameOpacity(opacity);
-  });
-}
-
-function applyBackground(bgUrl, opacity) {
-  const body = document.body;
-
-  // Remove old overlay (legacy)
-  const legacyOverlay = document.getElementById("bgOverlay");
-  if (legacyOverlay) legacyOverlay.remove();
-
-  if (bgUrl) {
-    if (bgUrl.startsWith("linear-gradient")) {
-      body.style.background = bgUrl;
-    } else {
-      body.style.backgroundImage = `url(${bgUrl})`;
-      body.style.backgroundSize = "cover";
-      body.style.backgroundPosition = "center";
-      body.style.backgroundRepeat = "no-repeat";
-    }
-    body.style.backgroundAttachment = "fixed";
-  } else {
-    body.style.background = "";
-    body.style.backgroundImage = "";
-  }
-
-  // Apply opacity overlay via CSS variable for consistent stacking
-  updateOverlayOpacity(opacity);
-}
-
-function updateBackgroundPreview(bgUrl) {
-  const preview = document.getElementById("bgPreview");
-  if (bgUrl) {
-    if (bgUrl.startsWith("linear-gradient")) {
-      preview.style.background = bgUrl;
-    } else {
-      preview.style.backgroundImage = `url(${bgUrl})`;
-    }
-    preview.style.display = "block";
-  } else {
-    preview.style.display = "none";
-  }
-}
-
-function showPresetBackgrounds() {
-  const modal = document.createElement("div");
-  modal.className = "bg-preset-modal-overlay";
-  modal.innerHTML = `
-    <div class="bg-preset-modal-box">
-      <div class="bg-preset-modal-header">
-        <div class="bg-preset-modal-icon">🎨</div>
-        <h2 class="bg-preset-modal-title">Chọn Background Preset</h2>
-        <p class="bg-preset-modal-subtitle">Chọn một trong các preset có sẵn</p>
-      </div>
-      <div class="bg-preset-modal-content">
-      <div class="preset-grid">
-        ${PRESET_BACKGROUNDS.map(
-      (preset, i) => `
-            <button class="preset-bg-btn" data-index="${i}" title="${preset.name}">
-              <div class="preset-bg-preview" style="background: ${preset.url};"></div>
-              <div class="preset-bg-name">${preset.name}</div>
-            </button>
-          `
-    ).join("")}
-      </div>
-    </div>
-  `;
-
-  document.body.appendChild(modal);
-  const closeModal = () => modal.remove();
-
-  // Add event listeners
-  document.getElementById("bgPresetCancel")?.addEventListener("click", closeModal);
-  
-  modal.addEventListener("click", (e) => {
-    if (e.target === modal) closeModal();
-  });
-
-  modal.querySelectorAll(".preset-bg-btn").forEach((btn) => {
-      btn.addEventListener("click", async () => {
-        const index = parseInt(btn.dataset.index);
-        const preset = PRESET_BACKGROUNDS[index];
-        await STORAGE.set({ background_image: preset.url });
-        applyBackground(
-          preset.url,
-          parseInt(document.getElementById("bgOpacity").value)
-        );
-        savedBg = preset.url;
-        updateBackgroundPreview(preset.url);
-        closeModal();
-        Toast.success(`�� �p d?ng ${preset.name}`);
-      });
-    });
-}
-
-// Initialize background system
-initBackgroundSystem();
-
-function updateOverlayOpacity(opacityPercent) {
-  const overlayOpacity = Math.max(
-    0,
-    Math.min(1, (100 - (opacityPercent || 0)) / 100)
-  );
-  document.documentElement.style.setProperty(
-    "--bg-overlay-opacity",
-    overlayOpacity
-  );
-}
-
-// ===== FRAME OPACITY SYSTEM =====
-function applyFrameOpacity(opacityPercent) {
-  // Convert percentage to decimal (0-1)
-  const opacity = opacityPercent / 100;
-
-  // Update CSS variable
-  document.documentElement.style.setProperty("--frame-opacity", opacity);
-
-  // Save to storage
-  STORAGE.set({ frame_opacity: opacityPercent });
-}
-
-// Load saved frame opacity on init
-async function initFrameOpacity() {
-  const savedOpacity = await STORAGE.get("frame_opacity", 100);
-  applyFrameOpacity(savedOpacity);
-}
-
-// Initialize frame opacity
-initFrameOpacity();
 
 // Achievements removed
 
@@ -3484,7 +2090,8 @@ const UpdateModal = {
         sizeEl.style.display = "block";
         sizeEl.innerHTML = "<strong>Kích thước:</strong> ~2.4 MB";
       }
-    } else if (this.config.repoOwner === "microsoft" && this.config.repoName === "vscode") {      if (appNameEl) appNameEl.textContent = "Visual Studio Code v1.85.0";
+    } else if (this.config.repoOwner === "microsoft" && this.config.repoName === "vscode") {
+      if (appNameEl) appNameEl.textContent = "Visual Studio Code v1.85.0";
       if (developerEl) developerEl.textContent = "Nhà phát triển: Microsoft";
       if (descriptionEl)
         descriptionEl.textContent =
@@ -3499,7 +2106,8 @@ const UpdateModal = {
       `;
       }
       if (sizeEl) sizeEl.innerHTML = "<strong>Kích thước:</strong> ~100 MB";
-    } else if (this.config.repoOwner === "facebook" && this.config.repoName === "react") {      if (appNameEl) appNameEl.textContent = "React v18.2.0";
+    } else if (this.config.repoOwner === "facebook" && this.config.repoName === "react") {
+      if (appNameEl) appNameEl.textContent = "React v18.2.0";
       if (developerEl) developerEl.textContent = "Nhà phát triển: Facebook (Meta)";
       if (descriptionEl)
         descriptionEl.textContent =

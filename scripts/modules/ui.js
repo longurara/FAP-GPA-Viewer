@@ -10,14 +10,23 @@ const Modal = {
 
   init() {
     this.overlay = document.getElementById("modalOverlay");
+
+    // Fix: If overlay exists but is outdated (missing subtitle), remove it to force recreation
+    if (this.overlay && !this.overlay.querySelector(".modal-subtitle")) {
+      this.overlay.remove();
+      this.overlay = null;
+    }
+
     if (!this.overlay) {
       this.overlay = document.createElement("div");
       this.overlay.id = "modalOverlay";
+      this.overlay.className = "modal-overlay";
       this.overlay.className = "modal-overlay";
       this.overlay.innerHTML = `
         <div class="modal-box">
           <div class="modal-icon"></div>
           <h3 class="modal-title"></h3>
+          <p class="modal-subtitle"></p>
           <p class="modal-message"></p>
           <div class="modal-actions">
             <button id="modalCancel" class="secondary">Hủy</button>
@@ -30,6 +39,7 @@ const Modal = {
     this.box = this.overlay.querySelector(".modal-box");
     this.icon = this.overlay.querySelector(".modal-icon");
     this.title = this.overlay.querySelector(".modal-title");
+    this.subtitle = this.overlay.querySelector(".modal-subtitle");
     this.message = this.overlay.querySelector(".modal-message");
     this.confirmBtn = this.overlay.querySelector("#modalConfirm");
     this.cancelBtn = this.overlay.querySelector("#modalCancel");
@@ -49,6 +59,7 @@ const Modal = {
   show({
     icon = "ℹ️",
     title = "Thông báo",
+    subtitle = "",
     message = "",
     confirmText = "OK",
     cancelText = "Hủy",
@@ -56,12 +67,40 @@ const Modal = {
     onConfirm = null,
     onCancel = null,
   }) {
+    // Debugging: Log who is calling the modal
+    if (!message || String(message).trim() === "") {
+      console.group("Modal.show called with empty message");
+      console.warn("Title:", title);
+      console.warn("Message (raw):", message);
+      console.trace("Stack trace:");
+      console.groupEnd();
+    }
+
     return new Promise((resolve) => {
+      // SAFEGUARD: Don't show modal if message is empty (or whitespace) and title is default
+      // This fixes the issue where an empty "Thông báo" modal appears on startup
+      if ((!message || String(message).trim() === "") && title === "Thông báo") {
+        console.warn("Blocked empty modal with default title");
+        resolve(true);
+        return;
+      }
+
       if (!this.overlay) this.init();
 
       this.icon.textContent = icon;
       this.title.textContent = title;
-      this.message.textContent = message;
+
+      // Handle subtitle
+      if (this.subtitle) {
+        if (subtitle) {
+          this.subtitle.textContent = subtitle;
+          this.subtitle.style.display = "block";
+        } else {
+          this.subtitle.style.display = "none";
+        }
+      }
+
+      this.message.innerHTML = message || ""; // Allow HTML for bold text
       this.confirmBtn.textContent = confirmText;
       this.cancelBtn.textContent = cancelText;
       this.cancelBtn.style.display = showCancel ? "block" : "none";
@@ -95,6 +134,7 @@ const Modal = {
     return this.show({
       icon: options.icon || "ℹ️",
       title: options.title || "Thông báo",
+      subtitle: options.subtitle || "",
       message,
       confirmText: "OK",
       showCancel: false,
@@ -105,6 +145,7 @@ const Modal = {
     return this.show({
       icon: options.icon || "❓",
       title: options.title || "Xác nhận",
+      subtitle: options.subtitle || "",
       message,
       confirmText: options.confirmText || "Xác nhận",
       cancelText: options.cancelText || "Hủy",

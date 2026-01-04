@@ -1,5 +1,6 @@
 ﻿<!DOCTYPE html>
 <html lang="vi">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -7,6 +8,7 @@
   <link rel="stylesheet" href="../styles/popup.css" />
   <link rel="stylesheet" href="../styles/timer-icons.css" />
 </head>
+
 <body>
   <div class="wrap">
     <header class="top">
@@ -22,7 +24,7 @@
       <div class="top-actions">
         <span id="verBadge" style="opacity: 0.8; margin-right: 8px"></span>
         <div class="theme-toggle" id="themeToggle" title="Chuyển Dark/Light mode"></div>
-        <button id="btnCheckUpdate" title="Kiểm tra cập nhật">Check update</button>
+
         <button id="btnOpenFAP" title="Mở FAP">Mở FAP</button>
       </div>
     </header>
@@ -147,7 +149,8 @@
         </div>
         <div class="card">
           <div class="label">GPA mục tiêu</div>
-          <input type="number" id="calcTargetGPA" class="calc-input-large" placeholder="3.5" step="0.1" min="0" max="10" />
+          <input type="number" id="calcTargetGPA" class="calc-input-large" placeholder="3.5" step="0.1" min="0"
+            max="10" />
         </div>
       </div>
       <div class="calc-form">
@@ -257,7 +260,9 @@
         <button id="btnExportScheduleICS" class="export-btn">📅 Export .ics</button>
       </div>
       <div class="table">
-        <div class="table-head"><div>Lịch cả tuần</div></div>
+        <div class="table-head">
+          <div>Lịch cả tuần</div>
+        </div>
         <table id="tblScheduleWeek">
           <thead>
             <tr>
@@ -311,7 +316,9 @@
 
     <section class="tab" id="tab-bookmark">
       <div class="table">
-        <div class="table-head"><div>Truy cập nhanh</div></div>
+        <div class="table-head">
+          <div>Truy cập nhanh</div>
+        </div>
         <div class="book-grid">
           <button id="btnOpenLMS">LMS HCM</button>
           <button id="btnOpenFAP2">FAP</button>
@@ -327,7 +334,8 @@
           <div class="row">
             <span>Theme presets:</span>
             <div class="theme-presets">
-              <button class="theme-preset" data-theme="blue" style="--preset-color: #60a5fa" title="Blue (Default)"></button>
+              <button class="theme-preset" data-theme="blue" style="--preset-color: #60a5fa"
+                title="Blue (Default)"></button>
               <button class="theme-preset" data-theme="green" style="--preset-color: #10b981" title="Green"></button>
               <button class="theme-preset" data-theme="purple" style="--preset-color: #a78bfa" title="Purple"></button>
               <button class="theme-preset" data-theme="pink" style="--preset-color: #f472b6" title="Pink"></button>
@@ -457,11 +465,27 @@
 
     <script src="../scripts/auto-calendar.js"></script>
     <script src="../assets/vendor/chart.min.js"></script>
+    <!-- Core utility modules (load first) -->
+    <script src="../scripts/modules/utils.js"></script>
+    <script src="../scripts/modules/storage.js"></script>
+    <script src="../scripts/modules/api.js"></script>
+    <!-- Feature modules -->
     <script src="../scripts/modules/ui.js"></script>
+    <script src="../scripts/modules/login.js"></script>
+    <script src="../scripts/modules/transcript.js"></script>
+    <script src="../scripts/modules/exams.js"></script>
+    <script src="../scripts/modules/today-schedule.js"></script>
+    <script src="../scripts/modules/settings.js"></script>
+    <script src="../scripts/modules/statistics.js"></script>
+    <script src="../scripts/modules/theme.js"></script>
+    <script src="../scripts/modules/tabs.js"></script>
+    <script src="../scripts/modules/gpa-calculator.js"></script>
     <script src="../scripts/modules/advanced-search.js"></script>
     <script src="../scripts/modules/attendance.js"></script>
     <script src="../scripts/modules/study-plans.js"></script>
+    <!-- Main popup script -->
     <script src="../scripts/popup.js"></script>
   </div>
 </body>
+
 </html>

@@ -216,7 +216,16 @@
       log(`Valid entries: ${validEntries.length}/${entries.length}`);
 
       if (validEntries.length === 0) {
-        throw new Error("Khong co entry hop le nao");
+        log("No valid entries found - likely empty schedule");
+        // Try rendering empty state instead of throwing
+        const tbody = document.querySelector("#tblAttendance tbody");
+        if (tbody) {
+          tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--muted); padding: 20px;">Không có dữ liệu điểm danh.</td></tr>`;
+        }
+        setValue?.("#attRate", "--");
+        setValue?.("#attPresent", "--");
+        setValue?.("#attAbsentLate", "--");
+        return;
       }
 
       const sorted = validEntries.sort((a, b) => {
@@ -414,22 +423,45 @@
 
   async function loadAttendanceAndSchedule() {
     try {
-      const cache = await cacheGet("cache_attendance", 10 * 60 * 1000);
-      if (cache?.entries && cache.entries.length > 0) {
-        renderAttendance(cache.entries);
-        renderScheduleWeek(cache.entries);
-        updateQuickAttendanceStats?.(cache.entries);
-      } else {
-        await refreshAttendance();
+      // Stale-While-Revalidate
+      const CACHE_KEY = "cache_attendance";
+      const cachedObj = await STORAGE.get(CACHE_KEY, null);
+      const cachedData = cachedObj ? cachedObj.data : null;
+      const cachedTs = cachedObj ? cachedObj.ts : 0;
+
+      let hasRendered = false;
+
+      // 1. Render immediate
+      if (cachedData?.entries && cachedData.entries.length > 0) {
+        log("[SWR] Rendering cached attendance");
+        renderAttendance(cachedData.entries);
+        renderScheduleWeek(cachedData.entries);
+        updateQuickAttendanceStats?.(cachedData.entries);
+        hasRendered = true;
+      }
+
+      // 2. Check stale
+      // 4 hours TTL (approx 4-6 times/day as requested)
+      const isStale = !cachedObj || Date.now() - cachedTs > 4 * 60 * 60 * 1000;
+
+      if (isStale) {
+        log("[SWR] Attendance stale/missing, refreshing...");
+        const refreshPromise = refreshAttendance().catch((err) => {
+          console.error("[SWR] Refresh failed:", err);
+          if (!hasRendered) {
+            setValue?.("#attRateQuick", "--");
+          }
+        });
+
+        // If we haven't rendered anything, await the refresh so the user sees something (or empty state)
+        // If we HAVE rendered, let it run in background
+        if (!hasRendered) {
+          await refreshPromise;
+        }
       }
     } catch (error) {
       console.error("[Attendance] Error loading attendance:", error);
-      try {
-        await refreshAttendance();
-      } catch (refreshError) {
-        console.error("[Attendance] Error refreshing attendance:", refreshError);
-        setValue?.("#attRateQuick", "--");
-      }
+      setValue?.("#attRateQuick", "--");
     }
   }
 

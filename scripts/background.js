@@ -64,7 +64,7 @@ function parseTranscriptDoc(html) {
         }
       }
     }
-  } catch (e) {}
+  } catch (e) { }
   return [];
 }
 
@@ -87,7 +87,7 @@ async function fetchHtml(url) {
       const loginUrl = "https://fap.fpt.edu.vn/";
       chrome.tabs.create({ url: loginUrl });
       await STORAGE.set({ last_login_prompt_ts: now });
-      }
+    }
     throw new Error("LOGIN_REQUIRED");
   }
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -332,7 +332,7 @@ chrome.runtime.onMessage.addListener(async (msg, _sender, sendResponse) => {
           cache_transcript_flat: transcriptRows || [],
           cache_attendance_flat: attendanceEntries || [],
         });
-      } catch (e) {}
+      } catch (e) { }
       sendResponse({
         ok: true,
         transcript: transcriptRows || [],
@@ -356,5 +356,4 @@ chrome.runtime.onMessage.addListener(async (msg, _sender, sendResponse) => {
 chrome.runtime.onInstalled.addListener(async () => {
   // Auto update check disabled to avoid GitHub API rate limit
   // setTimeout(checkUpdateAndNotify, 5000);
-  await scheduleClassReminders();
 });

@@ -4,19 +4,23 @@
   "version": "4.5.0",
   "description": "Xem GPA, điểm danh, lịch học, lịch thi, thống kê, tính toán GPA, export calendar và nhiều tính năng nâng cao",
   "icons": {
-    "128": "icon128.png"
+    "128": "assets/icons/icon128.png"
   },
   "action": {
-    "default_popup": "popup.html",
+    "default_popup": "pages/popup.html",
     "default_icon": {
-      "128": "icon128.png"
+      "128": "assets/icons/icon128.png"
     }
   },
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "scripts/background.js"
   },
-
-  "permissions": ["storage", "notifications", "alarms"],
+  "permissions": [
+    "storage",
+    "notifications",
+    "alarms",
+    "scripting"
+  ],
   "host_permissions": [
     "https://fap.fpt.edu.vn/*",
     "https://api.github.com/*",
@@ -28,13 +32,13 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "report.html",
-        "report.js",
-        "report.css",
-        "timer-icons.css",
-        "icon128.png",
-        "chart.min.js",
-        "auto-calendar.js"
+        "pages/report.html",
+        "scripts/report.js",
+        "styles/report.css",
+        "styles/timer-icons.css",
+        "assets/icons/icon128.png",
+        "scripts/vendor/chart.min.js",
+        "scripts/auto-calendar.js"
       ],
       "matches": [
         "https://fap.fpt.edu.vn/*",
