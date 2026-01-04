@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>FAP Dashboard – PDF Report</title>
+    <link rel="stylesheet" href="../styles/report.css" />
+  </head>
+  <body>
+    <section class="cover page">
+      <img id="logo" alt="logo" />
+      <h1 id="extName">FAP GPA Viewer – Dashboard</h1>
+      <div class="muted" id="extVer"></div>
+      <p class="lead">
+        Một Chrome Extension giúp sinh viên FPT University theo dõi GPA, lịch
+        học, điểm danh và nhắc nhở khi có thay đổi.
+      </p>
+      <div class="muted" id="today"></div>
+    </section>
+
+    <section class="page">
+      <h2>📄 Transcript</h2>
+      <div class="summary-box" id="gpaSummary">
+        <h3>Tổng kết GPA</h3>
+        <p>Đang tải...</p>
+      </div>
+      <table id="tblTranscript">
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>Tên môn</th>
+            <th>TC</th>
+            <th>Điểm</th>
+            <th>Trạng thái</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <section class="page">
+      <h2>🗓 Attendance</h2>
+      <table id="tblAttendance">
+        <thead>
+          <tr>
+            <th>Ngày</th>
+            <th>Thứ</th>
+            <th>Slot</th>
+            <th>Môn</th>
+            <th>Trạng thái</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <section class="page">
+      <h2>📅 Schedule (Week)</h2>
+      <table id="tblSchedule">
+        <thead>
+          <tr>
+            <th>Thứ</th>
+            <th>Ngày</th>
+            <th>Slot</th>
+            <th>Giờ</th>
+            <th>Môn</th>
+            <th>Phòng</th>
+            <th>Ghi chú</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <section class="page">
+      <h2>⚙ Settings</h2>
+      <table id="tblSettings">
+        <thead>
+          <tr>
+            <th>Key</th>
+            <th>Value</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <script src="../scripts/report.js"></script>
+  </body>
+</html>
