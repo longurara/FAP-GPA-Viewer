@@ -1,566 +1,308 @@
 <p align="center"> 
-  <a href="https://chromewebstore.google.com/detail/fpt-academic-portal-dashb/pkfcnophcekokdfobdkbliaainejbdhn?hl=vi" target="_blank">
-    <img src="icon128.png" alt="FAP Dashboard Logo" width="100" height="100">
+  <a href="https://chromewebstore.google.com/detail/fpt-academic-portal-dashb/pkfcnophcekokdfobdkbliaainejbdhn" target="_blank">
+    <img src="assets/icons/icon128.png" alt="FAP Dashboard" width="120" height="120">
   </a>
 </p>
 
-<h1 align="center">🎓 FAP Dashboard – Advanced Edition</h1>
+<h1 align="center">FAP Dashboard</h1>
 
 <p align="center">
-  <b>Chrome Extension mạnh mẽ giúp sinh viên FPT University quản lý học tập thông minh, trực quan và hiệu quả!</b><br>
-  <i>Không thu thập dữ liệu • Không thương mại • Dành cho sinh viên FPT</i>
+  <strong>The Ultimate Chrome Extension for FPT University Students</strong><br>
+  <sub>GPA Tracking • Smart Scheduling • Exam Countdown • Study Analytics</sub>
 </p>
 
 <p align="center">
-
-  <!-- Version -->
-  <img src="https://img.shields.io/badge/version-4.5.0-blue.svg" alt="Version: 4.5.0">
-
-  <!-- License -->
+  <a href="https://github.com/longurara/FAP-GPA-Viewer/releases">
+    <img src="https://img.shields.io/badge/version-5.0.0-blue?style=flat-square" alt="Version">
+  </a>
   <a href="LICENSE.md">
-    <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License: MIT">
+    <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="License">
   </a>
-
-  <!-- Chrome (clickable) -->
-  <a href="https://chromewebstore.google.com/detail/cngofiaoddikgpdlibjgkjggiihjaoln?utm_source=item-share-cb" target="_blank">
-    <img src="https://img.shields.io/badge/Chrome-Extension-orange.svg" alt="Chrome Extension">
+  <a href="https://chromewebstore.google.com/detail/cngofiaoddikgpdlibjgkjggiihjaoln">
+    <img src="https://img.shields.io/badge/chrome-extension-orange?style=flat-square&logo=googlechrome&logoColor=white" alt="Chrome Extension">
   </a>
-
-  <!-- Privacy -->
-  <img src="https://img.shields.io/badge/Privacy-Local%20Only-green.svg" alt="Privacy: Local Only">
-
-  <!-- Status -->
-  <a href="https://chromewebstore.google.com/detail/cngofiaoddikgpdlibjgkjggiihjaoln?utm_source=item-share-cb" target="_blank">
-    <img src="https://img.shields.io/badge/Status-Official-lightgrey.svg" alt="Official Status">
-  </a>
-
-  <!-- Stars -->
+  <img src="https://img.shields.io/badge/privacy-local%20only-success?style=flat-square" alt="Privacy">
   <a href="https://github.com/longurara/FAP-GPA-Viewer/stargazers">
-    <img src="https://img.shields.io/github/stars/longurara/FAP-GPA-Viewer?style=social" alt="GitHub Stars">
+    <img src="https://img.shields.io/github/stars/longurara/FAP-GPA-Viewer?style=social" alt="Stars">
   </a>
-
 </p>
-
-
-
----
 
 <p align="center">
-  🌐 <b>Ngôn ngữ:</b> 
-  <a href="#-tiếng-việt">🇻🇳 Tiếng Việt</a> | 
-  <a href="#-english">🇬🇧 English</a>
+  <a href="#-features">Features</a> •
+  <a href="#-installation">Installation</a> •
+  <a href="#-usage">Usage</a> •
+  <a href="#-architecture">Architecture</a> •
+  <a href="#-contributing">Contributing</a>
 </p>
 
 ---
 
-## 🇻🇳 Tiếng Việt
+## 🌟 Overview
 
-### 🧭 Giới thiệu
+**FAP Dashboard** is a modern Chrome Extension (Manifest V3) that transforms how FPT University students interact with the FAP academic portal. Built with performance and privacy in mind, it provides real-time GPA tracking, smart scheduling, exam countdowns, and comprehensive study analytics—all in a beautiful, intuitive interface.
 
-**FAP Dashboard – Advanced Edition** là tiện ích mở rộng Chrome (Manifest V3) được phát triển bởi sinh viên FPT University.  
-Giúp bạn **xem GPA, điểm danh, lịch học, Pomodoro timer, thống kê, và nhận thông báo thông minh** — tất cả trong một giao diện hiện đại, đẹp mắt.
-
----
-
-### ✨ Tính năng nổi bật v4.1.0
-
-#### 🌓 **Dark/Light Mode**
-
-- Toggle chuyển đổi giao diện sáng/tối mượt mà
-- Tự động lưu preference
-- Tối ưu cho mắt khi sử dụng lâu dài
-
-#### 📅 **Today's Schedule**
-
-- Hiển thị lịch học hôm nay ngay trang chủ
-- **Countdown real-time** đến từng tiết học
-- Cập nhật tự động mỗi phút
-
-#### 🧮 **GPA Calculator**
-
-- Tính toán điểm cần đạt để đạt GPA mục tiêu
-- Formula: `(target_gpa * total_credits - current_points) / new_credits`
-- Hỗ trợ plan môn học tiếp theo
-
-#### 📊 **Statistics & Trend Chart**
-
-- **Biểu đồ GPA theo kỳ** (powered by Chart.js)
-- Thống kê chi tiết: điểm trung bình, môn điểm cao nhất/thấp nhất, tỷ lệ Pass/Fail
-- Responsive với Dark/Light mode
-
-#### 🔥 **Attendance Streak Tracker**
-
-- Theo dõi chuỗi ngày đi học liên tiếp
-- Gamification: Badge động với animation
-- Motivate sinh viên đi học đầy đủ
-
-#### ⏰ **Smart Notifications**
-
-- **Nhắc nhở trước giờ học 15 phút**
-- Tự động schedule cho tất cả lớp trong ngày
-- Hiển thị môn học, giờ, và phòng
-
-#### ⏳ **Exam Countdown**
-
-- Badge đếm ngược số ngày đến kỳ thi
-- Highlight màu đỏ cho thi gấp (<3 ngày)
-- Highlight màu cam cho thi sắp tới (<7 ngày)
-- Badge "HÔM NAY!" cho ngày thi
-
-#### 🔍 **Advanced Search System**
-
-- **Global search** với scoring algorithm thông minh
-- Tìm kiếm across GPA, attendance, exams, timer data
-- Loading states với spinner animation
-- Auto-refresh search data mỗi 30 giây
-
-#### ⏰ **Background Pomodoro Timer**
-
-- **Chạy ngầm** ngay cả khi đóng extension
-- Chrome Alarms API integration
-- Seamless sync giữa popup và background
-- Auto-resume timer sau khi restart extension
-
-#### 🧠 **Smart Study Break Reminders**
-
-- Tính **thời gian học thực tế** thay vì thời gian trôi qua
-- Study history tracking cho tính toán chính xác
-- Prevent notification spam
-
-#### 🏆 **Achievement System**
-
-- Rate limiting (chỉ check achievements 1 lần/giờ)
-- Notifications chỉ hiển thị cho achievements mới unlock
-- Close button cho achievement notifications
-- Auto-clear existing notifications
-
-#### 🎨 **Smart Notifications Panel Redesign**
-
-- Complete UI redesign với modern glassmorphism
-- Grouped settings (Timing, Notification Types, Sound, Test)
-- Gradient backgrounds và hover effects
-- Toggle switches với smooth animations
+> 🔒 **Privacy First**: All data is processed locally. No external servers. No data collection.
 
 ---
 
-### 🚀 Cài đặt
+## ✨ Features
 
-#### Cách 1 – Tải trực tiếp
+### 📊 Academic Tracking
 
-1. Vào [GitHub Repository](https://github.com/longurara/FAP-GPA-Viewer)
-2. Chọn **Releases → Download ZIP**
-3. Giải nén file ZIP vào thư mục bất kỳ
+| Feature | Description |
+|---------|-------------|
+| **GPA Dashboard** | Real-time GPA calculation (10-point & 4-point scale) with course exclusion support |
+| **Transcript Viewer** | Complete course history with grades, credits, and status |
+| **GPA Calculator** | Calculate required grades to achieve target GPA |
+| **Course Notes** | Add personal notes to any course |
 
-#### Cách 2 – Clone qua Git
+### 📅 Schedule Management
+
+| Feature | Description |
+|---------|-------------|
+| **Today's Schedule** | At-a-glance view of today's classes with real-time countdown |
+| **Weekly Timetable** | Full week schedule with slot times and room numbers |
+| **Exam Schedule** | Upcoming exams with countdown badges (urgent/soon/today) |
+| **ICS Export** | Export schedule to Google Calendar, Apple Calendar, Outlook |
+
+### 📈 Analytics & Statistics
+
+| Feature | Description |
+|---------|-------------|
+| **GPA Trend Chart** | Visual semester-by-semester GPA progression |
+| **Attendance Tracker** | Present/Absent/Late statistics with rates |
+| **Performance Stats** | Best/worst courses, pass rate, average grade |
+
+### 🎨 User Experience
+
+| Feature | Description |
+|---------|-------------|
+| **Dark/Light Mode** | System-aware theme with manual toggle |
+| **Accent Colors** | 6 preset colors + custom color picker |
+| **Background Images** | Gradient presets or custom image upload |
+| **Liquid Glass UI** | Modern glassmorphism design with smooth animations |
+
+### 🔔 Smart Notifications
+
+| Feature | Description |
+|---------|-------------|
+| **Class Reminders** | Configurable pre-class notifications |
+| **Exam Alerts** | Countdown notifications for upcoming exams |
+| **Background Polling** | Automatic schedule updates even when closed |
+
+---
+
+## 🚀 Installation
+
+### Option 1: Chrome Web Store (Recommended)
+
+<a href="https://chromewebstore.google.com/detail/cngofiaoddikgpdlibjgkjggiihjaoln">
+  <img src="https://storage.googleapis.com/web-dev-uploads/image/WlD8wC6g8khYWPJUsQceQkhXSlv1/iNEddTyWiMfLSwFD6qGq.png" alt="Available in Chrome Web Store" width="200">
+</a>
+
+### Option 2: Manual Installation
 
 ```bash
+# Clone the repository
 git clone https://github.com/longurara/FAP-GPA-Viewer.git
 cd FAP-GPA-Viewer
+
+# Load in Chrome
+# 1. Open chrome://extensions/
+# 2. Enable "Developer mode"
+# 3. Click "Load unpacked"
+# 4. Select the cloned folder
 ```
 
-#### Cách 3 – Cài vào Chrome
+### Option 3: Download ZIP
 
-1. Mở Chrome → `chrome://extensions/`
-2. Bật **Developer Mode**
-3. Nhấn **Load unpacked**
-4. Chọn thư mục có `manifest.json`
-5. Ghim extension qua biểu tượng 🧩 → 📌 **FAP Dashboard**
+1. Download from [Releases](https://github.com/longurara/FAP-GPA-Viewer/releases)
+2. Extract to a folder
+3. Load unpacked in Chrome
 
 ---
 
-### 📖 Hướng dẫn sử dụng
+## 📖 Usage
 
-#### Bước đầu tiên
+### Quick Start
 
-1. Đăng nhập [fap.fpt.edu.vn](https://fap.fpt.edu.vn/)
-2. Mở extension → bấm **Làm mới tất cả**
-3. Chờ vài giây để tải GPA, điểm danh và lịch học
+1. **Login** to [fap.fpt.edu.vn](https://fap.fpt.edu.vn/)
+2. **Click** the FAP Dashboard extension icon
+3. **Wait** for automatic data sync (or click "Refresh All")
 
-#### Các tab chính
+### Tab Overview
 
-| Tab              | Mô tả                                       | Chức năng                      |
-| ---------------- | ------------------------------------------- | ------------------------------ |
-| 📅 **Hôm nay**   | Lịch học hôm nay với countdown, quick stats | Làm mới / Xem chi tiết         |
-| 📊 **GPA**       | Xem điểm, GPA, tổng tín chỉ                 | Làm mới / Copy / Mở Transcript |
-| ✅ **Điểm danh** | Tỷ lệ chuyên cần, vắng, muộn                | Làm mới / Mở Attendance        |
-| 📅 **Lịch học**  | Lịch tuần, Slot, phòng                      | Làm mới / Mở Schedule          |
-| 📝 **Lịch thi**  | Lịch thi với countdown badges               | Làm mới / Mở Exam Schedule     |
-| 🧮 **Tính GPA**  | GPA Calculator với target planning          | Tính điểm cần đạt              |
-| 📊 **Thống kê**  | Statistics với trend chart                  | Xem biểu đồ GPA                |
-| ⏰ **Timer**     | Pomodoro timer với background support       | Start/Pause/Reset timer        |
-| 🔍 **Tìm kiếm**  | Advanced search system                      | Tìm kiếm toàn bộ dữ liệu       |
-| 🔖 **Bookmark**  | Truy cập nhanh LMS / FAP / IT HCM           | —                              |
-| ⚙️ **Cài đặt**   | Giờ hoạt động, thông báo, theme             | Lưu / Test / Xuất PDF          |
+| Tab | Purpose |
+|-----|---------|
+| 🏠 **Today** | Quick stats, today's classes, GPA overview |
+| 📊 **GPA** | Full transcript, course management, notes |
+| 🧮 **Calculator** | GPA target planning tool |
+| 📈 **Statistics** | Trend charts, performance analytics |
+| ✅ **Attendance** | Attendance records and rates |
+| 📅 **Schedule** | Weekly timetable view |
+| 📝 **Exams** | Exam schedule with countdowns |
+| 🔖 **Bookmarks** | Quick links to FAP, LMS, IT Portal |
+| ⚙️ **Settings** | Themes, notifications, export options |
 
 ---
 
-### 🧠 Chi tiết kỹ thuật
+## 🏗️ Architecture
 
-- **Quyền:**
-  `storage`, `tabs`, `notifications`, `alarms`, `host_permissions (https://fap.fpt.edu.vn/*)`
-- **Cache:**
-  GPA – 24h, Điểm danh – 10 phút, Cập nhật – 6h
-- **Service Worker:**
-  Background Pomodoro timer, kiểm tra điểm danh, gửi thông báo, kiểm tra bản cập nhật
-- **Background Features:**
-  Chrome Alarms API, Study session tracking, Auto-resume functionality
+### v5.0.0 Modular Architecture
+
+```
+FAP-GPA-Viewer/
+├── manifest.json           # Extension configuration
+├── pages/
+│   ├── popup.html          # Main popup interface
+│   └── report.html         # PDF export page
+├── scripts/
+│   ├── popup.js            # Main orchestrator (~2,300 lines)
+│   ├── background.js       # Service worker for notifications
+│   └── modules/            # ES Modules (12 modules)
+│       ├── utils.js        # DOM helpers, debounce
+│       ├── storage.js      # Chrome storage wrapper
+│       ├── api.js          # FAP API integration
+│       ├── login.js        # Authentication status
+│       ├── transcript.js   # GPA parsing & calculation
+│       ├── exams.js        # Exam schedule handling
+│       ├── today-schedule.js # Today widget
+│       ├── settings.js     # User preferences
+│       ├── statistics.js   # Charts & analytics
+│       ├── theme.js        # Theme customization
+│       ├── tabs.js         # Tab navigation
+│       └── gpa-calculator.js # Target GPA tool
+├── styles/
+│   ├── popup.css           # Main styles
+│   └── themes/             # Theme variations
+└── assets/
+    └── icons/              # Extension icons
+```
+
+### Technical Highlights
+
+- **Manifest V3** compliant with Service Workers
+- **Modular codebase** with 43% reduction from v4.x
+- **Stale-While-Revalidate** caching pattern
+- **Chrome Alarms API** for background polling
+- **Chart.js** for data visualization
 
 ---
 
-### 🐞 Khắc phục sự cố
+## 🔧 Technical Details
 
-| Vấn đề                    | Nguyên nhân         | Cách khắc phục                               |
-| ------------------------- | ------------------- | -------------------------------------------- |
-| ❌ Không hiển thị dữ liệu | Chưa đăng nhập FAP  | Đăng nhập lại → Làm mới                      |
-| 🔕 Không nhận thông báo   | Bị tắt Notification | Mở `chrome://settings/content/notifications` |
-| ⚙️ Lỗi sau cập nhật       | Cache cũ            | `Reload` hoặc gỡ và cài lại                  |
-| 📉 Sai GPA                | Dữ liệu lỗi         | Click "Làm mới" hoặc xóa cache               |
-| ⏰ Timer không chạy ngầm  | Background bị tắt   | Restart extension hoặc cài lại               |
-| 🔍 Search không hiệu quả  | Cache search cũ     | Chờ 30 giây để auto-refresh hoặc reload      |
+### Permissions
+
+| Permission | Purpose |
+|------------|---------|
+| `storage` | Save preferences and cached data locally |
+| `notifications` | Class reminders and exam alerts |
+| `alarms` | Background polling and timer functionality |
+| `scripting` | Execute scripts on FAP pages for data fetching |
+
+### Cache TTL
+
+| Data | Cache Duration |
+|------|---------------|
+| GPA/Transcript | 24 hours |
+| Attendance | 4 hours |
+| Exams | 24 hours |
+| Settings | Persistent |
+
+### Browser Support
+
+- ✅ Google Chrome (v88+)
+- ✅ Microsoft Edge (Chromium)
+- ✅ Brave Browser
+- ✅ Opera (Chromium)
 
 ---
 
-### 🔄 Cập nhật
+## 🐛 Troubleshooting
 
-- **Tự động:** Kiểm tra bản mới mỗi 6 giờ
-- **Thủ công:** Bấm "Check Update" → Mở GitHub → Cài lại bản mới nhất
+| Issue | Solution |
+|-------|----------|
+| No data displayed | Login to FAP first, then refresh |
+| Notifications not working | Enable at `chrome://settings/content/notifications` |
+| Wrong GPA values | Click "Refresh" to fetch latest data |
+| Extension not loading | Reload extension at `chrome://extensions` |
 
 ---
 
-### 🤝 Đóng góp
+## 🤝 Contributing
 
-Chào mừng đóng góp từ sinh viên FPT 🎉
-
-- Báo lỗi: [GitHub Issues](https://github.com/longurara/FAP-GPA-Viewer/issues)
-- Đề xuất tính năng: gắn nhãn "enhancement"
-- Tạo Pull Request:
+Contributions are welcome from the FPT student community!
 
 ```bash
-git checkout -b feature/ten-tinh-nang
-git commit -m "Thêm tính năng mới"
-git push origin feature/ten-tinh-nang
+# Fork the repository
+# Create your feature branch
+git checkout -b feature/amazing-feature
+
+# Commit your changes
+git commit -m 'Add amazing feature'
+
+# Push to the branch
+git push origin feature/amazing-feature
+
+# Open a Pull Request
 ```
 
----
+### Guidelines
 
-### 📜 Giấy phép
-
-Phát hành theo [Giấy phép MIT (LICENSE.md)](LICENSE.md)
-
----
-
-### 👤 Tác giả
-
-**Lê Hoàng Long (longurara)**
-
-- GitHub: [@longurara](https://github.com/longurara)
-- Repository: [FAP-GPA-Viewer](https://github.com/longurara/FAP-GPA-Viewer)
+- Follow existing code style
+- Test on multiple Chrome versions
+- Update documentation for new features
+- Add comments for complex logic
 
 ---
 
-### ⚠️ Miễn trừ trách nhiệm
+## 📜 License
 
-Dự án này là **công cụ không chính thức**, phát triển **độc lập** để hỗ trợ sinh viên FPT University.
-Không thuộc, không được bảo trợ, và không đại diện cho **FPT University** hoặc trang **[fap.fpt.edu.vn](https://fap.fpt.edu.vn)**.
-Phần mềm **không thu thập dữ liệu cá nhân**, **không lưu mật khẩu**, **không gửi dữ liệu ra ngoài**.
-Người dùng **tự chịu trách nhiệm** khi sử dụng phần mềm.
+This project is licensed under the [MIT License](LICENSE.md).
 
 ---
 
-### 🛡️ Chính sách bảo mật (Tóm tắt)
+## 👤 Author
 
-- Không thu thập hoặc gửi thông tin đăng nhập ra ngoài
-- Xử lý **cục bộ trong trình duyệt**
-- Lưu tạm qua **Chrome Storage API**
-- Gỡ extension = xóa toàn bộ dữ liệu
-
----
-
-### ❤️ Dành cho sinh viên FPT – Bởi sinh viên FPT
-
-Nếu bạn thấy tiện ích này hữu ích, hãy ⭐ dự án trên GitHub nhé!
-
----
-
-## 🇬🇧 English
+<table>
+  <tr>
+    <td align="center">
+      <a href="https://github.com/longurara">
+        <img src="https://github.com/longurara.png" width="100px;" alt="longurara"/><br />
+        <sub><b>Lê Hoàng Long</b></sub>
+      </a>
+    </td>
+  </tr>
+</table>
 
 ---
 
-<p align="center">
-  <img src="icon128.png" alt="FAP Dashboard Logo" width="100" height="100">
-</p>
+## ⚠️ Disclaimer
 
-<h1 align="center">🎓 FAP Dashboard – Advanced Edition</h1>
+This is an **unofficial, community-built extension** created independently to assist FPT University students. It is:
 
-<p align="center">
-  <b>A powerful Chrome Extension that helps FPT University students manage their studies intelligently, visually, and efficiently!</b><br>
-  <i>Privacy-first • Non-commercial • Made by FPT Students</i>
-</p>
+- ❌ NOT affiliated with FPT University
+- ❌ NOT endorsed by fap.fpt.edu.vn
+- ❌ NOT collecting any personal data
+- ✅ Open source and transparent
+- ✅ Privacy-focused with local-only processing
 
-<p align="center">
+**Use at your own discretion.**
 
-  <!-- Version -->
-  <img src="https://img.shields.io/badge/version-4.5.0-blue.svg" alt="Version: 4.5.0">
+---
 
-  <!-- License -->
-  <a href="LICENSE.md">
-    <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License: MIT">
-  </a>
+## 🛡️ Privacy Policy
 
-  <!-- Chrome (clickable) -->
-  <a href="https://chromewebstore.google.com/detail/cngofiaoddikgpdlibjgkjggiihjaoln?utm_source=item-share-cb" target="_blank">
-    <img src="https://img.shields.io/badge/Chrome-Extension-orange.svg" alt="Chrome Extension">
-  </a>
+- **No data collection**: All processing happens in your browser
+- **No external servers**: Data never leaves your device
+- **No tracking**: No analytics or telemetry
+- **Easy cleanup**: Uninstall removes all data
 
-  <!-- Privacy -->
-  <img src="https://img.shields.io/badge/Privacy-Local%20Only-green.svg" alt="Privacy: Local Only">
+For details, see [PRIVACY.md](PRIVACY.md).
 
-  <!-- Status -->
-  <a href="https://chromewebstore.google.com/detail/cngofiaoddikgpdlibjgkjggiihjaoln?utm_source=item-share-cb" target="_blank">
-    <img src="https://img.shields.io/badge/Status-Official-lightgrey.svg" alt="Official Status">
-  </a>
-
-  <!-- Stars -->
-  <a href="https://github.com/longurara/FAP-GPA-Viewer/stargazers">
-    <img src="https://img.shields.io/github/stars/longurara/FAP-GPA-Viewer?style=social" alt="GitHub Stars">
-  </a>
-
-</p>
 ---
 
 <p align="center">
-  🌐 <b>Ngôn ngữ:</b> 
-  <a href="#-tiếng-việt">🇻🇳 Tiếng Việt</a> | 
-  <a href="#-english">🇬🇧 English</a>
+  <sub>Made with ❤️ by FPT Students, for FPT Students</sub><br>
+  <sub>If you find this useful, please ⭐ the repository!</sub>
 </p>
-
----
-
-## 🇬🇧 English
-
-### 🧭 Overview
-
-**FAP Dashboard – Advanced Edition** is a Chrome Extension (Manifest V3) developed by FPT University students.  
-It helps students **view GPA, attendance, schedules, Pomodoro timer, statistics, and receive smart notifications** — all in one modern, beautiful interface.
-
----
-
-### ✨ Key Features v4.1.0
-
-#### 🌓 **Dark/Light Mode**
-
-- Smooth toggle between light and dark themes
-- Auto-save preferences
-- Optimized for long-term eye comfort
-
-#### 📅 **Today's Schedule**
-
-- Display today's classes on the homepage
-- **Real-time countdown** to each class
-- Auto-update every minute
-
-#### 🧮 **GPA Calculator**
-
-- Calculate required grades to achieve target GPA
-- Formula: `(target_gpa * total_credits - current_points) / new_credits`
-- Support for planning next semester courses
-
-#### 📊 **Statistics & Trend Chart**
-
-- **GPA trend chart by semester** (powered by Chart.js)
-- Detailed statistics: average grades, highest/lowest courses, Pass/Fail ratio
-- Responsive with Dark/Light mode
-
-#### 🔥 **Attendance Streak Tracker**
-
-- Track consecutive days of attendance
-- Gamification: Dynamic badges with animation
-- Motivate students to maintain perfect attendance
-
-#### ⏰ **Smart Notifications**
-
-- **15-minute pre-class reminders**
-- Auto-schedule for all classes in the day
-- Display subject, time, and room
-
-#### ⏳ **Exam Countdown**
-
-- Countdown badges to exam days
-- Red highlight for urgent exams (<3 days)
-- Orange highlight for upcoming exams (<7 days)
-- "TODAY!" badge for exam day
-
-#### 🔍 **Advanced Search System**
-
-- **Global search** with intelligent scoring algorithm
-- Search across GPA, attendance, exams, timer data
-- Loading states with spinner animation
-- Auto-refresh search data every 30 seconds
-
-#### ⏰ **Background Pomodoro Timer**
-
-- **Runs in background** even when extension is closed
-- Chrome Alarms API integration
-- Seamless sync between popup and background
-- Auto-resume timer after extension restart
-
-#### 🧠 **Smart Study Break Reminders**
-
-- Calculate **actual study time** instead of elapsed time
-- Study history tracking for accurate calculations
-- Prevent notification spam
-
-#### 🏆 **Achievement System**
-
-- Rate limiting (check achievements only once per hour)
-- Notifications only for newly unlocked achievements
-- Close button for achievement notifications
-- Auto-clear existing notifications
-
-#### 🎨 **Smart Notifications Panel Redesign**
-
-- Complete UI redesign with modern glassmorphism
-- Grouped settings (Timing, Notification Types, Sound, Test)
-- Gradient backgrounds and hover effects
-- Toggle switches with smooth animations
-
----
-
-### 🚀 Installation
-
-#### Option 1 – Manual Download
-
-1. Visit [GitHub Repository](https://github.com/longurara/FAP-GPA-Viewer)
-2. Open **Releases → Download ZIP**
-3. Extract the ZIP to any folder
-
-#### Option 2 – Clone via Git
-
-```bash
-git clone https://github.com/longurara/FAP-GPA-Viewer.git
-cd FAP-GPA-Viewer
-```
-
-#### Option 3 – Load into Chrome
-
-1. Open Chrome → `chrome://extensions/`
-2. Enable **Developer Mode**
-3. Click **Load unpacked**
-4. Select the folder containing `manifest.json`
-5. Pin the extension via 🧩 → 📌 **FAP Dashboard**
-
----
-
-### 📖 Usage Guide
-
-#### First-time setup
-
-1. Log in to [fap.fpt.edu.vn](https://fap.fpt.edu.vn/)
-2. Open the extension and click **"Refresh All"**
-3. Wait a few seconds for GPA, attendance, and schedule to load
-
-#### Tabs Overview
-
-| Tab               | Description                                  | Actions                          |
-| ----------------- | -------------------------------------------- | -------------------------------- |
-| 📅 **Today**      | Today's schedule with countdown, quick stats | Refresh / View details           |
-| 📊 **GPA**        | Displays GPA, total credits, subjects        | Refresh / Copy / Open Transcript |
-| ✅ **Attendance** | Attendance rate and history                  | Refresh / Open Attendance        |
-| 📅 **Schedule**   | Weekly timetable view                        | Refresh / Open Schedule          |
-| 📝 **Exams**      | Exam schedule with countdown badges          | Refresh / Open Exam Schedule     |
-| 🧮 **Calculator** | GPA Calculator with target planning          | Calculate required grades        |
-| 📊 **Statistics** | Statistics with trend chart                  | View GPA chart                   |
-| ⏰ **Timer**      | Pomodoro timer with background support       | Start/Pause/Reset timer          |
-| 🔍 **Search**     | Advanced search system                       | Search all data                  |
-| 🔖 **Bookmarks**  | Quick links (LMS / FAP / IT Portal)          | —                                |
-| ⚙️ **Settings**   | Control hours, notifications, theme          | Save / Test / Export PDF         |
-
----
-
-### 🧠 Technical Details
-
-- **Permissions:**
-  `storage`, `tabs`, `notifications`, `alarms`, `host_permissions (https://fap.fpt.edu.vn/*)`
-- **Cache:**
-  GPA – 24 hours, Attendance – 10 minutes, Update check – 6 hours
-- **Service Worker:**
-  Background Pomodoro timer, attendance checks, notifications, version updates
-- **Background Features:**
-  Chrome Alarms API, Study session tracking, Auto-resume functionality
-
----
-
-### 🐞 Troubleshooting
-
-| Issue                              | Cause               | Solution                                            |
-| ---------------------------------- | ------------------- | --------------------------------------------------- |
-| ❌ No data loaded                  | Not logged in       | Log in again → click Refresh                        |
-| 🔕 No notifications                | Disabled in Chrome  | Enable at `chrome://settings/content/notifications` |
-| ⚙️ Extension errors                | Old cache           | Reload or reinstall                                 |
-| 📉 Wrong GPA                       | Outdated data       | Click "Refresh" or clear cache                      |
-| ⏰ Timer not running in background | Background disabled | Restart extension or reinstall                      |
-| 🔍 Search not effective            | Old search cache    | Wait 30 seconds for auto-refresh or reload          |
-
----
-
-### 🔄 Updates
-
-- **Automatic:** Checks GitHub for new releases every 6 hours
-- **Manual:** Click "Check Update" in the popup → open GitHub → reinstall latest version
-
----
-
-### 🤝 Contributing
-
-Contributions from the FPT student community are welcome 🎉
-
-- Report bugs via [GitHub Issues](https://github.com/longurara/FAP-GPA-Viewer/issues)
-- Suggest features (label: enhancement)
-- Create Pull Requests:
-
-```bash
-git checkout -b feature/your-feature
-git commit -m "Add new feature"
-git push origin feature/your-feature
-```
-
----
-
-### 📜 License
-
-Released under the [MIT License](LICENSE.md)
-
----
-
-### 👤 Author
-
-**Lê Hoàng Long (longurara)**
-
-- GitHub: [@longurara](https://github.com/longurara)
-- Repository: [FAP-GPA-Viewer](https://github.com/longurara/FAP-GPA-Viewer)
-
----
-
-### ⚠️ Disclaimer
-
-This is an **unofficial, community-built extension** created independently to assist FPT University students.
-It is **not affiliated with, endorsed by, or maintained by FPT University or fap.fpt.edu.vn**.
-The extension **does not collect personal data**, **does not store passwords**, and **does not send data externally**.
-Use at your own risk.
-
----
-
-### 🛡️ Privacy Summary
-
-- No credentials or private data are collected
-- All processing happens **locally in your browser**
-- Temporary data is stored only in Chrome Storage API
-- Uninstalling the extension removes all local data
-
----
-
-### ❤️ Made by FPT Students – for FPT Students
-
-If you find this project useful, please ⭐ the repository on GitHub!
-
----

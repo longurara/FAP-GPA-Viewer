@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "FAP Dashboard",
-  "version": "4.5.0",
+  "version": "5.0.0",
   "description": "Xem GPA, điểm danh, lịch học, lịch thi, thống kê, tính toán GPA, export calendar và nhiều tính năng nâng cao",
   "icons": {
     "128": "assets/icons/icon128.png"
@@ -26,8 +26,7 @@
     "https://api.github.com/*",
     "https://github.com/*",
     "https://lms-hcm.fpt.edu.vn/*",
-    "https://it-hcm.fpt.edu.vn/*",
-    "https://wttr.in/*"
+    "https://it-hcm.fpt.edu.vn/*"
   ],
   "web_accessible_resources": [
     {
