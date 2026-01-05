@@ -28,6 +28,20 @@ const LoginService = {
         }
     },
 
+    // Debounce timer for login banner flag
+    _bannerDebounceTimer: null,
+
+    /**
+     * Set login banner flag with debounce to prevent flickering
+     * @param {boolean} show - Whether to show the banner
+     */
+    async setLoginBannerFlag(show) {
+        clearTimeout(this._bannerDebounceTimer);
+        this._bannerDebounceTimer = setTimeout(async () => {
+            await window.STORAGE?.set({ show_login_banner: show });
+        }, 100);
+    },
+
     /**
      * Actively check if user is logged into FAP
      * @returns {Promise<boolean>} - True if logged in
@@ -44,20 +58,18 @@ const LoginService = {
                 new DOMParser().parseFromString(csResult.text, "text/html");
 
             if (!doc || window.looksLikeLoginPage(doc)) {
-                await window.STORAGE?.set({ show_login_banner: true });
+                this.setLoginBannerFlag(true);
                 this.updateLoginStatusDisplay(false, false);
                 return false;
             }
 
-            await window.STORAGE?.set({
-                show_login_banner: false,
-                last_successful_fetch: Date.now(),
-            });
+            this.setLoginBannerFlag(false);
+            await window.STORAGE?.set({ last_successful_fetch: Date.now() });
             this.updateLoginStatusDisplay(true, false);
             return true;
         } catch (error) {
             // On error, assume we need to login
-            await window.STORAGE?.set({ show_login_banner: true });
+            this.setLoginBannerFlag(true);
             this.updateLoginStatusDisplay(false, false);
             return false;
         }
@@ -114,7 +126,7 @@ const LoginService = {
         const loginUrl = "https://fap.fpt.edu.vn/";
         chrome.tabs.create({ url: loginUrl });
         this.hideLoginBanner();
-        await window.STORAGE?.set({ show_login_banner: false });
+        this.setLoginBannerFlag(false);
 
         // Check login status after a delay to see if user logged in
         setTimeout(async () => {
@@ -128,7 +140,7 @@ const LoginService = {
      */
     async handleDismissBanner() {
         this.hideLoginBanner();
-        await window.STORAGE?.set({ show_login_banner: false });
+        this.setLoginBannerFlag(false);
     },
 
     /**

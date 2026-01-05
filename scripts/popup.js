@@ -1,11 +1,4 @@
-﻿// ====== FAP Dashboard (popup) with caching + ScheduleOfWeek attendance ======
-// NOTE: Core functions are now provided by modules loaded before this script:
-// - utils.js: $, setValue, toNum, NORM, debounce
-// - storage.js: STORAGE, cacheGet, cacheSet
-// - api.js: DEFAULT_URLS, fetchViaContentScript, looksLikeLoginPage, fetchHTML
-
-// Fallback definitions if modules not loaded (backward compatibility)
-if (!window.STORAGE) {
+﻿if (!window.STORAGE) {
   window.STORAGE = {
     get: (k, d) => new Promise((r) => chrome.storage.local.get({ [k]: d }, (v) => r(v[k]))),
     set: (obj) => new Promise((r) => chrome.storage.local.set(obj, r)),
@@ -295,24 +288,14 @@ async function renderTranscript(rows, excluded) {
       const courseCode = e.target.dataset.code;
       const isExcluded = e.target.checked;
 
-      // Get current excluded courses
-      const excludedCourses = await STORAGE.get("excluded_courses", []);
-
-      if (isExcluded) {
-        // Add to excluded list
-        if (!excludedCourses.includes(courseCode)) {
-          excludedCourses.push(courseCode);
+      // Use atomicUpdate to prevent race condition on rapid clicks
+      const excludedCourses = await STORAGE.atomicUpdate("excluded_courses", [], (courses) => {
+        if (isExcluded) {
+          return courses.includes(courseCode) ? courses : [...courses, courseCode];
+        } else {
+          return courses.filter(c => c !== courseCode);
         }
-      } else {
-        // Remove from excluded list
-        const index = excludedCourses.indexOf(courseCode);
-        if (index > -1) {
-          excludedCourses.splice(index, 1);
-        }
-      }
-
-      // Save updated list
-      await STORAGE.set({ excluded_courses: excludedCourses });
+      });
 
       // Update UI
       tr.className = isExcluded ? "course-row excluded" : "course-row";
@@ -334,9 +317,11 @@ async function renderTranscript(rows, excluded) {
     textarea.addEventListener("input", async () => {
       clearTimeout(saveTimeout);
       saveTimeout = setTimeout(async () => {
-        const currentNotes = await STORAGE.get("course_notes", {});
-        currentNotes[courseCode] = textarea.value;
-        await STORAGE.set({ course_notes: currentNotes });
+        // Use atomicUpdate to prevent race condition when editing multiple notes
+        await STORAGE.atomicUpdate("course_notes", {}, (notes) => ({
+          ...notes,
+          [courseCode]: textarea.value,
+        }));
 
         // Update button icon
         const hasContent = textarea.value.trim();
@@ -607,16 +592,40 @@ if (window.TabsService) {
   setTimeout(() => initLiquidGlassTabs(), 100);
 }
 
+// Helper: Load with timeout - failure doesn't block next request
+async function safeLoad(fn, name, timeoutMs = 60000) {
+  try {
+    await Promise.race([
+      fn(),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Timeout")), timeoutMs)
+      ),
+    ]);
+    console.log(`[Init] ${name} loaded successfully`);
+  } catch (e) {
+    console.warn(`[Init] ${name} load failed/timeout:`, e.message);
+  }
+}
+
 (async function init() {
-  await Promise.all([
-    loadGPA(),
-    loadAttendanceAndSchedule(),
-    loadTodaySchedule(),
-    loadSettingsUI(),
-    loadExams(),
-    loadStatistics(),
-    initGPACalculator(),
-  ]);
+  // 1. Non-network operations first (instant)
+  loadSettingsUI();
+  initGPACalculator();
+
+  // 2. Sequential network requests with priority
+  // Each request has timeout, failure doesn't block next
+  // Cache-first pattern in each loader ensures immediate display
+
+  await safeLoad(loadAttendanceAndSchedule, "Attendance");
+
+  // Today schedule reads from cache populated by attendance, no extra network call
+  loadTodaySchedule();
+
+  await safeLoad(loadExams, "Exams");
+  await safeLoad(loadStatistics, "Statistics");
+
+  // GPA/Transcript last - tends to be slowest
+  await safeLoad(loadGPA, "GPA");
 
   // Check login status and show banner if needed
   await checkLoginStatus();
