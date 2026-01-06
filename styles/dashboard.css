@@ -1,0 +1,259 @@
+/* Dashboard Full Page Mode Styles
+   Overrides popup.css for larger display in full browser tab
+   ============================================================= */
+
+/* Remove popup constraints */
+body.fullpage-mode {
+    min-width: 100vw;
+    max-width: none;
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+}
+
+body.fullpage-mode .wrap {
+    max-width: 960px;
+    max-height: none;
+    min-height: 100vh;
+    margin: 0 auto;
+    padding: 18px 28px 28px;
+    overflow-y: auto;
+}
+
+/* Header */
+body.fullpage-mode .top {
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+}
+
+body.fullpage-mode .brand img {
+    width: 36px;
+    height: 36px;
+}
+
+body.fullpage-mode .brand h1 {
+    font-size: 22px;
+}
+
+/* Tabs */
+body.fullpage-mode .tabs {
+    margin-bottom: 18px;
+    padding: 10px;
+    border-radius: 16px;
+}
+
+body.fullpage-mode .tabs button {
+    padding: 10px 16px;
+    font-size: 13px;
+    border-radius: 9px;
+}
+
+body.fullpage-mode .tab-indicator {
+    height: calc(100% - 14px);
+    top: 8px;
+    border-radius: 10px;
+}
+
+/* Cards grid */
+body.fullpage-mode .cards {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 16px;
+}
+
+body.fullpage-mode .card {
+    padding: 16px;
+    border-radius: 14px;
+}
+
+body.fullpage-mode .card .label {
+    font-size: 11px;
+    margin-bottom: 10px;
+}
+
+body.fullpage-mode .card .value {
+    font-size: 28px;
+}
+
+/* Actions buttons */
+body.fullpage-mode .actions {
+    gap: 10px;
+    margin: 12px 0 16px;
+}
+
+body.fullpage-mode .actions button {
+    padding: 10px 16px;
+    font-size: 13px;
+    border-radius: 9px;
+}
+
+/* Tables */
+body.fullpage-mode .table {
+    border-radius: 14px;
+}
+
+body.fullpage-mode .table-head {
+    padding: 14px;
+}
+
+body.fullpage-mode th,
+body.fullpage-mode td {
+    padding: 12px 14px;
+    font-size: 13px;
+}
+
+body.fullpage-mode th {
+    font-size: 11px;
+}
+
+/* Settings sections */
+body.fullpage-mode .settings-section {
+    margin-bottom: 24px;
+}
+
+body.fullpage-mode .section-title {
+    font-size: 16px;
+    margin-bottom: 14px;
+}
+
+body.fullpage-mode .form .row {
+    margin-bottom: 14px;
+}
+
+body.fullpage-mode .form input,
+body.fullpage-mode .form select {
+    padding: 9px 12px;
+    font-size: 13px;
+}
+
+/* Statistics grid */
+body.fullpage-mode .stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+}
+
+body.fullpage-mode .stat-card {
+    padding: 16px;
+}
+
+body.fullpage-mode .stat-value {
+    font-size: 26px;
+}
+
+/* Chart container */
+body.fullpage-mode .chart-container {
+    max-height: 350px;
+    margin-top: 20px;
+}
+
+/* Widgets container */
+body.fullpage-mode .widgets-container {
+    margin-bottom: 16px;
+}
+
+body.fullpage-mode .widget {
+    padding: 16px;
+    border-radius: 14px;
+}
+
+/* Bookmark grid */
+body.fullpage-mode .book-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    padding: 16px;
+}
+
+body.fullpage-mode .book-grid button {
+    padding: 16px;
+    font-size: 13px;
+    border-radius: 12px;
+}
+
+/* Modal adjustments */
+body.fullpage-mode .modal-box {
+    max-width: 460px;
+    padding: 24px;
+    border-radius: 18px;
+}
+
+body.fullpage-mode .modal-title {
+    font-size: 18px;
+}
+
+body.fullpage-mode .modal-message {
+    font-size: 14px;
+}
+
+/* Hint text */
+body.fullpage-mode .hint {
+    font-size: 12px;
+    padding: 12px;
+}
+
+/* GPA Calculator */
+body.fullpage-mode .calc-form {
+    padding: 16px;
+}
+
+body.fullpage-mode .calc-input-large {
+    font-size: 18px;
+    padding: 10px;
+}
+
+body.fullpage-mode #calcResult {
+    font-size: 22px;
+}
+
+/* Today schedule items */
+body.fullpage-mode .class-item {
+    padding: 14px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+}
+
+body.fullpage-mode .class-time {
+    font-size: 15px;
+}
+
+body.fullpage-mode .class-course {
+    font-size: 13px;
+}
+
+/* Responsive for medium screens */
+@media (max-width: 900px) {
+    body.fullpage-mode .cards {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    body.fullpage-mode .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    body.fullpage-mode .book-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* Responsive for smaller screens */
+@media (max-width: 600px) {
+    body.fullpage-mode .wrap {
+        padding: 14px 16px 16px;
+    }
+
+    body.fullpage-mode .cards {
+        grid-template-columns: 1fr;
+    }
+
+    body.fullpage-mode .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    body.fullpage-mode .book-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    body.fullpage-mode .tabs button {
+        padding: 8px 12px;
+        font-size: 12px;
+    }
+}

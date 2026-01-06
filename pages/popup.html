@@ -369,6 +369,13 @@
         <h3 class="section-title">⚙️ Hệ thống</h3>
         <div class="form">
           <label class="row">
+            <span>Chế độ hiển thị</span>
+            <select id="setViewMode">
+              <option value="popup">Popup (mặc định)</option>
+              <option value="fullpage">Trang mới (lớn hơn)</option>
+            </select>
+          </label>
+          <label class="row">
             <span>Giờ hoạt động (hh:mm-hh:mm)</span>
             <input id="setActiveFrom" value="07:00" />
             <input id="setActiveTo" value="17:40" />
@@ -483,6 +490,8 @@
     <script src="../scripts/modules/advanced-search.js"></script>
     <script src="../scripts/modules/attendance.js"></script>
     <script src="../scripts/modules/study-plans.js"></script>
+    <script src="../scripts/modules/update.js"></script>
+    <script src="../scripts/modules/calendar.js"></script>
     <!-- Main popup script -->
     <script src="../scripts/popup.js"></script>
   </div>

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "FAP Dashboard",
-  "version": "5.0.0",
+  "version": "5.2.0",
   "description": "Xem GPA, điểm danh, lịch học, lịch thi, thống kê, tính toán GPA, export calendar và nhiều tính năng nâng cao",
   "icons": {
     "128": "assets/icons/icon128.png"
@@ -29,8 +29,10 @@
     {
       "resources": [
         "pages/report.html",
+        "pages/dashboard.html",
         "scripts/report.js",
         "styles/report.css",
+        "styles/dashboard.css",
         "styles/timer-icons.css",
         "assets/icons/icon128.png",
         "scripts/vendor/chart.min.js",

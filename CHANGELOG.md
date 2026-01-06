@@ -7,7 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [5.0.0] - 2025-01-05
+## [5.2.0] - 2026-01-06
+
+### ✨ New Features
+
+- **Full Page Dashboard**: Now you can choose between sticking with the compact Popup or opening a spacious Full Page Dashboard.
+  - **Popup Mode**: Classic compact view for quick checks.
+  - **Full Page Mode**: Expanded interface, larger charts, and more breathing room for your data.
+- **View Mode Setting**: New option in "Settings > System" to toggle between Popup and Full Page modes.
+
+### 🎨 UI Improvements
+
+- **Dashboard UI**: Completely responsive design for the new Full Page mode with optimized font sizes and spacing.
+- **Visual Polish**: refined spacing, better card scaling, and improved readability on larger screens.
+
+---
 
 ### 🏗️ Major Architecture Refactor
 

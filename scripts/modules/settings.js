@@ -10,6 +10,7 @@ const SettingsService = {
         delayMin: 10,
         delayMax: 30,
         pollEvery: 15,
+        viewMode: "popup", // "popup" or "fullpage"
     },
 
     /**
@@ -19,6 +20,7 @@ const SettingsService = {
         const cfg = await window.STORAGE?.get("cfg", this.DEFAULT_CFG) || this.DEFAULT_CFG;
         const get = (id) => document.getElementById(id);
 
+        if (get("setViewMode")) get("setViewMode").value = cfg.viewMode || this.DEFAULT_CFG.viewMode;
         if (get("setActiveFrom")) get("setActiveFrom").value = cfg.activeFrom || this.DEFAULT_CFG.activeFrom;
         if (get("setActiveTo")) get("setActiveTo").value = cfg.activeTo || this.DEFAULT_CFG.activeTo;
         if (get("setDelayMin")) get("setDelayMin").value = Number.isFinite(cfg.delayMin) ? cfg.delayMin : this.DEFAULT_CFG.delayMin;
@@ -35,6 +37,7 @@ const SettingsService = {
 
         const cfg = {
             ...currentCfg,
+            viewMode: get("setViewMode")?.value || this.DEFAULT_CFG.viewMode,
             activeFrom: get("setActiveFrom")?.value || this.DEFAULT_CFG.activeFrom,
             activeTo: get("setActiveTo")?.value || this.DEFAULT_CFG.activeTo,
             delayMin: Math.max(0, parseInt(get("setDelayMin")?.value || this.DEFAULT_CFG.delayMin, 10)),

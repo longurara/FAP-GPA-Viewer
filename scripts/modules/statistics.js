@@ -13,10 +13,17 @@ const StatisticsService = {
         const cache = await window.cacheGet("cache_transcript", DAY_MS);
         if (!cache || !cache.rows) return;
 
-        const rows = cache.rows.filter((r) => Number.isFinite(r.grade) && r.grade > 0);
+        // Get excluded courses first
+        const excludedCourses = await window.STORAGE?.get("excluded_courses", []) || [];
+
+        // Filter: only courses with valid grades AND not excluded
+        const rows = cache.rows.filter((r) => {
+            const code = (r.code || "").toUpperCase();
+            return Number.isFinite(r.grade) && r.grade > 0 && !excludedCourses.includes(code);
+        });
         if (rows.length === 0) return;
 
-        // Calculate statistics
+        // Calculate statistics (already excludes courses above)
         const grades = rows.map((r) => r.grade);
         const avgGrade = grades.reduce((a, b) => a + b, 0) / grades.length;
 
@@ -50,7 +57,7 @@ const StatisticsService = {
             semesterMap.get(sem).push(r);
         });
 
-        const excludedCourses = await window.STORAGE?.get("excluded_courses", []) || [];
+        // excludedCourses already declared above
         const semesters = Array.from(semesterMap.keys()).sort();
         const computeGPA = window.computeGPA || ((items, excluded) => {
             let sumC = 0, sumP = 0;

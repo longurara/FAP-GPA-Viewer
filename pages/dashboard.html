@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FAP Dashboard - Full Page</title>
+    <link rel="stylesheet" href="../styles/popup.css" />
+    <link rel="stylesheet" href="../styles/dashboard.css" />
+    <link rel="stylesheet" href="../styles/timer-icons.css" />
+</head>
+
+<body class="fullpage-mode">
+    <div class="wrap">
+        <header class="top">
+            <div class="brand">
+                <img src="../assets/icons/icon128.png" alt="FAP Dashboard" />
+                <div>
+                    <h1>FAP Dashboard</h1>
+                    <div class="login-status-indicator" id="loginStatusIndicator">
+                        <div class="status-dot" id="statusDot"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="top-actions">
+                <span id="verBadge" style="opacity: 0.8; margin-right: 8px"></span>
+                <div class="theme-toggle" id="themeToggle" title="Chuyển Dark/Light mode"></div>
+
+                <button id="btnOpenFAP" title="Mở FAP">Mở FAP</button>
+            </div>
+        </header>
+
+        <!-- Login Banner -->
+        <div id="loginBanner" class="login-banner" style="display: none">
+            <div class="login-banner-content">
+                <div class="login-banner-icon">🔐</div>
+                <div class="login-banner-text">
+                    <strong>Cần đăng nhập FAP</strong>
+                    <span>Đang sử dụng dữ liệu cũ. Đăng nhập để cập nhật dữ liệu mới nhất.</span>
+                </div>
+                <div class="login-banner-actions">
+                    <button id="btnLoginNow" class="login-btn">Đăng nhập ngay</button>
+                    <button id="btnDismissBanner" class="dismiss-btn">×</button>
+                </div>
+            </div>
+        </div>
+
+        <nav class="tabs">
+            <div class="tab-indicator"></div>
+            <button class="active" data-tab="tab-today">Hôm nay</button>
+            <button data-tab="tab-gpa">GPA</button>
+            <button data-tab="tab-calc">Tính GPA</button>
+            <button data-tab="tab-stats">Thống kê</button>
+            <button data-tab="tab-att">Điểm danh</button>
+            <button data-tab="tab-schedule">Lịch</button>
+            <button data-tab="tab-exam">Lịch thi</button>
+            <button data-tab="tab-bookmark">Bookmark</button>
+            <button data-tab="tab-settings">Cài đặt</button>
+        </nav>
+
+        <!-- Today's Schedule Tab -->
+        <section class="tab active" id="tab-today">
+            <div class="widgets-container" id="widgetsContainer">
+                <!-- Today's Schedule Widget -->
+                <div class="widget" data-widget="today-schedule">
+                    <div class="widget-header">
+                        <div class="widget-title">📅 Lịch hôm nay</div>
+                    </div>
+                    <div class="widget-content" id="todayClasses">
+                        <div class="no-class">Đang tải...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="cards">
+                <div class="card">
+                    <div class="label">GPA (10)</div>
+                    <div class="value" id="gpa10Quick">--</div>
+                </div>
+                <div class="card">
+                    <div class="label">% chuyên cần</div>
+                    <div class="value" id="attRateQuick">--</div>
+                </div>
+            </div>
+
+            <div class="actions">
+                <button id="btnQuickRefresh" class="primary">Làm mới tất cả</button>
+            </div>
+        </section>
+
+        <section class="tab" id="tab-gpa">
+            <div class="cards">
+                <div class="card">
+                    <div class="label">GPA (10)</div>
+                    <div class="value" id="gpa10">--</div>
+                </div>
+                <div class="card">
+                    <div class="label">GPA (4)</div>
+                    <div class="value" id="gpa4">--</div>
+                </div>
+                <div class="card">
+                    <div class="label">Tổng tín chỉ</div>
+                    <div class="value" id="credits">--</div>
+                </div>
+                <div class="card exclude-info">
+                    <div class="label">Môn loại trừ</div>
+                    <div class="value" id="excludedCount">0</div>
+                    <div class="exclude-detail" id="excludedDetail">Không có môn nào</div>
+                </div>
+            </div>
+            <div class="actions">
+                <button id="btnOpenTranscript">Trang Transcript</button>
+                <button id="btnCopyGPA">Copy GPA</button>
+                <button id="btnResetExcluded">Reset loại trừ</button>
+                <button id="btnSetDefaultExcluded">Mặc định</button>
+                <button id="btnRefreshAll">Làm mới</button>
+            </div>
+            <div class="table">
+                <div class="table-head">
+                    <div>Danh sách môn</div>
+                    <input id="searchCourse" placeholder="Tìm môn..." />
+                </div>
+                <table id="tblCourses">
+                    <thead>
+                        <tr>
+                            <th style="width: 40px">🚫</th>
+                            <th>Code</th>
+                            <th>Tên môn</th>
+                            <th class="r">TC</th>
+                            <th class="r">Điểm</th>
+                            <th>Trạng thái</th>
+                            <th style="width: 60px">📝</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- GPA Calculator Tab -->
+        <section class="tab" id="tab-calc">
+            <div class="cards">
+                <div class="card">
+                    <div class="label">GPA hiện tại (10)</div>
+                    <div class="value" id="calcCurrentGPA">--</div>
+                </div>
+                <div class="card">
+                    <div class="label">Tổng tín chỉ hiện tại</div>
+                    <div class="value" id="calcCurrentCredits">--</div>
+                </div>
+                <div class="card">
+                    <div class="label">GPA mục tiêu</div>
+                    <input type="number" id="calcTargetGPA" class="calc-input-large" placeholder="3.5" step="0.1"
+                        min="0" max="10" />
+                </div>
+            </div>
+            <div class="calc-form">
+                <div class="calc-row">
+                    <label class="calc-label">Số tín chỉ môn mới:</label>
+                    <input type="number" id="calcNewCredits" class="calc-input-small" value="3" min="1" max="10" />
+                </div>
+                <div class="calc-row-result">
+                    <label class="calc-label">Điểm cần đạt:</label>
+                    <div id="calcResult">--</div>
+                </div>
+                <div class="calc-actions">
+                    <button id="btnCalculateGPA" class="primary">🧮 Tính toán</button>
+                    <button id="btnResetCalc">↻ Reset</button>
+                </div>
+            </div>
+            <p class="hint" style="margin-top: 12px">💡 Công cụ giúp bạn tính toán cần bao nhiêu điểm để đạt GPA mục
+                tiêu.</p>
+        </section>
+
+        <!-- Statistics Tab -->
+        <section class="tab" id="tab-stats">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Điểm trung bình</div>
+                    <div class="stat-value" id="statAvgGrade">--</div>
+                    <div class="stat-detail">Trung bình các môn đã học</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Môn điểm cao nhất</div>
+                    <div class="stat-value" id="statBestGrade">--</div>
+                    <div class="stat-detail" id="statBestCourse">--</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Môn điểm thấp nhất</div>
+                    <div class="stat-value" id="statWorstGrade">--</div>
+                    <div class="stat-detail" id="statWorstCourse">--</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Tỷ lệ Pass</div>
+                    <div class="stat-value" id="statPassRate">--</div>
+                    <div class="stat-detail">Môn đạt / tổng môn</div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <canvas id="gpaChart"></canvas>
+            </div>
+
+            <!-- Analytics Dashboard removed -->
+        </section>
+
+        <!-- Attendance Tab -->
+        <section class="tab" id="tab-att">
+            <div class="cards">
+                <div class="card">
+                    <div class="label">% chuyên cần</div>
+                    <div class="value" id="attRate">--</div>
+                </div>
+                <div class="card">
+                    <div class="label">Có mặt</div>
+                    <div class="value" id="attPresent">--</div>
+                </div>
+                <div class="card">
+                    <div class="label">Vắng / Muộn</div>
+                    <div class="value" id="attAbsentLate">--</div>
+                </div>
+            </div>
+            <div class="actions">
+                <button id="btnOpenAttendance">Trang Attendance</button>
+                <button class="primary" id="btnRefreshAttendance">Làm mới</button>
+            </div>
+            <div class="table">
+                <div class="table-head">
+                    <div>Nhật ký điểm danh (gần nhất → xa)</div>
+                    <div style="display: flex; gap: 8px; align-items: center">
+                        <select id="filterDay">
+                            <option value="ALL">Tất cả ngày</option>
+                            <option value="MON">Thứ 2</option>
+                            <option value="TUE">Thứ 3</option>
+                            <option value="WED">Thứ 4</option>
+                            <option value="THU">Thứ 5</option>
+                            <option value="FRI">Thứ 6</option>
+                            <option value="SAT">Thứ 7</option>
+                            <option value="SUN">Chủ nhật</option>
+                        </select>
+                        <input id="searchAtt" placeholder="Tìm theo môn / trạng thái..." />
+                    </div>
+                </div>
+                <table id="tblAttendance">
+                    <thead>
+                        <tr>
+                            <th>Ngày</th>
+                            <th>Slot</th>
+                            <th>Môn</th>
+                            <th>Trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="tab" id="tab-schedule">
+            <div class="actions">
+                <button id="btnOpenSchedule">Trang Schedule</button>
+                <button class="primary" id="btnRefreshSchedule">Làm mới</button>
+                <button id="btnExportScheduleICS" class="export-btn">📅 Export .ics</button>
+            </div>
+            <div class="table">
+                <div class="table-head">
+                    <div>Lịch cả tuần</div>
+                </div>
+                <table id="tblScheduleWeek">
+                    <thead>
+                        <tr>
+                            <th>Thứ</th>
+                            <th>Slot</th>
+                            <th>Giờ</th>
+                            <th>Môn</th>
+                            <th>Phòng</th>
+                            <th>Ghi chú</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="tab" id="tab-exam">
+            <div class="actions">
+                <button id="btnOpenExams">Trang Lịch thi</button>
+                <button class="primary" id="btnRefreshExams">Làm mới</button>
+                <button id="btnExportExamICS" class="export-btn">📝 Export .ics</button>
+            </div>
+            <div class="table">
+                <div class="table-head">
+                    <div>Lịch thi các môn</div>
+                    <div style="display: flex; gap: 8px">
+                        <select id="filterExamTime">
+                            <option value="ALL">Tất cả</option>
+                            <option value="THIS_WEEK">Tuần này</option>
+                            <option value="THIS_MONTH">Tháng này</option>
+                            <option value="UPCOMING">Sắp tới</option>
+                        </select>
+                        <input id="searchExam" placeholder="Tìm môn thi..." />
+                    </div>
+                </div>
+                <table id="tblExams">
+                    <thead>
+                        <tr>
+                            <th>Môn</th>
+                            <th>Tên môn</th>
+                            <th>Ngày thi</th>
+                            <th>Giờ</th>
+                            <th>Phòng</th>
+                            <th>Hình thức</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="tab" id="tab-bookmark">
+            <div class="table">
+                <div class="table-head">
+                    <div>Truy cập nhanh</div>
+                </div>
+                <div class="book-grid">
+                    <button id="btnOpenLMS">LMS HCM</button>
+                    <button id="btnOpenFAP2">FAP</button>
+                    <button id="btnOpenIT">IT HCM</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="tab" id="tab-settings">
+            <div class="settings-section">
+                <h3 class="section-title">🎨 Giao diện</h3>
+                <div class="form">
+                    <div class="row">
+                        <span>Theme presets:</span>
+                        <div class="theme-presets">
+                            <button class="theme-preset" data-theme="blue" style="--preset-color: #60a5fa"
+                                title="Blue (Default)"></button>
+                            <button class="theme-preset" data-theme="green" style="--preset-color: #10b981"
+                                title="Green"></button>
+                            <button class="theme-preset" data-theme="purple" style="--preset-color: #a78bfa"
+                                title="Purple"></button>
+                            <button class="theme-preset" data-theme="pink" style="--preset-color: #f472b6"
+                                title="Pink"></button>
+                            <button class="theme-preset" data-theme="orange" style="--preset-color: #fb923c"
+                                title="Orange"></button>
+                            <button class="theme-preset" data-theme="red" style="--preset-color: #ef4444"
+                                title="Red"></button>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <span>Custom accent color:</span>
+                        <input type="color" id="customAccentColor" value="#60a5fa" />
+                    </div>
+                    <div class="row">
+                        <span>Background image:</span>
+                        <div class="bg-controls">
+                            <input type="file" id="bgImageInput" accept="image/*" style="display: none" />
+                            <button id="btnSelectBg" class="secondary">📁 Chọn ảnh</button>
+                            <button id="btnRemoveBg" class="secondary">🗑️ Xóa</button>
+                            <button id="btnPresetBg" class="secondary">🎨 Presets</button>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <span>Background opacity:</span>
+                        <input type="range" id="bgOpacity" min="0" max="100" value="20" />
+                        <span id="bgOpacityValue">20%</span>
+                    </div>
+                    <div class="bg-preview" id="bgPreview"></div>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h3 class="section-title">⚙️ Hệ thống</h3>
+                <div class="form">
+                    <label class="row">
+                        <span>Chế độ hiển thị</span>
+                        <select id="setViewMode">
+                            <option value="popup">Popup (mặc định)</option>
+                            <option value="fullpage">Trang mới (lớn hơn)</option>
+                        </select>
+                    </label>
+                    <label class="row">
+                        <span>Giờ hoạt động (hh:mm-hh:mm)</span>
+                        <input id="setActiveFrom" value="07:00" />
+                        <input id="setActiveTo" value="17:40" />
+                    </label>
+                    <label class="row">
+                        <span>Trễ thông báo ngẫu nhiên (phút, min-max)</span>
+                        <input id="setDelayMin" min="0" type="number" value="10" />
+                        <input id="setDelayMax" min="0" type="number" value="30" />
+                    </label>
+                    <label class="row">
+                        <span>Tần suất kiểm tra cập nhật (phút)</span>
+                        <input id="setPollEvery" min="5" type="number" value="15" />
+                    </label>
+                    <div class="row">
+                        <button class="primary" id="btnSaveSettings">Lưu cài đặt</button>
+                        <button id="btnTestNotify">Test thông báo</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h3 class="section-title">📤 Export</h3>
+                <div class="form">
+                    <div class="row">
+                        <button id="btnExportPDF">📄 Export PDF</button>
+                        <button id="btnExportCSV">📊 Export CSV</button>
+                    </div>
+                </div>
+            </div>
+
+            <p class="hint">
+                Cài đặt này dùng cho service worker để tự kiểm tra cập nhật điểm danh và nhắc bạn sau khi hệ thống cập
+                nhật.
+            </p>
+        </section>
+
+        <!-- Custom Modal System -->
+        <div class="modal-overlay" id="modalOverlay">
+            <div class="modal-box">
+                <div class="modal-icon" id="modalIcon"></div>
+                <h3 class="modal-title" id="modalTitle">Thông báo</h3>
+                <p class="modal-message" id="modalMessage"></p>
+                <div class="modal-actions">
+                    <button id="modalConfirm" class="primary">OK</button>
+                    <button id="modalCancel" style="display: none">Hủy</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast Notifications Container -->
+        <div class="toast-container" id="toastContainer"></div>
+
+        <!-- Calendar Modal -->
+        <div class="modal-overlay" id="calendarModal" style="display: none">
+            <div class="modal-box">
+                <div class="modal-icon">📅</div>
+                <h3 class="modal-title" id="calendarModalTitle">Xác nhận</h3>
+                <p class="modal-message" id="calendarModalMessage">Bạn có muốn tiếp tục?</p>
+                <div class="modal-actions">
+                    <button id="calendarModalConfirm" class="primary">Xác nhận</button>
+                    <button id="calendarModalCancel">Hủy</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Help Modal -->
+        <div class="modal-overlay" id="calendarHelpModal" style="display: none">
+            <div class="modal-box">
+                <div class="modal-icon">📅</div>
+                <h3 class="modal-title">Hướng dẫn sử dụng</h3>
+                <div class="modal-message">
+                    <p><strong>📅 Export Google Calendar</strong></p>
+
+                    <p><strong>📤 Export .ics:</strong></p>
+                    <ol>
+                        <li>Nhấp nút "Export .ics"</li>
+                        <li>Tải file .ics về máy</li>
+                        <li>Mở Google Calendar → Import & Export</li>
+                        <li>Chọn file .ics và import</li>
+                    </ol>
+
+                    <p><strong>💡 Lưu ý:</strong></p>
+                    <ul>
+                        <li>File .ics chuẩn RFC 5545</li>
+                        <li>Tương thích với Google Calendar, Outlook, Apple Calendar</li>
+                        <li>Có thể import nhiều lần</li>
+                        <li>Bao gồm nhắc nhở tự động</li>
+                    </ul>
+                </div>
+                <div class="modal-actions">
+                    <button id="modalHelpClose" class="primary">Đã hiểu</button>
+                </div>
+            </div>
+        </div>
+
+        <script src="../scripts/auto-calendar.js"></script>
+        <script src="../assets/vendor/chart.min.js"></script>
+        <!-- Core utility modules (load first) -->
+        <script src="../scripts/modules/utils.js"></script>
+        <script src="../scripts/modules/storage.js"></script>
+        <script src="../scripts/modules/api.js"></script>
+        <!-- Feature modules -->
+        <script src="../scripts/modules/ui.js"></script>
+        <script src="../scripts/modules/login.js"></script>
+        <script src="../scripts/modules/transcript.js"></script>
+        <script src="../scripts/modules/exams.js"></script>
+        <script src="../scripts/modules/today-schedule.js"></script>
+        <script src="../scripts/modules/settings.js"></script>
+        <script src="../scripts/modules/statistics.js"></script>
+        <script src="../scripts/modules/theme.js"></script>
+        <script src="../scripts/modules/tabs.js"></script>
+        <script src="../scripts/modules/gpa-calculator.js"></script>
+        <script src="../scripts/modules/advanced-search.js"></script>
+        <script src="../scripts/modules/attendance.js"></script>
+        <script src="../scripts/modules/study-plans.js"></script>
+        <script src="../scripts/modules/update.js"></script>
+        <script src="../scripts/modules/calendar.js"></script>
+        <!-- Main popup script -->
+        <script src="../scripts/popup.js"></script>
+    </div>
+</body>
+
+</html>

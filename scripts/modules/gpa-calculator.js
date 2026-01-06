@@ -108,4 +108,7 @@ const GPACalculatorService = {
 
 // Expose globally
 window.GPACalculatorService = GPACalculatorService;
-window.initGPACalculator = () => GPACalculatorService.initGPACalculator();
+window.initGPACalculator = () => {
+    GPACalculatorService.initGPACalculator();
+    GPACalculatorService.init();
+};

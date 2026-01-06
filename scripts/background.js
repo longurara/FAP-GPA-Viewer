@@ -9,6 +9,20 @@ const SCHEDULE_OF_WEEK = "https://fap.fpt.edu.vn/Report/ScheduleOfWeek.aspx";
 
 const TRANSCRIPT_URL = "https://fap.fpt.edu.vn/Grade/StudentTranscript.aspx";
 
+// ========== Message Types ==========
+const MSG = {
+  FETCH_TRANSCRIPT: 'FETCH_TRANSCRIPT',
+  TRANSCRIPT_READY: 'TRANSCRIPT_READY',
+  TRANSCRIPT_LOADING: 'TRANSCRIPT_LOADING',
+  FETCH_STATUS: 'FETCH_STATUS'
+};
+
+// ========== Loading State ==========
+let loadingState = {
+  transcript: false,
+  schedule: false
+};
+
 function toNum(txt) {
   const m = String(txt || "").match(/-?\d+(?:[.,]\d+)?/);
   return m ? parseFloat(m[0].replace(",", ".")) : NaN;
@@ -21,11 +35,20 @@ function parseTranscriptDoc(html) {
   try {
     const doc = new DOMParser().parseFromString(html, "text/html");
     const tables = [...doc.querySelectorAll("table")];
+    console.log("🔍 parseTranscriptDoc: Found", tables.length, "tables");
+
     for (const t of tables) {
       const trs = [...t.querySelectorAll("tr")];
       for (const tr of trs) {
         const labels = [...tr.children].map((td) => NORM_TXT(td.textContent));
+
+        // Debug: Look for tables with interesting headers
+        if (labels.some(l => l.includes("CREDIT") || l.includes("GRADE") || l.includes("SUBJECT"))) {
+          console.log("🔍 Found potential header row:", labels);
+        }
+
         if (labels.includes("CREDIT") && labels.includes("GRADE")) {
+          console.log("✅ Found transcript table header:", labels);
           const header = [...tr.children].map((x) => NORM_TXT(x.textContent));
           const idx = {
             term: header.findIndex((v) => v === "TERM"),
@@ -38,6 +61,8 @@ function parseTranscriptDoc(html) {
             grade: header.indexOf("GRADE"),
             status: header.findIndex((v) => v === "STATUS"),
           };
+          console.log("📊 Column indices:", idx);
+
           const all = [...t.querySelectorAll("tr")];
           const start = all.indexOf(tr) + 1;
           const rows = [];
@@ -60,11 +85,15 @@ function parseTranscriptDoc(html) {
               continue;
             rows.push(row);
           }
+          console.log("📊 Parsed", rows.length, "course rows");
           return rows;
         }
       }
     }
-  } catch (e) { }
+    console.log("⚠️ No transcript table found (no CREDIT+GRADE headers)");
+  } catch (e) {
+    console.error("❌ parseTranscriptDoc error:", e);
+  }
   return [];
 }
 
@@ -92,6 +121,211 @@ async function fetchHtml(url) {
   }
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return await res.text();
+}
+
+// ========== Content Script Based Fetch (for cookie access) ==========
+async function waitForTabComplete(tabId, timeoutMs = 8000) {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    const tab = await chrome.tabs.get(tabId);
+    if (tab.status === "complete") return true;
+    await new Promise((r) => setTimeout(r, 150));
+  }
+  return false;
+}
+
+async function fetchViaContentScript(url) {
+  const parsedUrl = new URL(url);
+  const targetOrigin = parsedUrl.origin;
+
+  // Prefer an existing FAP tab to reuse logged-in session
+  const tabs = await chrome.tabs.query({ url: `${targetOrigin}/*`, status: "complete" });
+  let tabId;
+  let createdTab = false;
+
+  if (tabs && tabs.length > 0) {
+    tabId = tabs[0].id;
+  } else {
+    const tab = await chrome.tabs.create({ url: targetOrigin, active: false });
+    tabId = tab.id;
+    createdTab = true;
+    await waitForTabComplete(tabId);
+  }
+
+  try {
+    const [result] = await chrome.scripting.executeScript({
+      target: { tabId },
+      args: [url],
+      func: async (targetUrl) => {
+        try {
+          const res = await fetch(targetUrl, { credentials: "include" });
+          const text = await res.text();
+          return { status: res.status, redirected: res.redirected, url: res.url, text };
+        } catch (err) {
+          return { error: err?.message || String(err) };
+        }
+      },
+    });
+
+    if (createdTab) {
+      await chrome.tabs.remove(tabId);
+    }
+
+    if (!result || !result.result) return null;
+    return result.result;
+  } catch (e) {
+    if (createdTab) {
+      try { await chrome.tabs.remove(tabId); } catch (x) { }
+    }
+    throw e;
+  }
+}
+
+// Fetch AND PARSE transcript inside content script (where DOMParser is available)
+async function fetchAndParseTranscriptViaTab(url) {
+  const parsedUrl = new URL(url);
+  const targetOrigin = parsedUrl.origin;
+
+  const tabs = await chrome.tabs.query({ url: `${targetOrigin}/*`, status: "complete" });
+  let tabId;
+  let createdTab = false;
+
+  if (tabs && tabs.length > 0) {
+    tabId = tabs[0].id;
+  } else {
+    const tab = await chrome.tabs.create({ url: targetOrigin, active: false });
+    tabId = tab.id;
+    createdTab = true;
+    await waitForTabComplete(tabId);
+  }
+
+  try {
+    const [result] = await chrome.scripting.executeScript({
+      target: { tabId },
+      args: [url],
+      func: async (targetUrl) => {
+        // This runs IN the tab context where DOMParser is available
+        try {
+          const res = await fetch(targetUrl, { credentials: "include" });
+          const html = await res.text();
+
+          // Check for login page
+          if (res.redirected && /\/Default\.aspx$/i.test(new URL(res.url).pathname)) {
+            return { error: "LOGIN_REQUIRED", status: res.status };
+          }
+
+          const looksLikeLogin = html.toLowerCase().slice(0, 2000).includes("login") ||
+            html.toLowerCase().slice(0, 2000).includes("đăng nhập");
+          if (looksLikeLogin) {
+            return { error: "LOGIN_REQUIRED", status: res.status };
+          }
+
+          // Parse the HTML
+          const NORM = (s) => (s || "").replace(/\s+/g, " ").trim().toUpperCase();
+          const toNum = (txt) => {
+            const m = (txt || "").match(/-?\d+(?:[.,]\d+)?/);
+            return m ? parseFloat(m[0].replace(",", ".")) : NaN;
+          };
+
+          const doc = new DOMParser().parseFromString(html, "text/html");
+          const tables = [...doc.querySelectorAll("table")];
+
+          for (const t of tables) {
+            const trs = [...t.querySelectorAll("tr")];
+            for (const tr of trs) {
+              const labels = [...tr.children].map((td) => NORM(td.textContent));
+              if (labels.includes("CREDIT") && labels.includes("GRADE")) {
+                const header = [...tr.children].map((x) => NORM(x.textContent));
+                const idx = {
+                  term: header.findIndex((v) => v === "TERM"),
+                  semester: header.findIndex((v) => v === "SEMESTER"),
+                  code: header.findIndex((v) => v.includes("SUBJECT CODE")),
+                  name: header.findIndex((v) => v.includes("SUBJECT NAME") || v.includes("SUBJECT")),
+                  credit: header.indexOf("CREDIT"),
+                  grade: header.indexOf("GRADE"),
+                  status: header.findIndex((v) => v === "STATUS"),
+                };
+
+                const all = [...t.querySelectorAll("tr")];
+                const start = all.indexOf(tr) + 1;
+                const rows = [];
+
+                for (const r of all.slice(start)) {
+                  const tds = [...r.querySelectorAll("td")];
+                  if (!tds.length) continue;
+                  const row = {
+                    term: idx.term >= 0 ? tds[idx.term]?.textContent.trim() : "",
+                    semester: idx.semester >= 0 ? tds[idx.semester]?.textContent.trim() : "",
+                    code: idx.code >= 0 ? tds[idx.code]?.textContent.trim() : "",
+                    name: idx.name >= 0 ? tds[idx.name]?.textContent.trim() : "",
+                    credit: idx.credit >= 0 ? toNum(tds[idx.credit]?.textContent) : NaN,
+                    grade: idx.grade >= 0 ? toNum(tds[idx.grade]?.textContent) : NaN,
+                    status: idx.status >= 0 ? tds[idx.status]?.textContent.trim() : "",
+                  };
+                  if (!row.code && !row.name && !Number.isFinite(row.credit)) continue;
+                  rows.push(row);
+                }
+
+                return { status: res.status, rows, htmlLength: html.length };
+              }
+            }
+          }
+
+          // No transcript table found
+          return { status: res.status, rows: [], htmlLength: html.length, noTable: true };
+
+        } catch (err) {
+          return { error: err?.message || String(err) };
+        }
+      },
+    });
+
+    if (createdTab) {
+      await chrome.tabs.remove(tabId);
+    }
+
+    if (!result || !result.result) return { error: "NO_RESULT" };
+    return result.result;
+  } catch (e) {
+    if (createdTab) {
+      try { await chrome.tabs.remove(tabId); } catch (x) { }
+    }
+    throw e;
+  }
+}
+
+function looksLikeLoginPage(html) {
+  if (!html) return true;
+  const lc = html.toLowerCase().slice(0, 2000);
+  if (lc.includes("login") || lc.includes("đăng nhập") || lc.includes("dang nhap")) return true;
+  return false;
+}
+
+// Fetch HTML via content script (first-party context) for proper cookie handling
+async function fetchHtmlViaTab(url) {
+  console.log("🌐 Fetching via content script:", url);
+  const result = await fetchViaContentScript(url);
+
+  if (!result || result.error) {
+    console.error("❌ Content script fetch failed:", result?.error);
+    throw new Error(result?.error || "FETCH_FAILED");
+  }
+
+  // Check if redirected to login
+  if (result.redirected && /\/Default\.aspx$/i.test(new URL(result.url).pathname)) {
+    throw new Error("LOGIN_REQUIRED");
+  }
+
+  // Check if looks like login page
+  if (looksLikeLoginPage(result.text)) {
+    throw new Error("LOGIN_REQUIRED");
+  }
+
+  if (result.status !== 200) {
+    throw new Error(`HTTP ${result.status}`);
+  }
+
+  return result.text;
 }
 function extractFingerprint(html) {
   const s = html.replace(/\s+/g, " ").slice(0, 20000);
@@ -185,6 +419,90 @@ function parseScheduleOfWeek(html) {
   return result;
 }
 
+// ========== Background Transcript Fetch ==========
+async function fetchTranscriptInBackground(forceRefresh = false) {
+  // Prevent duplicate fetches
+  if (loadingState.transcript) {
+    console.log("📋 Transcript fetch already in progress, skipping...");
+    return { status: 'already_loading' };
+  }
+
+  // Check cache first (unless forced refresh)
+  if (!forceRefresh) {
+    const cached = await STORAGE.get("cache_transcript", null);
+    const DAY_MS = 24 * 60 * 60 * 1000;
+    const cachedRows = cached?.data?.rows || [];
+
+    // Only consider cache fresh if it has actual data
+    if (cached && cached.ts && cachedRows.length > 0 && Date.now() - cached.ts < DAY_MS) {
+      console.log("📋 Transcript cache is fresh with", cachedRows.length, "courses, skipping fetch");
+      return { status: 'cache_fresh', rows: cachedRows };
+    }
+
+    // Cache is stale or empty
+    if (cached && cachedRows.length === 0) {
+      console.log("📋 Transcript cache is empty, will fetch fresh data");
+    }
+  }
+
+  loadingState.transcript = true;
+  console.log("📋 Starting background transcript fetch...");
+
+  // Notify popup that loading started (ignore if popup closed)
+  chrome.runtime.sendMessage({ type: MSG.TRANSCRIPT_LOADING }).catch(() => { });
+
+  try {
+    // Use the new function that fetches AND parses inside content script
+    console.log("🌐 Fetching and parsing transcript via content script...");
+    const result = await fetchAndParseTranscriptViaTab(TRANSCRIPT_URL);
+
+    console.log("📊 Content script result:", result);
+
+    // Check for errors
+    if (result.error) {
+      if (result.error === "LOGIN_REQUIRED") {
+        await STORAGE.set({ show_login_banner: true });
+        throw new Error("LOGIN_REQUIRED");
+      }
+      throw new Error(result.error);
+    }
+
+    const rows = result.rows || [];
+
+    if (result.noTable) {
+      console.warn("⚠️ No transcript table found in HTML (length:", result.htmlLength, ")");
+    }
+
+    // Save to storage
+    await STORAGE.set({
+      cache_transcript: { ts: Date.now(), data: { rows } },
+      cache_transcript_flat: rows,
+      show_login_banner: false,
+      last_successful_fetch: Date.now()
+    });
+
+    console.log(`✅ Background transcript fetch completed: ${rows.length} courses`);
+
+    // Notify popup if open (ignore if popup closed)
+    chrome.runtime.sendMessage({ type: MSG.TRANSCRIPT_READY, rows }).catch(() => { });
+
+    return { status: 'success', rows };
+
+  } catch (e) {
+    console.error("❌ Background transcript fetch failed:", e);
+
+    if (e.message === "LOGIN_REQUIRED") {
+      await STORAGE.set({ show_login_banner: true });
+      return { status: 'login_required' };
+    }
+
+    return { status: 'error', error: e.message };
+
+  } finally {
+    loadingState.transcript = false;
+  }
+}
+
 async function pollOnce() {
   const cfg = await STORAGE.get("cfg", {
     activeFrom: "07:00",
@@ -267,14 +585,64 @@ async function schedulePollAlarm() {
   );
 }
 
-chrome.runtime.onInstalled.addListener(async () => {
+chrome.runtime.onInstalled.addListener(async (details) => {
   await schedulePollAlarm();
-});
-chrome.runtime.onStartup.addListener(async () => {
-  await schedulePollAlarm();
+  await updateActionPopup(); // Set initial popup behavior
+
+  // On fresh install, start fetching transcript immediately
+  if (details.reason === 'install') {
+    console.log("🆕 Extension installed, starting background fetch...");
+    setTimeout(() => fetchTranscriptInBackground(), 1000);
+  }
 });
 
-chrome.runtime.onMessage.addListener(async (msg, _sender, sendResponse) => {
+chrome.runtime.onStartup.addListener(async () => {
+  await schedulePollAlarm();
+  await updateActionPopup(); // Set popup behavior on startup
+  // Also try to fetch transcript on browser startup
+  fetchTranscriptInBackground();
+});
+
+// ========== View Mode Handler ==========
+async function updateActionPopup() {
+  const cfg = await STORAGE.get("cfg", { viewMode: "popup" });
+  const viewMode = cfg.viewMode || "popup";
+
+  if (viewMode === "fullpage") {
+    // Disable popup so onClicked fires
+    await chrome.action.setPopup({ popup: "" });
+    console.log("📺 View mode: fullpage - popup disabled");
+  } else {
+    // Enable popup
+    await chrome.action.setPopup({ popup: "pages/popup.html" });
+    console.log("📺 View mode: popup - popup enabled");
+  }
+}
+
+// Handle extension icon click when popup is disabled
+chrome.action.onClicked.addListener(async (tab) => {
+  // This only fires when popup is disabled (fullpage mode)
+  chrome.tabs.create({ url: chrome.runtime.getURL("pages/dashboard.html") });
+});
+
+// ========== Message Handlers ==========
+chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+  // Handle FETCH_TRANSCRIPT request from popup
+  if (msg.type === MSG.FETCH_TRANSCRIPT) {
+    const forceRefresh = msg.force || false;
+    fetchTranscriptInBackground(forceRefresh).then(result => {
+      sendResponse(result);
+    });
+    return true; // Keep channel open for async response
+  }
+
+  // Handle FETCH_STATUS request
+  if (msg.type === MSG.FETCH_STATUS) {
+    sendResponse({ loading: loadingState });
+    return true;
+  }
+
+  // Handle getAllData request (legacy)
   if (msg.action === "getAllData") {
     (async () => {
       const tcache = await STORAGE.get("cache_transcript", null);
@@ -283,7 +651,7 @@ chrome.runtime.onMessage.addListener(async (msg, _sender, sendResponse) => {
       let attendanceEntries = acache?.entries || acache?.data?.entries || null;
       let showLoginBanner = false;
 
-      // If missing, try to fetch now
+      // If missing attendance, try to fetch now
       try {
         if (!attendanceEntries) {
           const docHtml = await fetchHtml(SCHEDULE_OF_WEEK);
@@ -302,19 +670,10 @@ chrome.runtime.onMessage.addListener(async (msg, _sender, sendResponse) => {
         }
       }
 
-      try {
-        if (!transcriptRows) {
-          const html = await fetchHtml(TRANSCRIPT_URL);
-          const rows = parseTranscriptDoc(html);
-          await STORAGE.set({
-            cache_transcript: { ts: Date.now(), data: { rows } },
-          });
-          transcriptRows = rows;
-        }
-      } catch (e) {
-        if (e.message === "LOGIN_REQUIRED") {
-          showLoginBanner = true;
-        }
+      // For transcript, use cache if available, else trigger background fetch
+      if (!transcriptRows) {
+        // Trigger background fetch (non-blocking)
+        fetchTranscriptInBackground();
       }
 
       // Set login banner flag
@@ -345,15 +704,11 @@ chrome.runtime.onMessage.addListener(async (msg, _sender, sendResponse) => {
     return true;
   }
 
+  // Handle CFG_UPDATED
   if (msg.type === "CFG_UPDATED") {
-    await schedulePollAlarm();
-    sendResponse({ ok: true });
+    Promise.all([schedulePollAlarm(), updateActionPopup()]).then(() => {
+      sendResponse({ ok: true });
+    });
     return true;
   }
-});
-
-// Schedule class reminders on install
-chrome.runtime.onInstalled.addListener(async () => {
-  // Auto update check disabled to avoid GitHub API rate limit
-  // setTimeout(checkUpdateAndNotify, 5000);
 });
