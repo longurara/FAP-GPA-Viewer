@@ -39,37 +39,6 @@ const StorageService = {
         });
     },
 
-    // ========== Atomic Update Helpers ==========
-
-    /**
-     * Atomic update: read → modify → write in one operation
-     * Prevents race conditions when multiple operations modify the same key
-     * @param {string} key - Storage key
-     * @param {*} defaultValue - Default value if key doesn't exist
-     * @param {Function} updateFn - Function that receives current value and returns updated value
-     * @returns {Promise<*>} - The updated value
-     */
-    async atomicUpdate(key, defaultValue, updateFn) {
-        const current = await this.get(key, defaultValue);
-        const updated = updateFn(current);
-        await this.set({ [key]: updated });
-        return updated;
-    },
-
-    /**
-     * Merge update: read current object → merge with partial update
-     * Does not overwrite entire object, only specified keys
-     * @param {string} key - Storage key
-     * @param {Object} partialUpdate - Partial object to merge
-     * @returns {Promise<Object>} - The merged object
-     */
-    async mergeUpdate(key, partialUpdate) {
-        const current = await this.get(key, {});
-        const merged = { ...current, ...partialUpdate };
-        await this.set({ [key]: merged });
-        return merged;
-    },
-
     // ========== Cache Helpers ==========
 
     /**
@@ -137,8 +106,6 @@ window.STORAGE = {
     get: (k, d) => StorageService.get(k, d),
     set: (obj) => StorageService.set(obj),
     remove: (k) => StorageService.remove(k),
-    atomicUpdate: (k, d, fn) => StorageService.atomicUpdate(k, d, fn),
-    mergeUpdate: (k, p) => StorageService.mergeUpdate(k, p),
 };
 
 // Expose cache functions globally
