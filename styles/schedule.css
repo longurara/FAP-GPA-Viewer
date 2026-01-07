@@ -1,0 +1,364 @@
+/* ===============================
+   SCHEDULE.CSS - Schedule, Attendance & Exam Styles
+   =============================== */
+
+/* ========== Today's Schedule Widget ========== */
+.today-schedule {
+    background: linear-gradient(135deg,
+            rgba(96, 165, 250, var(--frame-opacity)) 0%,
+            rgba(129, 140, 248, var(--frame-opacity)) 100%);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 16px;
+    color: white;
+    box-shadow: 0 8px 24px rgba(96, 165, 250, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.today-schedule h3 {
+    margin: 0 0 16px 0;
+    font-size: 18px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    letter-spacing: -0.3px;
+}
+
+.today-schedule .no-class {
+    opacity: 0.95;
+    font-size: 15px;
+    text-align: center;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    backdrop-filter: blur(10px);
+}
+
+/* ========== Class Items ========== */
+.class-item {
+    background: rgba(255, 255, 255, calc(0.15 * var(--frame-opacity)));
+    backdrop-filter: blur(10px);
+    padding: 14px;
+    border-radius: 12px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.2s ease;
+}
+
+.class-item:hover {
+    background: rgba(255, 255, 255, calc(0.25 * var(--frame-opacity)));
+    transform: translateX(4px);
+}
+
+.class-item:last-child {
+    margin-bottom: 0;
+}
+
+.class-info {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.class-time {
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: -0.3px;
+}
+
+.class-course {
+    font-size: 14px;
+    opacity: 0.95;
+    font-weight: 500;
+}
+
+.class-countdown {
+    background: rgba(255, 255, 255, 0.3);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+/* ========== Exam Styles ========== */
+.exam-urgent {
+    background: #ef4444 !important;
+    animation: pulse 2s infinite;
+}
+
+.exam-soon {
+    background: #f59e0b !important;
+}
+
+.exam-days {
+    display: inline-block;
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-left: 8px;
+}
+
+/* ========== Attendance Table ========== */
+.online-class {
+    background: rgba(96, 165, 250, 0.1);
+}
+
+.online-room {
+    color: var(--accent-2);
+    font-weight: 600;
+}
+
+/* ========== Course Notes ========== */
+.note-toggle-btn {
+    background: transparent;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    opacity: 0.6;
+}
+
+.note-toggle-btn:hover {
+    background: var(--border);
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+.note-toggle-btn.has-note {
+    opacity: 1;
+    animation: noteGlow 2s ease-in-out infinite;
+}
+
+.note-row {
+    animation: noteExpand 0.3s ease-out;
+}
+
+.note-cell {
+    background: var(--table-bg);
+    padding: 12px 16px !important;
+    border-top: 2px solid var(--accent);
+}
+
+.course-note-input {
+    width: 100%;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    resize: vertical;
+    min-height: 80px;
+    transition: border-color 0.2s ease;
+}
+
+.course-note-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+}
+
+.course-note-input::placeholder {
+    color: var(--muted);
+    opacity: 0.7;
+}
+
+/* ========== GPA Calculator ========== */
+.calc-input-large {
+    width: 100%;
+    background: var(--card-bg);
+    border: 2px solid var(--border);
+    color: var(--accent);
+    font-size: 28px;
+    font-weight: 700;
+    text-align: center;
+    padding: 12px;
+    margin-top: 8px;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.calc-input-large:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px var(--glow);
+}
+
+.calc-result {
+    font-size: 36px;
+    font-weight: 800;
+    color: var(--text);
+    text-align: center;
+    padding: 16px;
+    background: var(--card-bg);
+    border-radius: 12px;
+    border: 2px solid var(--border);
+    transition: all 0.3s ease;
+}
+
+.calc-result.calc-success {
+    color: #10b981;
+    border-color: rgba(16, 185, 129, 0.3);
+    background: rgba(16, 185, 129, 0.1);
+}
+
+.calc-result.calc-warning {
+    color: #f59e0b;
+    border-color: rgba(245, 158, 11, 0.3);
+    background: rgba(245, 158, 11, 0.1);
+}
+
+.calc-result.calc-error {
+    color: #ef4444;
+    border-color: rgba(239, 68, 68, 0.3);
+    background: rgba(239, 68, 68, 0.1);
+}
+
+/* ========== Login Banner ========== */
+.login-banner {
+    display: none;
+    background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+    border: 1px solid rgba(255, 107, 53, 0.3);
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    position: relative;
+    overflow: hidden;
+}
+
+.login-banner.slideDown {
+    animation: slideDown 0.3s ease forwards;
+}
+
+.login-banner::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    animation: bannerShine 3s infinite;
+}
+
+.login-banner-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    position: relative;
+    z-index: 1;
+}
+
+.login-banner-text {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.login-banner-icon {
+    font-size: 24px;
+    animation: iconPulse 2s ease-in-out infinite;
+}
+
+.login-banner-message {
+    color: white;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.login-banner-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.login-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(10px);
+}
+
+.login-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.dismiss-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(10px);
+}
+
+.dismiss-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+}
+
+/* Dark mode support for login banner */
+:root[data-theme="dark"] .login-banner {
+    background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+    border-color: rgba(255, 107, 53, 0.4);
+}
+
+/* Export button loading */
+.export-btn.loading {
+    position: relative;
+    color: transparent;
+}
+
+.export-btn.loading::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 16px;
+    height: 16px;
+    margin: -8px 0 0 -8px;
+    border: 2px solid transparent;
+    border-top: 2px solid white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .login-banner-content {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .login-banner-actions {
+        width: 100%;
+        justify-content: center;
+    }
+}

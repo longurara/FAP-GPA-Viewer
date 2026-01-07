@@ -1,0 +1,197 @@
+/* ===============================
+   LAYOUT.CSS - Container & Grid Layouts
+   =============================== */
+
+/* ========== Main Container ========== */
+.wrap {
+    padding: 16px 20px 20px;
+    max-height: 600px;
+    overflow-y: auto;
+    position: relative;
+    z-index: 1;
+}
+
+/* ========== Top Header ========== */
+.top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+}
+
+.brand {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.brand img {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.brand h1 {
+    font-size: 20px;
+    margin: 0;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+}
+
+.top-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.top-actions button {
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    color: var(--text);
+    padding: 8px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.top-actions button:hover {
+    background: var(--border);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* ========== Card Grid ========== */
+.cards {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+/* ========== Actions Row ========== */
+.actions {
+    display: flex;
+    gap: 10px;
+    margin: 12px 0 16px;
+    flex-wrap: wrap;
+}
+
+/* ========== Form Layout ========== */
+.form .row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 14px;
+}
+
+/* ========== Bookmark Grid ========== */
+.book-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    padding: 16px;
+}
+
+/* ========== Hint Box ========== */
+.hint {
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.6;
+    padding: 12px;
+    background: var(--card-bg);
+    border-left: 3px solid var(--accent);
+    border-radius: 6px;
+    margin-top: 12px;
+}
+
+/* ========== Section Headers ========== */
+.section-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* ========== Empty State ========== */
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--muted);
+}
+
+.empty-state p {
+    margin-bottom: 16px;
+}
+
+/* ========== Responsive Adjustments ========== */
+@media (max-width: 600px) {
+    .cards {
+        grid-template-columns: 1fr;
+    }
+
+    .book-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .actions {
+        flex-direction: column;
+    }
+
+    .actions button {
+        width: 100%;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ========== Widgets Container ========== */
+.widgets-container {
+    display: grid;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.widget {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+}
+
+.widget-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.widget-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.widget-content {
+    min-height: 60px;
+}
+
+/* ========== No Data State ========== */
+.no-class,
+.no-data {
+    text-align: center;
+    padding: 20px;
+    color: var(--muted);
+    font-size: 14px;
+    background: var(--table-bg);
+    border-radius: 10px;
+}

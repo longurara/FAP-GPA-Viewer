@@ -1,0 +1,583 @@
+/* ===============================
+   COMPONENTS.CSS - Buttons, Cards, Forms, Tables
+   =============================== */
+
+/* ========== Cards ========== */
+.card {
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0)) padding-box,
+        radial-gradient(circle at 10% 10%, rgba(61, 245, 194, 0.18), transparent 45%),
+        radial-gradient(circle at 90% 0%, rgba(111, 178, 255, 0.2), transparent 50%),
+        var(--card-bg);
+    border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+    border-radius: 16px;
+    padding: 18px;
+    transition: all 0.25s ease;
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.24), 0 0 0 1px rgba(255, 255, 255, 0.03);
+}
+
+.card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.32);
+    border-color: color-mix(in srgb, var(--accent) 60%, var(--border));
+}
+
+.card .label {
+    color: var(--muted);
+    font-size: 12px;
+    margin-bottom: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+}
+
+.card .value {
+    font-size: 30px;
+    font-weight: 800;
+    color: var(--accent);
+    letter-spacing: -0.6px;
+}
+
+/* ========== Buttons ========== */
+.actions button,
+.form button,
+.settings-section button {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 16px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    flex: 1;
+    min-width: fit-content;
+}
+
+.actions button:hover,
+.form button:hover,
+.settings-section button:hover {
+    background: var(--border);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.actions button.primary,
+button.primary {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 90%);
+    color: #04121a;
+    border-color: color-mix(in srgb, var(--accent) 70%, var(--accent-2));
+    box-shadow: 0 10px 20px var(--glow), 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.actions button.primary:hover,
+button.primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.28), 0 12px 28px var(--glow);
+}
+
+button.secondary {
+    background: var(--border);
+    color: var(--text);
+    border: 1px solid var(--border);
+}
+
+button.secondary:hover {
+    background: var(--muted);
+    color: var(--bg);
+}
+
+button.danger {
+    background: var(--error);
+    color: white;
+    border: 1px solid var(--error);
+}
+
+button.danger:hover {
+    filter: brightness(1.1);
+}
+
+button.success {
+    background: var(--success);
+    color: white;
+    border: 1px solid var(--success);
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Bookmark grid buttons */
+.book-grid button {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 16px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.book-grid button:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    background: var(--accent);
+    color: white;
+}
+
+/* ========== Forms ========== */
+.form input,
+.form select {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.form input:focus,
+.form select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+}
+
+/* ========== Tables ========== */
+.table {
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0)) padding-box,
+        var(--table-bg);
+    border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.28), 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.table-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    border-bottom: 1px dashed color-mix(in srgb, var(--border) 70%, transparent);
+    background: color-mix(in srgb, var(--table-bg) 90%, transparent);
+    font-weight: 600;
+}
+
+.table-head input,
+.table-head select {
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--card-bg);
+    color: var(--text);
+    font-size: 13px;
+    transition: all 0.2s ease;
+}
+
+.table-head input:focus,
+.table-head select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th,
+td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+}
+
+th {
+    background: var(--table-bg);
+    font-weight: 600;
+    text-align: left;
+    color: var(--muted);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+tbody tr {
+    transition: background 0.2s ease;
+}
+
+tbody tr:hover {
+    background: var(--table-bg);
+}
+
+th.r,
+td.r {
+    text-align: right;
+}
+
+/* Course row states */
+.course-row.excluded {
+    opacity: 0.5;
+    text-decoration: line-through;
+}
+
+/* ========== Checkboxes ========== */
+.exclude-checkbox {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: var(--accent);
+}
+
+/* ========== Theme Toggle ========== */
+.theme-toggle {
+    position: relative;
+    width: 50px;
+    height: 26px;
+    background: var(--border);
+    border-radius: 50px;
+    cursor: pointer;
+    transition: background 0.3s;
+    border: 1px solid var(--border);
+}
+
+.theme-toggle::before {
+    content: "🌙";
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: var(--card-bg);
+    border-radius: 50%;
+    top: 2px;
+    left: 2px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+:root[data-theme="light"] .theme-toggle::before {
+    content: "☀️";
+    left: 26px;
+}
+
+/* ========== Badges & Tags ========== */
+.badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.badge.success {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+}
+
+.badge.warning {
+    background: rgba(245, 158, 11, 0.2);
+    color: #f59e0b;
+}
+
+.badge.error {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+}
+
+.badge.info {
+    background: rgba(96, 165, 250, 0.2);
+    color: #60a5fa;
+}
+
+/* ========== Login Status Indicator ========== */
+.login-status-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 6px 0;
+    cursor: help;
+    transition: all 0.2s ease;
+    border-radius: 50%;
+}
+
+.login-status-indicator:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: var(--muted);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.05);
+}
+
+.status-dot.logged-in {
+    background-color: #10b981;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2), 0 0 8px rgba(16, 185, 129, 0.4);
+}
+
+.status-dot.logged-out {
+    background-color: #ef4444;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2), 0 0 8px rgba(239, 68, 68, 0.4);
+}
+
+.status-dot.checking {
+    background-color: #f59e0b;
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2), 0 0 8px rgba(245, 158, 11, 0.4);
+    animation: statusPulse 1.5s infinite;
+}
+
+/* ========== Statistics Grid ========== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.stat-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    transition: all 0.2s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.stat-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+
+.stat-value {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--accent);
+    margin-bottom: 4px;
+}
+
+.stat-detail {
+    font-size: 12px;
+    color: var(--muted);
+}
+
+/* ========== Chart Container ========== */
+.chart-container {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    max-height: 280px;
+}
+
+/* ========== GPA Calculator Form ========== */
+.calc-form {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    margin-top: 16px;
+}
+
+.calc-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.calc-row-result {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    padding: 16px;
+    background: var(--table-bg);
+    border-radius: 10px;
+}
+
+.calc-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+}
+
+.calc-input-small {
+    width: 80px;
+    background: var(--card-bg);
+    border: 2px solid var(--border);
+    color: var(--text);
+    font-size: 16px;
+    font-weight: 600;
+    text-align: center;
+    padding: 8px;
+    border-radius: 8px;
+}
+
+.calc-input-small:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.calc-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.calc-actions button {
+    flex: 1;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+}
+
+/* ========== Settings Sections ========== */
+.settings-section {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    margin-bottom: 16px;
+}
+
+/* ========== Theme Presets ========== */
+.theme-presets {
+    display: flex;
+    gap: 8px;
+}
+
+.theme-preset {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    background: var(--preset-color);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0;
+}
+
+.theme-preset:hover {
+    transform: scale(1.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.theme-preset.active {
+    border-color: var(--text);
+    box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
+}
+
+/* ========== Exclude Info Card ========== */
+.exclude-info .value {
+    font-size: 24px;
+}
+
+.exclude-detail {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 6px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ========== Background Controls ========== */
+.bg-controls {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.bg-controls button {
+    padding: 8px 12px;
+    font-size: 12px;
+}
+
+.bg-preview {
+    margin-top: 12px;
+    height: 80px;
+    border-radius: 8px;
+    background-size: cover;
+    background-position: center;
+    border: 1px dashed var(--border);
+    display: none;
+}
+
+.bg-preview.has-image {
+    display: block;
+}
+
+/* ========== Input Range Slider ========== */
+input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 120px;
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    outline: none;
+    cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: var(--accent);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+    box-shadow: 0 2px 8px var(--glow);
+}
+
+/* ========== Color Input ========== */
+input[type="color"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 40px;
+    height: 32px;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    padding: 2px;
+    background: var(--card-bg);
+}
+
+input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+input[type="color"]::-webkit-color-swatch {
+    border: none;
+    border-radius: 4px;
+}

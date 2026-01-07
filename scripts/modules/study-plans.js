@@ -6,18 +6,31 @@ class StudyPlans {
   }
 
   async init() {
-    await this.loadPlans();
-    this.setupEventListeners();
-    this.renderPlans();
+    try {
+      await this.loadPlans();
+      this.setupEventListeners();
+      this.renderPlans();
+    } catch (error) {
+      console.error("[StudyPlans] Error initializing:", error);
+    }
   }
 
   async loadPlans() {
-    const savedPlans = await STORAGE.get("study_plans", []);
-    this.plans = savedPlans;
+    try {
+      const savedPlans = await STORAGE.get("study_plans", []);
+      this.plans = savedPlans;
+    } catch (error) {
+      console.error("[StudyPlans] Error loading plans:", error);
+      this.plans = [];
+    }
   }
 
   async savePlans() {
-    await STORAGE.set({ study_plans: this.plans });
+    try {
+      await STORAGE.set({ study_plans: this.plans });
+    } catch (error) {
+      console.error("[StudyPlans] Error saving plans:", error);
+    }
   }
 
   setupEventListeners() {

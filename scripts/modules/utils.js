@@ -76,6 +76,50 @@ const Utils = {
         };
         return map[day] || day;
     },
+
+    // ========== Validation Functions ==========
+
+    /**
+     * Validate schedule entries before saving to cache
+     * Prevents overwriting good data with empty data when user is not logged in
+     * @param {Array} entries - Schedule entries to validate
+     * @returns {boolean} - true if data is valid and safe to cache
+     */
+    isValidScheduleData(entries) {
+        if (!Array.isArray(entries)) return false;
+        if (entries.length === 0) return false;
+
+        // Check if at least one entry has valid course code (e.g., "ABC123")
+        const hasValidEntry = entries.some(e =>
+            e && e.course && /^[A-Z]{2,4}\d{3}$/.test(e.course)
+        );
+
+        return hasValidEntry;
+    },
+
+    // ========== GPA Calculation ==========
+
+    /**
+     * Compute GPA from course items
+     * @param {Array} items - Course rows with credit and grade
+     * @param {Array} excluded - Course codes to exclude from calculation
+     * @returns {Object} - { gpa10, gpa4, credits }
+     */
+    computeGPA(items, excluded = []) {
+        let sumC = 0, sumP = 0;
+        for (const it of items) {
+            const c = it.credit;
+            const g = it.grade;
+            const code = (it.code || "").toUpperCase();
+            if (!Number.isFinite(c) || !Number.isFinite(g) || c <= 0 || g <= 0) continue;
+            if (excluded.includes(code)) continue;
+            sumC += c;
+            sumP += c * g;
+        }
+        const g10 = sumC > 0 ? sumP / sumC : NaN;
+        const g4 = Number.isFinite(g10) ? (g10 / 10) * 4 : NaN;
+        return { gpa10: g10, gpa4: g4, credits: sumC };
+    },
 };
 
 // Expose globally for backward compatibility
@@ -88,3 +132,8 @@ window.toNum = window.toNum || Utils.toNum;
 window.NORM = window.NORM || Utils.NORM;
 window.debounce = window.debounce || Utils.debounce;
 window.dayToVietnamese = window.dayToVietnamese || Utils.dayToVietnamese;
+
+// New centralized functions
+window.isValidScheduleData = Utils.isValidScheduleData;
+window.computeGPA = Utils.computeGPA;
+

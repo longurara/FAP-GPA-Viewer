@@ -1,0 +1,327 @@
+/* ===============================
+   ANIMATIONS.CSS - Keyframes & Transitions
+   =============================== */
+
+/* ========== Fade Animations ========== */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+
+    to {
+        opacity: 0;
+        transform: translateY(-8px) scale(0.98);
+    }
+}
+
+/* ========== Glow & Pulse ========== */
+@keyframes glowPulse {
+
+    0%,
+    100% {
+        opacity: 0.7;
+        filter: blur(12px);
+    }
+
+    50% {
+        opacity: 1;
+        filter: blur(16px);
+    }
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+    }
+}
+
+@keyframes statusPulse {
+    0% {
+        transform: scale(0.95);
+        opacity: 0.8;
+    }
+
+    50% {
+        transform: scale(1.1);
+        opacity: 1;
+    }
+
+    100% {
+        transform: scale(0.95);
+        opacity: 0.8;
+    }
+}
+
+/* ========== Ripple Effect ========== */
+@keyframes rippleEffect {
+    0% {
+        transform: scale(0);
+        opacity: 1;
+    }
+
+    100% {
+        transform: scale(4);
+        opacity: 0;
+    }
+}
+
+/* ========== Exam Warning ========== */
+@keyframes examWarning {
+
+    0%,
+    100% {
+        transform: scale(1) rotate(0deg);
+        filter: drop-shadow(0 0 8px rgba(255, 193, 7, 0.8));
+    }
+
+    25% {
+        transform: scale(1.1) rotate(-2deg);
+        filter: drop-shadow(0 0 12px rgba(255, 150, 0, 1));
+    }
+
+    50% {
+        transform: scale(0.95) rotate(1deg);
+        filter: drop-shadow(0 0 6px rgba(255, 200, 0, 0.6));
+    }
+
+    75% {
+        transform: scale(1.05) rotate(-1deg);
+        filter: drop-shadow(0 0 10px rgba(255, 180, 0, 0.9));
+    }
+}
+
+/* ========== Note Animations ========== */
+@keyframes noteGlow {
+
+    0%,
+    100% {
+        filter: drop-shadow(0 0 2px rgba(96, 165, 250, 0.3));
+    }
+
+    50% {
+        filter: drop-shadow(0 0 6px rgba(96, 165, 250, 0.6));
+    }
+}
+
+@keyframes noteExpand {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ========== Success Animations ========== */
+@keyframes successGlow {
+
+    0%,
+    100% {
+        background: linear-gradient(135deg,
+                rgba(34, 197, 94, 0.15) 0%,
+                rgba(22, 163, 74, 0.1) 50%,
+                rgba(34, 197, 94, 0.15) 100%);
+    }
+
+    50% {
+        background: linear-gradient(135deg,
+                rgba(34, 197, 94, 0.2) 0%,
+                rgba(22, 163, 74, 0.15) 50%,
+                rgba(34, 197, 94, 0.2) 100%);
+    }
+}
+
+@keyframes successPulse {
+
+    0%,
+    100% {
+        transform: scale(1) rotate(0deg);
+        opacity: 0.1;
+    }
+
+    50% {
+        transform: scale(1.1) rotate(180deg);
+        opacity: 0.2;
+    }
+}
+
+@keyframes successIconBounce {
+    0% {
+        transform: scale(0) rotate(-180deg);
+        opacity: 0;
+    }
+
+    50% {
+        transform: scale(1.3) rotate(-90deg);
+        opacity: 0.9;
+    }
+
+    100% {
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+    }
+}
+
+@keyframes successButtonGradientShift {
+
+    0%,
+    100% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+}
+
+/* ========== Slide Animations ========== */
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ========== Banner & Shine ========== */
+@keyframes bannerShine {
+    0% {
+        left: -100%;
+    }
+
+    100% {
+        left: 100%;
+    }
+}
+
+@keyframes iconPulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+/* ========== Spin (Loading) ========== */
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* ========== Shake Animation ========== */
+@keyframes shake {
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    10%,
+    30%,
+    50%,
+    70%,
+    90% {
+        transform: translateX(-5px);
+    }
+
+    20%,
+    40%,
+    60%,
+    80% {
+        transform: translateX(5px);
+    }
+}
+
+/* ========== Bounce Animation ========== */
+@keyframes bounce {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+/* ========== Scale In Animation ========== */
+@keyframes scaleIn {
+    from {
+        transform: scale(0);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* ========== Skeleton Loading ========== */
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+.skeleton {
+    background: linear-gradient(90deg,
+            var(--border) 25%,
+            var(--card-bg) 50%,
+            var(--border) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 4px;
+}

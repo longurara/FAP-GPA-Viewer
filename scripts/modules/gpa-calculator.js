@@ -7,34 +7,26 @@ const GPACalculatorService = {
      * Initialize GPA Calculator with current values
      */
     async initGPACalculator() {
-        const DAY_MS = window.DAY_MS || 24 * 60 * 60 * 1000;
-        const cache = await window.cacheGet?.("cache_transcript", DAY_MS);
-        if (!cache || !cache.rows) return;
+        try {
+            const DAY_MS = window.DAY_MS || 24 * 60 * 60 * 1000;
+            const cache = await window.cacheGet?.("cache_transcript", DAY_MS);
+            if (!cache || !cache.rows) return;
 
-        const excludedCourses = await window.STORAGE?.get("excluded_courses", []) || [];
-        const computeGPA = window.computeGPA || ((items, excluded) => {
-            let sumC = 0, sumP = 0;
-            for (const it of items) {
-                const c = it.credit, g = it.grade;
-                const code = (it.code || "").toUpperCase();
-                if (!Number.isFinite(c) || !Number.isFinite(g) || c <= 0 || g <= 0) continue;
-                if (excluded.includes(code)) continue;
-                sumC += c;
-                sumP += c * g;
-            }
-            const g10 = sumC > 0 ? sumP / sumC : NaN;
-            return { gpa10: g10, gpa4: Number.isFinite(g10) ? (g10 / 10) * 4 : NaN, credits: sumC };
-        });
+            const excludedCourses = await window.STORAGE?.get("excluded_courses", []) || [];
 
-        const gpa = computeGPA(cache.rows, excludedCourses);
+            // Use centralized computeGPA from utils.js
+            const gpa = window.computeGPA(cache.rows, excludedCourses);
 
-        const setValue = window.setValue || ((s, v) => {
-            const el = document.querySelector(s);
-            if (el) el.textContent = v;
-        });
+            const setValue = window.setValue || ((s, v) => {
+                const el = document.querySelector(s);
+                if (el) el.textContent = v;
+            });
 
-        setValue("#calcCurrentGPA", Number.isFinite(gpa.gpa10) ? gpa.gpa10.toFixed(2) : "--");
-        setValue("#calcCurrentCredits", gpa.credits || "--");
+            setValue("#calcCurrentGPA", Number.isFinite(gpa.gpa10) ? gpa.gpa10.toFixed(2) : "--");
+            setValue("#calcCurrentCredits", gpa.credits || "--");
+        } catch (error) {
+            console.error("[GPACalculator] Error initializing:", error);
+        }
     },
 
     /**

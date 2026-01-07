@@ -207,10 +207,33 @@ async function updateAttendanceQuickStats() {
   }
 }
 
-async function loadGPA() {
+// Cache freshness threshold (7 days)
+const GPA_CACHE_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
+
+/**
+ * Render GPA from cache only - for search/filter operations
+ * Does NOT trigger background fetch
+ */
+async function renderGPAFromCache() {
   const CACHE_KEY = "cache_transcript";
   const cachedObj = await STORAGE.get(CACHE_KEY, null);
   const cachedData = cachedObj ? cachedObj.data : null;
+  const excludedCourses = await STORAGE.get("excluded_courses", []);
+
+  if (cachedData && Array.isArray(cachedData.rows) && cachedData.rows.length > 0) {
+    renderTranscript(cachedData.rows, excludedCourses);
+  }
+}
+
+/**
+ * Load GPA - renders from cache and optionally fetches fresh data
+ * @param {boolean} forceFetch - Force background fetch regardless of cache age
+ */
+async function loadGPA(forceFetch = false) {
+  const CACHE_KEY = "cache_transcript";
+  const cachedObj = await STORAGE.get(CACHE_KEY, null);
+  const cachedData = cachedObj ? cachedObj.data : null;
+  const cacheTimestamp = cachedObj?.ts || 0;
   const excludedCourses = await STORAGE.get("excluded_courses", []);
 
   // Always render from cache first (instant display)
@@ -226,13 +249,21 @@ async function loadGPA() {
     setValue("#gpa10Quick", "⏳");
   }
 
-  // Request background to fetch fresh data (non-blocking)
-  // Background will save to storage, and our onChanged listener will update UI
-  try {
-    chrome.runtime.sendMessage({ type: 'FETCH_TRANSCRIPT' });
-    console.log("[GPA] Requested background fetch");
-  } catch (e) {
-    console.error("[GPA] Failed to request background fetch:", e);
+  // Check if we need to fetch fresh data
+  const cacheAge = Date.now() - cacheTimestamp;
+  const isCacheStale = cacheAge > GPA_CACHE_MAX_AGE;
+  const hasNoData = !cachedData || !cachedData.rows || cachedData.rows.length === 0;
+
+  if (forceFetch || isCacheStale || hasNoData) {
+    // Request background to fetch fresh data (non-blocking)
+    try {
+      chrome.runtime.sendMessage({ type: 'FETCH_TRANSCRIPT', force: forceFetch });
+      console.log("[GPA] Requested background fetch (stale:", isCacheStale, ", force:", forceFetch, ", age:", Math.round(cacheAge / 1000), "s)");
+    } catch (e) {
+      console.error("[GPA] Failed to request background fetch:", e);
+    }
+  } else {
+    console.log("[GPA] Cache is fresh, skipping background fetch (age:", Math.round(cacheAge / 1000), "s)");
   }
 }
 
@@ -275,8 +306,8 @@ document.getElementById("btnOpenAttendance")?.addEventListener("click", () => ch
 document.getElementById("btnOpenSchedule")?.addEventListener("click", () => chrome.tabs.create({ url: DEFAULT_URLS.scheduleOfWeek }));
 document.getElementById("btnOpenExams")?.addEventListener("click", () => chrome.tabs.create({ url: DEFAULT_URLS.examSchedule }));
 
-// Search & Filter
-document.getElementById("searchCourse")?.addEventListener("input", debounce(loadGPA, 300));
+// Search & Filter - Use renderGPAFromCache to avoid triggering background fetch on every keystroke
+document.getElementById("searchCourse")?.addEventListener("input", debounce(renderGPAFromCache, 300));
 document.getElementById("searchAtt")?.addEventListener("input", debounce(async () => {
   const c = await cacheGet("cache_attendance", 10 * 60 * 1000);
   renderAttendance(c?.entries || []);
@@ -685,6 +716,9 @@ function setupEventListeners() {
 
 // ========== Reactive Updates: Listen for Background Fetch ==========
 
+// Use centralized isValidScheduleData from utils.js
+const isValidScheduleData = window.isValidScheduleData;
+
 // Listen for storage changes (when background updates cache)
 chrome.storage.onChanged.addListener(async (changes, area) => {
   if (area !== 'local') return;
@@ -699,13 +733,18 @@ chrome.storage.onChanged.addListener(async (changes, area) => {
     }
   }
 
-  // When attendance cache is updated, re-render
+  // When attendance cache is updated, re-render (only if valid data)
   if (changes.cache_attendance) {
     const newValue = changes.cache_attendance.newValue;
-    if (newValue?.data?.entries) {
-      console.log("[Storage] Attendance cache updated, re-rendering");
-      renderAttendance(newValue.data.entries);
-      updateQuickAttendanceStats(newValue.data.entries);
+    const entries = newValue?.data?.entries;
+
+    // Only re-render if new data is valid (prevents blank screen on login page redirect)
+    if (entries && isValidScheduleData(entries)) {
+      console.log("[Storage] Attendance cache updated with valid data, re-rendering");
+      renderAttendance(entries);
+      updateQuickAttendanceStats(entries);
+    } else if (entries && entries.length === 0) {
+      console.warn("[Storage] Ignoring empty attendance cache update (likely not logged in)");
     }
   }
 });

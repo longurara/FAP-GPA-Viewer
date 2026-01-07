@@ -2,6 +2,9 @@
 (function (global) {
   const log = (...args) => console.log("[Attendance]", ...args);
 
+  // Use centralized isValidScheduleData from utils.js (exposed as window.isValidScheduleData)
+  // const isValidScheduleData = window.isValidScheduleData; // available globally
+
   function parseScheduleOfWeek(doc) {
     const result = { entries: [], todayRows: [] };
     const N = (s) => (s || "").replace(/\s+/g, " ").trim();
@@ -407,9 +410,20 @@
     }
 
     const parsed = parseScheduleOfWeek(doc);
+
+    // Validate data before saving - don't overwrite cache with empty/invalid data
+    if (!window.isValidScheduleData(parsed.entries)) {
+      log("⚠️ Invalid schedule data, using cached data instead");
+      const cachedEntries = await STORAGE.get("cache_attendance_flat", []);
+      renderAttendance(cachedEntries);
+      renderScheduleWeek(cachedEntries);
+      updateQuickAttendanceStats?.(cachedEntries);
+      return;
+    }
+
     await cacheSet("cache_attendance", parsed);
     await STORAGE.set({
-      cache_attendance_flat: parsed && parsed.entries ? parsed.entries : [],
+      cache_attendance_flat: parsed.entries,
       cache_attendance_fallback_ts: null,
     });
     await STORAGE.set({

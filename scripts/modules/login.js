@@ -89,21 +89,25 @@ const LoginService = {
      * Check and show login banner if needed
      */
     async checkAndShowLoginBanner() {
-        // Check multiple indicators to determine if login is needed
-        const showBanner = await window.STORAGE?.get("show_login_banner", false);
-        const lastFetchTime = await window.STORAGE?.get("last_successful_fetch", 0);
-        const now = Date.now();
+        try {
+            // Check multiple indicators to determine if login is needed
+            const showBanner = await window.STORAGE?.get("show_login_banner", false);
+            const lastFetchTime = await window.STORAGE?.get("last_successful_fetch", 0);
+            const now = Date.now();
 
-        // Show banner if:
-        // 1. Flag is explicitly set to true, OR
-        // 2. No successful fetch in the last 10 minutes (likely means login expired)
-        const shouldShow =
-            showBanner || (lastFetchTime > 0 && now - lastFetchTime > 10 * 60 * 1000);
+            // Show banner if:
+            // 1. Flag is explicitly set to true, OR
+            // 2. No successful fetch in the last 10 minutes (likely means login expired)
+            const shouldShow =
+                showBanner || (lastFetchTime > 0 && now - lastFetchTime > 10 * 60 * 1000);
 
-        if (shouldShow) {
-            this.showLoginBanner();
-        } else {
-            this.hideLoginBanner();
+            if (shouldShow) {
+                this.showLoginBanner();
+            } else {
+                this.hideLoginBanner();
+            }
+        } catch (error) {
+            console.error("[Login] Error checking login banner:", error);
         }
     },
 
@@ -111,16 +115,20 @@ const LoginService = {
      * Handle login now button click
      */
     async handleLoginNow() {
-        const loginUrl = "https://fap.fpt.edu.vn/";
-        chrome.tabs.create({ url: loginUrl });
-        this.hideLoginBanner();
-        await window.STORAGE?.set({ show_login_banner: false });
+        try {
+            const loginUrl = "https://fap.fpt.edu.vn/";
+            chrome.tabs.create({ url: loginUrl });
+            this.hideLoginBanner();
+            await window.STORAGE?.set({ show_login_banner: false });
 
-        // Check login status after a delay to see if user logged in
-        setTimeout(async () => {
-            await this.checkLoginStatus();
-            await this.checkAndShowLoginBanner();
-        }, 3000);
+            // Check login status after a delay to see if user logged in
+            setTimeout(async () => {
+                await this.checkLoginStatus();
+                await this.checkAndShowLoginBanner();
+            }, 3000);
+        } catch (error) {
+            console.error("[Login] Error handling login:", error);
+        }
     },
 
     /**

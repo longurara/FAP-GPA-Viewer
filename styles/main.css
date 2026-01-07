@@ -1,0 +1,40 @@
+/* ===============================
+   MAIN.CSS - CSS Entry Point
+   Imports all modular CSS files
+   =============================== */
+
+/* Base: Variables, Reset, Typography */
+@import url("base.css");
+
+/* Animations: All keyframes (must be early for references) */
+@import url("animations.css");
+
+/* Layout: Containers, Grid, Structure */
+@import url("layout.css");
+
+/* Components: Buttons, Cards, Forms, Tables */
+@import url("components.css");
+
+/* Tabs: Tab Navigation System */
+@import url("tabs.css");
+
+/* Modals: Modal & Toast System */
+@import url("modals.css");
+
+/* Schedule: Schedule, Attendance, Exams */
+@import url("schedule.css");
+
+/* 
+ * CSS Architecture Overview:
+ * 
+ * base.css      - CSS variables, reset, typography, theme colors
+ * animations.css - All @keyframes for animations
+ * layout.css    - Main container, grid layouts, structure
+ * components.css - Reusable UI components (buttons, cards, forms, tables)
+ * tabs.css      - Tab navigation with liquid glass effect
+ * modals.css    - Modal dialogs, toasts, overlays
+ * schedule.css  - Schedule-specific styles (today widget, exams, notes)
+ *
+ * Total: ~1800 lines organized into 7 focused files
+ * Original: ~4400 lines in a single file
+ */

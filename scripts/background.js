@@ -23,12 +23,37 @@ let loadingState = {
   schedule: false
 };
 
+// ========== Service Worker Helper Functions ==========
+// NOTE: These are copies of Utils functions because Service Worker 
+// doesn't have access to window.Utils (runs in isolated context)
+// Canonical versions are in scripts/modules/utils.js
+
 function toNum(txt) {
   const m = String(txt || "").match(/-?\d+(?:[.,]\d+)?/);
   return m ? parseFloat(m[0].replace(",", ".")) : NaN;
 }
+
 function NORM_TXT(s) {
   return (s || "").replace(/\s+/g, " ").trim().toUpperCase();
+}
+
+/**
+ * Validate schedule entries before saving to cache
+ * Prevents overwriting good data with empty data when user is not logged in
+ * @param {Array} entries - Schedule entries to validate
+ * @returns {boolean} - true if data is valid and safe to cache
+ * NOTE: Copy of Utils.isValidScheduleData for Service Worker context
+ */
+function isValidScheduleData(entries) {
+  if (!Array.isArray(entries)) return false;
+  if (entries.length === 0) return false;
+
+  // Check if at least one entry has valid course code (e.g., "ABC123")
+  const hasValidEntry = entries.some(e =>
+    e && e.course && /^[A-Z]{2,4}\d{3}$/.test(e.course)
+  );
+
+  return hasValidEntry;
 }
 
 function parseTranscriptDoc(html) {
@@ -430,18 +455,20 @@ async function fetchTranscriptInBackground(forceRefresh = false) {
   // Check cache first (unless forced refresh)
   if (!forceRefresh) {
     const cached = await STORAGE.get("cache_transcript", null);
-    const DAY_MS = 24 * 60 * 60 * 1000;
+    const CACHE_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days - match popup logic
     const cachedRows = cached?.data?.rows || [];
 
     // Only consider cache fresh if it has actual data
-    if (cached && cached.ts && cachedRows.length > 0 && Date.now() - cached.ts < DAY_MS) {
-      console.log("📋 Transcript cache is fresh with", cachedRows.length, "courses, skipping fetch");
+    if (cached && cached.ts && cachedRows.length > 0 && Date.now() - cached.ts < CACHE_MAX_AGE) {
+      console.log("📋 Transcript cache is fresh with", cachedRows.length, "courses, skipping fetch (age:", Math.round((Date.now() - cached.ts) / 1000), "s)");
       return { status: 'cache_fresh', rows: cachedRows };
     }
 
     // Cache is stale or empty
     if (cached && cachedRows.length === 0) {
       console.log("📋 Transcript cache is empty, will fetch fresh data");
+    } else if (cached && cached.ts) {
+      console.log("📋 Transcript cache is stale (age:", Math.round((Date.now() - cached.ts) / 1000), "s), will refresh");
     }
   }
 
@@ -530,6 +557,12 @@ async function pollOnce() {
     const prevFp = await STORAGE.get("att_fp", null);
 
     const newEntries = parseScheduleOfWeek(html);
+
+    // Validate data before saving - don't overwrite cache with empty/invalid data
+    if (!isValidScheduleData(newEntries)) {
+      console.warn("⚠️ Invalid schedule data from polling, keeping existing cache");
+      return;
+    }
 
     await STORAGE.set({
       att_entries: newEntries,
@@ -656,13 +689,19 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         if (!attendanceEntries) {
           const docHtml = await fetchHtml(SCHEDULE_OF_WEEK);
           const entries = parseScheduleOfWeek(docHtml);
-          await STORAGE.set({
-            cache_attendance: {
-              ts: Date.now(),
-              data: { entries, todayRows: [] },
-            },
-          });
-          attendanceEntries = entries;
+
+          // Only save to cache if data is valid (prevents overwriting with empty data)
+          if (isValidScheduleData(entries)) {
+            await STORAGE.set({
+              cache_attendance: {
+                ts: Date.now(),
+                data: { entries, todayRows: [] },
+              },
+            });
+            attendanceEntries = entries;
+          } else {
+            console.warn("⚠️ Invalid schedule data from getAllData, not caching");
+          }
         }
       } catch (e) {
         if (e.message === "LOGIN_REQUIRED") {

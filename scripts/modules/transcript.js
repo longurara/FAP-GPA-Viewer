@@ -61,27 +61,7 @@ const TranscriptService = {
         return [];
     },
 
-    /**
-     * Compute GPA from course items
-     * @param {Array} items - Course rows
-     * @param {Array} excluded - Course codes to exclude
-     * @returns {Object} - { gpa10, gpa4, credits }
-     */
-    computeGPA(items, excluded) {
-        let sumC = 0, sumP = 0;
-        for (const it of items) {
-            const c = it.credit;
-            const g = it.grade;
-            const code = (it.code || "").toUpperCase();
-            if (!Number.isFinite(c) || !Number.isFinite(g) || c <= 0 || g <= 0) continue;
-            if (excluded.includes(code)) continue;
-            sumC += c;
-            sumP += c * g;
-        }
-        const g10 = sumC > 0 ? sumP / sumC : NaN;
-        const g4 = Number.isFinite(g10) ? (g10 / 10) * 4 : NaN;
-        return { gpa10: g10, gpa4: g4, credits: sumC };
-    },
+    // computeGPA is now centralized in utils.js (window.computeGPA)
 
     /**
      * Render transcript table with course rows
@@ -94,7 +74,7 @@ const TranscriptService = {
             if (el) el.textContent = v;
         });
 
-        const g = this.computeGPA(rows, excluded);
+        const g = window.computeGPA(rows, excluded);
         setValue("#gpa10", Number.isFinite(g.gpa10) ? g.gpa10.toFixed(2) : "--");
         setValue("#gpa4", Number.isFinite(g.gpa4) ? g.gpa4.toFixed(2) : "--");
         setValue("#credits", g.credits || "--");
@@ -238,55 +218,54 @@ const TranscriptService = {
     },
 
     /**
-     * Load GPA data with stale-while-revalidate pattern
+     * Load GPA data - renders from cache and optionally triggers background fetch
+     * @param {boolean} forceFetch - Force background fetch regardless of cache age
      */
-    async loadGPA() {
-        const CACHE_KEY = "cache_transcript";
-        const cachedObj = await window.STORAGE?.get(CACHE_KEY, null);
-        const cachedData = cachedObj ? cachedObj.data : null;
-        const cachedTs = cachedObj ? cachedObj.ts : 0;
-        const excludedCourses = await window.STORAGE?.get("excluded_courses", []) || [];
+    async loadGPA(forceFetch = false) {
+        try {
+            const CACHE_KEY = "cache_transcript";
+            const CACHE_MAX_AGE = 5 * 60 * 1000; // 5 minutes
 
-        // 1. Render immediately if we have ANY data (even stale)
-        if (cachedData && Array.isArray(cachedData.rows)) {
-            console.log("[SWR] Rendering cached GPA data");
-            await this.renderTranscript(cachedData.rows, excludedCourses);
-        }
+            const cachedObj = await window.STORAGE?.get(CACHE_KEY, null);
+            const cachedData = cachedObj ? cachedObj.data : null;
+            const cacheTimestamp = cachedObj?.ts || 0;
+            const excludedCourses = await window.STORAGE?.get("excluded_courses", []) || [];
 
-        // 2. Check if we need to revalidate (is stale?)
-        const DAY_MS = window.DAY_MS || 24 * 60 * 60 * 1000;
-        const isStale = !cachedObj || Date.now() - cachedTs > DAY_MS;
-
-        if (isStale) {
-            console.log("[SWR] GPA data is stale or missing, fetching...");
-            try {
-                const doc = await window.fetchHTML(window.DEFAULT_URLS.transcript);
-
-                if (doc) {
-                    const rows = this.parseTranscriptDoc(doc);
-
-                    // Update caches
-                    await window.cacheSet(CACHE_KEY, { rows });
-                    await window.STORAGE?.set({
-                        cache_transcript_flat: rows,
-                        cache_transcript_fallback_ts: null,
-                        show_login_banner: false,
-                        last_successful_fetch: Date.now(),
-                    });
-
-                    // Re-render with fresh data
-                    console.log("[SWR] Fetched fresh GPA data, re-rendering");
-                    await this.renderTranscript(rows, excludedCourses);
-                } else {
-                    // If fetch failed but no cached data, try flat fallback
-                    if (!cachedData) {
-                        const fallbackRows = await window.STORAGE?.get("cache_transcript_flat", []) || [];
-                        await this.renderTranscript(fallbackRows, excludedCourses);
-                    }
-                }
-            } catch (e) {
-                console.error("[SWR] Error fetching GPA:", e);
+            // 1. Render immediately from cache (instant display)
+            if (cachedData && Array.isArray(cachedData.rows) && cachedData.rows.length > 0) {
+                console.log("[TranscriptService] Rendering from cache:", cachedData.rows.length, "courses");
+                await this.renderTranscript(cachedData.rows, excludedCourses);
+            } else {
+                // No cache - show loading indicators
+                const setValue = window.setValue || ((s, v) => {
+                    const el = document.querySelector(s);
+                    if (el) el.textContent = v;
+                });
+                setValue("#gpa10", "⏳");
+                setValue("#gpa4", "⏳");
+                setValue("#credits", "⏳");
+                setValue("#gpa10Quick", "⏳");
             }
+
+            // 2. Check if we need to fetch fresh data
+            const cacheAge = Date.now() - cacheTimestamp;
+            const isCacheStale = cacheAge > CACHE_MAX_AGE;
+            const hasNoData = !cachedData || !cachedData.rows || cachedData.rows.length === 0;
+
+            if (forceFetch || isCacheStale || hasNoData) {
+                // Request background.js to fetch fresh data (non-blocking)
+                // Background will save to storage, and onChanged listener will update UI
+                try {
+                    chrome.runtime.sendMessage({ type: 'FETCH_TRANSCRIPT', force: forceFetch });
+                    console.log("[TranscriptService] Requested background fetch (stale:", isCacheStale, ", force:", forceFetch, ", age:", Math.round(cacheAge / 1000), "s)");
+                } catch (e) {
+                    console.error("[TranscriptService] Failed to request background fetch:", e);
+                }
+            } else {
+                console.log("[TranscriptService] Cache is fresh, skipping fetch (age:", Math.round(cacheAge / 1000), "s)");
+            }
+        } catch (error) {
+            console.error("[TranscriptService] Error loading GPA:", error);
         }
     },
 };
@@ -294,7 +273,7 @@ const TranscriptService = {
 // Expose globally for backward compatibility
 window.TranscriptService = TranscriptService;
 window.parseTranscriptDoc = (doc) => TranscriptService.parseTranscriptDoc(doc);
-window.computeGPA = (items, excluded) => TranscriptService.computeGPA(items, excluded);
+// window.computeGPA is now centralized in utils.js (no need to override)
 window.renderTranscript = (rows, excluded) => TranscriptService.renderTranscript(rows, excluded);
 window.loadGPA = () => TranscriptService.loadGPA();
 

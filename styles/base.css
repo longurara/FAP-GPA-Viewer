@@ -1,0 +1,110 @@
+/* ===============================
+   BASE.CSS - Variables, Reset & Typography
+   =============================== */
+
+/* Font imports */
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=Space+Grotesk:wght@500;700&display=swap");
+
+/* ========== CSS Variables (Dark Mode Default) ========== */
+:root {
+    /* Colors */
+    --bg: #05090f;
+    --bg-2: #091624;
+    --card: #0d1826;
+    --text: #f3f4f6;
+    --muted: #9fb1ca;
+    --accent: #3df5c2;
+    --accent-2: #6fb2ff;
+    --border: #1b2a3d;
+    --glow: rgba(61, 245, 194, 0.25);
+
+    /* Background overlay opacity (0-1) */
+    --bg-overlay-opacity: 0.35;
+
+    /* Frame opacity control */
+    --frame-opacity: 0.9;
+    --card-bg: rgba(13, 24, 38, var(--frame-opacity));
+    --table-bg: rgba(13, 24, 38, var(--frame-opacity));
+    --tab-bg: rgba(12, 22, 33, 0.9);
+    --modal-bg: rgba(9, 15, 23, 0.9);
+    --toast-bg: rgba(13, 24, 38, 0.95);
+
+    /* Status colors */
+    --success: #10b981;
+    --error: #ef4444;
+    --warning: #f59e0b;
+    --info: #60a5fa;
+}
+
+/* ========== Light Mode Variables ========== */
+:root[data-theme="light"] {
+    --bg: #fdfcf8;
+    --bg-2: #f6f7ff;
+    --card: #ffffff;
+    --text: #0c1222;
+    --muted: #708090;
+    --accent: #008f6f;
+    --accent-2: #0c9ffd;
+    --border: #dfe4ec;
+    --glow: rgba(0, 143, 111, 0.18);
+
+    /* Light mode frame opacity */
+    --card-bg: rgba(255, 255, 255, 0.92);
+    --table-bg: rgba(255, 255, 255, 0.92);
+    --tab-bg: rgba(255, 255, 255, 0.9);
+    --modal-bg: rgba(255, 255, 255, 0.96);
+    --toast-bg: rgba(255, 255, 255, 0.96);
+}
+
+/* ========== Reset ========== */
+* {
+    box-sizing: border-box;
+}
+
+/* ========== Body & Typography ========== */
+body {
+    margin: 0;
+    background: radial-gradient(circle at 20% 20%, rgba(61, 245, 194, 0.06), transparent 30%),
+        radial-gradient(circle at 80% 0%, rgba(111, 178, 255, 0.08), transparent 32%),
+        linear-gradient(135deg, var(--bg) 0%, var(--bg-2) 100%);
+    position: relative;
+    color: var(--text);
+    font-family: "Manrope", "Space Grotesk", "SF Pro", system-ui, sans-serif;
+    min-width: 800px;
+    max-width: 880px;
+    overflow-x: hidden;
+}
+
+/* Background overlay */
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    opacity: var(--bg-overlay-opacity);
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Scrollbar styling - hidden but scrollable */
+::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+}
+
+/* Firefox */
+* {
+    scrollbar-width: none;
+}
+
+/* IE/Edge */
+* {
+    -ms-overflow-style: none;
+}
+
+/* Selection styling */
+::selection {
+    background: var(--accent);
+    color: var(--bg);
+}

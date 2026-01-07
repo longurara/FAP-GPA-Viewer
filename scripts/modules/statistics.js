@@ -9,77 +9,69 @@ const StatisticsService = {
      * Load and display statistics
      */
     async loadStatistics() {
-        const DAY_MS = window.DAY_MS || 24 * 60 * 60 * 1000;
-        const cache = await window.cacheGet("cache_transcript", DAY_MS);
-        if (!cache || !cache.rows) return;
+        try {
+            const DAY_MS = window.DAY_MS || 24 * 60 * 60 * 1000;
+            const cache = await window.cacheGet("cache_transcript", DAY_MS);
+            if (!cache || !cache.rows) return;
 
-        // Get excluded courses first
-        const excludedCourses = await window.STORAGE?.get("excluded_courses", []) || [];
+            // Get excluded courses first
+            const excludedCourses = await window.STORAGE?.get("excluded_courses", []) || [];
 
-        // Filter: only courses with valid grades AND not excluded
-        const rows = cache.rows.filter((r) => {
-            const code = (r.code || "").toUpperCase();
-            return Number.isFinite(r.grade) && r.grade > 0 && !excludedCourses.includes(code);
-        });
-        if (rows.length === 0) return;
+            // Filter: only courses with valid grades AND not excluded
+            const rows = cache.rows.filter((r) => {
+                const code = (r.code || "").toUpperCase();
+                return Number.isFinite(r.grade) && r.grade > 0 && !excludedCourses.includes(code);
+            });
+            if (rows.length === 0) return;
 
-        // Calculate statistics (already excludes courses above)
-        const grades = rows.map((r) => r.grade);
-        const avgGrade = grades.reduce((a, b) => a + b, 0) / grades.length;
+            // Calculate statistics (already excludes courses above)
+            const grades = rows.map((r) => r.grade);
+            const avgGrade = grades.reduce((a, b) => a + b, 0) / grades.length;
 
-        const best = rows.reduce((max, r) => (r.grade > max.grade ? r : max), rows[0]);
-        const worst = rows.reduce((min, r) => (r.grade < min.grade ? r : min), rows[0]);
+            const best = rows.reduce((max, r) => (r.grade > max.grade ? r : max), rows[0]);
+            const worst = rows.reduce((min, r) => (r.grade < min.grade ? r : min), rows[0]);
 
-        const passed = rows.filter(
-            (r) => r.status?.toLowerCase() !== "failed" && r.grade >= 5
-        ).length;
-        const passRate = ((passed / rows.length) * 100).toFixed(1);
+            const passed = rows.filter(
+                (r) => r.status?.toLowerCase() !== "failed" && r.grade >= 5
+            ).length;
+            const passRate = ((passed / rows.length) * 100).toFixed(1);
 
-        const setValue = window.setValue || ((s, v) => {
-            const el = document.querySelector(s);
-            if (el) el.textContent = v;
-        });
+            const setValue = window.setValue || ((s, v) => {
+                const el = document.querySelector(s);
+                if (el) el.textContent = v;
+            });
 
-        setValue("#statAvgGrade", avgGrade.toFixed(2));
-        setValue("#statBestGrade", best.grade.toFixed(2));
-        setValue("#statBestCourse", best.code || "--");
-        setValue("#statWorstGrade", worst.grade.toFixed(2));
-        setValue("#statWorstCourse", worst.code || "--");
-        setValue("#statPassRate", passRate + "%");
+            setValue("#statAvgGrade", avgGrade.toFixed(2));
+            setValue("#statBestGrade", best.grade.toFixed(2));
+            setValue("#statBestCourse", best.code || "--");
+            setValue("#statWorstGrade", worst.grade.toFixed(2));
+            setValue("#statWorstCourse", worst.code || "--");
+            setValue("#statPassRate", passRate + "%");
 
-        // Build GPA trend by semester
-        const semesterMap = new Map();
-        rows.forEach((r) => {
-            const sem = r.semester || r.term || "Unknown";
-            if (!semesterMap.has(sem)) {
-                semesterMap.set(sem, []);
-            }
-            semesterMap.get(sem).push(r);
-        });
+            // Build GPA trend by semester
+            const semesterMap = new Map();
+            rows.forEach((r) => {
+                const sem = r.semester || r.term || "Unknown";
+                if (!semesterMap.has(sem)) {
+                    semesterMap.set(sem, []);
+                }
+                semesterMap.get(sem).push(r);
+            });
 
-        // excludedCourses already declared above
-        const semesters = Array.from(semesterMap.keys()).sort();
-        const computeGPA = window.computeGPA || ((items, excluded) => {
-            let sumC = 0, sumP = 0;
-            for (const it of items) {
-                const c = it.credit, g = it.grade;
-                const code = (it.code || "").toUpperCase();
-                if (!Number.isFinite(c) || !Number.isFinite(g) || c <= 0 || g <= 0) continue;
-                if (excluded.includes(code)) continue;
-                sumC += c;
-                sumP += c * g;
-            }
-            const g10 = sumC > 0 ? sumP / sumC : NaN;
-            return { gpa10: g10, gpa4: Number.isFinite(g10) ? (g10 / 10) * 4 : NaN, credits: sumC };
-        });
+            // excludedCourses already declared above
+            const semesters = Array.from(semesterMap.keys()).sort();
 
-        const gpaData = semesters.map((sem) => {
-            const semRows = semesterMap.get(sem);
-            const gpa = computeGPA(semRows, excludedCourses);
-            return Number.isFinite(gpa.gpa10) ? gpa.gpa10 : 0;
-        });
+            // Use centralized computeGPA from utils.js
+            const gpaData = semesters.map((sem) => {
+                const semRows = semesterMap.get(sem);
+                const gpa = window.computeGPA(semRows, excludedCourses);
+                return Number.isFinite(gpa.gpa10) ? gpa.gpa10 : 0;
+            });
 
-        this.renderGPAChart(semesters, gpaData);
+            this.renderGPAChart(semesters, gpaData);
+        } catch (error) {
+            console.error("[Statistics] Error loading statistics:", error);
+        }
     },
 
     /**
