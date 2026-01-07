@@ -7,6 +7,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [5.3.0] - 2026-01-08
+
+### 🏗️ CSS Architecture Refactor
+
+- **Modular CSS**: Split monolithic `popup.css` (~88KB, 4400 lines) into 8 focused files (~50KB total):
+  - `main.css` - Entry point with imports
+  - `base.css` - CSS variables, reset, typography
+  - `animations.css` - All @keyframes
+  - `layout.css` - Containers, grids, structure
+  - `components.css` - Buttons, cards, forms, tables
+  - `tabs.css` - Tab navigation with liquid glass effect
+  - `modals.css` - Modal dialogs, toasts, overlays
+  - `schedule.css` - Schedule, attendance, exams styles
+
+### ⚡ Performance Improvements
+
+- **GPA Cache Extended**: Cache max age increased from 5 minutes to **7 days**
+  - Reduces unnecessary network requests
+  - GPA data only refreshes on manual refresh or when cache expires
+- **Duplicate Fetch Prevention**: Added guard to prevent concurrent transcript fetches
+- **Hidden Scrollbar**: Cleaner UI with invisible scrollbar (still scrollable)
+
+### 🐛 Bug Fixes
+
+- Fixed missing CSS for buttons in Settings/Export sections
+- Fixed login status indicator alignment (moved to left)
+- Fixed duplicate error handling guards in background.js
+- Added missing CSS for stats-grid, calc-form, theme-presets, widgets
+
+### 🔧 Error Handling
+
+- Added try-catch blocks to all async functions:
+  - `login.js`: checkAndShowLoginBanner, handleLoginNow
+  - `transcript.js`: loadGPA
+  - `study-plans.js`: init, loadPlans, savePlans
+  - `gpa-calculator.js`: initGPACalculator
+  - `statistics.js`: loadStatistics
+
+---
+
 ## [5.2.0] - 2026-01-06
 
 ### ✨ New Features
