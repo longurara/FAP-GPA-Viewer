@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [5.4.0] - 2026-01-08
+
+### ⚡ Performance Improvements
+
+- **Login Check Cache**: Login status now cached for 30 minutes
+  - Extension no longer loads FAP page every time popup opens
+  - Cache resets on browser startup for fresh check
+  - Manual refresh buttons still perform real-time login check
+
+### 🎨 New Features
+
+- **ScheduleOfWeek Page Enhancement**: Beautiful redesign for the schedule page
+  - Clean header widget with attendance statistics (Đã học, Chưa học, Vắng, Tỷ lệ ĐD)
+  - Subtle status highlighting with colored left border
+  - Enhanced View Materials & Meet URL buttons styling
+  - Today's date highlighting
+  - Responsive design with clean, minimal aesthetic
+
+### 🔧 Technical Changes
+
+- Added new content script: `fap-schedule-week.js`
+- Added new stylesheet: `fap-schedule-week.css`
+- Updated `manifest.json` with ScheduleOfWeek.aspx content script entry
+- Added `forceCheckLoginStatus()` function for manual refresh operations
+- Background service worker now resets login cache on browser startup
+
+### 🐛 Bug Fixes
+
+- Fixed login check causing FAP tab to open on every popup click
+- Improved content preservation - schedule page now keeps all original info (room, teacher, links)
+
+---
+
 ## [5.3.0] - 2026-01-08
 
 ### 🏗️ CSS Architecture Refactor
