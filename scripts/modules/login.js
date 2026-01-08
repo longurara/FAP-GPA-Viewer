@@ -3,6 +3,9 @@
 // ===============================
 
 const LoginService = {
+    // Cache duration: 30 minutes
+    LOGIN_CHECK_CACHE_MS: 30 * 60 * 1000,
+
     /**
      * Update login status display (dot indicator)
      * @param {boolean} isLoggedIn - Whether user is logged in
@@ -30,11 +33,28 @@ const LoginService = {
 
     /**
      * Actively check if user is logged into FAP
+     * Uses cached status if checked recently (within 30 min)
+     * @param {boolean} forceCheck - Force network check, ignore cache
      * @returns {Promise<boolean>} - True if logged in
      */
-    async checkLoginStatus() {
+    async checkLoginStatus(forceCheck = false) {
+        // Check if we should use cached status (skip network check)
+        if (!forceCheck) {
+            const lastCheck = await window.STORAGE?.get("last_login_check_ts", 0);
+            const cachedStatus = await window.STORAGE?.get("cached_login_status", null);
+            const now = Date.now();
+
+            // If checked recently (within 30 min) and have cached status, use it
+            if (cachedStatus !== null && lastCheck > 0 && (now - lastCheck) < this.LOGIN_CHECK_CACHE_MS) {
+                console.log("[Login] Using cached status:", cachedStatus, "age:", Math.round((now - lastCheck) / 1000), "s");
+                this.updateLoginStatusDisplay(cachedStatus, false);
+                return cachedStatus;
+            }
+        }
+
         // Show checking status
         this.updateLoginStatusDisplay(false, true);
+        console.log("[Login] Performing network check for login status...");
 
         try {
             const testUrl = "https://fap.fpt.edu.vn/Student.aspx";
@@ -44,7 +64,11 @@ const LoginService = {
                 new DOMParser().parseFromString(csResult.text, "text/html");
 
             if (!doc || window.looksLikeLoginPage(doc)) {
-                await window.STORAGE?.set({ show_login_banner: true });
+                await window.STORAGE?.set({
+                    show_login_banner: true,
+                    last_login_check_ts: Date.now(),
+                    cached_login_status: false
+                });
                 this.updateLoginStatusDisplay(false, false);
                 return false;
             }
@@ -52,15 +76,30 @@ const LoginService = {
             await window.STORAGE?.set({
                 show_login_banner: false,
                 last_successful_fetch: Date.now(),
+                last_login_check_ts: Date.now(),
+                cached_login_status: true
             });
             this.updateLoginStatusDisplay(true, false);
             return true;
         } catch (error) {
             // On error, assume we need to login
-            await window.STORAGE?.set({ show_login_banner: true });
+            await window.STORAGE?.set({
+                show_login_banner: true,
+                last_login_check_ts: Date.now(),
+                cached_login_status: false
+            });
             this.updateLoginStatusDisplay(false, false);
             return false;
         }
+    },
+
+    /**
+     * Force check login status (ignores cache)
+     * Used when user explicitly requests refresh
+     * @returns {Promise<boolean>} - True if logged in
+     */
+    async forceCheckLoginStatus() {
+        return this.checkLoginStatus(true);
     },
 
     /**
@@ -165,6 +204,7 @@ const LoginService = {
 // Expose globally for backward compatibility
 window.LoginService = LoginService;
 window.checkLoginStatus = () => LoginService.checkLoginStatus();
+window.forceCheckLoginStatus = () => LoginService.forceCheckLoginStatus();
 window.checkAndShowLoginBanner = () => LoginService.checkAndShowLoginBanner();
 window.showLoginBanner = () => LoginService.showLoginBanner();
 window.hideLoginBanner = () => LoginService.hideLoginBanner();
@@ -172,3 +212,4 @@ window.handleLoginNow = () => LoginService.handleLoginNow();
 window.handleDismissBanner = () => LoginService.handleDismissBanner();
 window.updateLoginStatusDisplay = (a, b) => LoginService.updateLoginStatusDisplay(a, b);
 window.showLoginNotification = () => LoginService.showLoginNotification();
+

@@ -22,8 +22,45 @@
     "scripting"
   ],
   "host_permissions": [
-    "https://fap.fpt.edu.vn/*",
-    "https://api.github.com/*"
+    "https://fap.fpt.edu.vn/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://fap.fpt.edu.vn/Grade/StudentTranscript.aspx*"
+      ],
+      "js": [
+        "scripts/fap-transcript.js"
+      ],
+      "css": [
+        "styles/fap-transcript.css"
+      ],
+      "run_at": "document_end"
+    },
+    {
+      "matches": [
+        "https://fap.fpt.edu.vn/Student.aspx*"
+      ],
+      "js": [
+        "scripts/fap-schedule.js"
+      ],
+      "css": [
+        "styles/fap-schedule.css"
+      ],
+      "run_at": "document_end"
+    },
+    {
+      "matches": [
+        "https://fap.fpt.edu.vn/Report/ScheduleOfWeek.aspx*"
+      ],
+      "js": [
+        "scripts/fap-schedule-week.js"
+      ],
+      "css": [
+        "styles/fap-schedule-week.css"
+      ],
+      "run_at": "document_end"
+    }
   ],
   "web_accessible_resources": [
     {

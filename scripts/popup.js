@@ -50,6 +50,7 @@ const initLiquidGlassTabs = window.initLiquidGlassTabs || (() => window.TabsServ
 
 // Login - from modules/login.js
 const checkLoginStatus = window.checkLoginStatus || (() => window.LoginService?.checkLoginStatus());
+const forceCheckLoginStatus = window.forceCheckLoginStatus || (() => window.LoginService?.forceCheckLoginStatus());
 const checkAndShowLoginBanner = window.checkAndShowLoginBanner || (() => window.LoginService?.checkAndShowLoginBanner());
 const showLoginNotification = window.showLoginNotification || (() => { });
 
@@ -319,7 +320,7 @@ document.getElementById("filterDay")?.addEventListener("change", async () => {
 
 // Refresh Buttons
 document.getElementById("btnRefreshAttendance")?.addEventListener("click", async function () {
-  const isLoggedIn = await checkLoginStatus();
+  const isLoggedIn = await forceCheckLoginStatus();
   if (!isLoggedIn) { await checkAndShowLoginBanner(); showLoginNotification(); return; }
   await handleRefreshWithLoading(this, async () => {
     await refreshAttendance();
@@ -328,7 +329,7 @@ document.getElementById("btnRefreshAttendance")?.addEventListener("click", async
 });
 
 document.getElementById("btnRefreshSchedule")?.addEventListener("click", async function () {
-  const isLoggedIn = await checkLoginStatus();
+  const isLoggedIn = await forceCheckLoginStatus();
   if (!isLoggedIn) { await checkAndShowLoginBanner(); showLoginNotification(); return; }
   await handleRefreshWithLoading(this, async () => {
     await refreshAttendance();
@@ -337,7 +338,7 @@ document.getElementById("btnRefreshSchedule")?.addEventListener("click", async f
 });
 
 document.getElementById("btnRefreshExams")?.addEventListener("click", async function () {
-  const isLoggedIn = await checkLoginStatus();
+  const isLoggedIn = await forceCheckLoginStatus();
   if (!isLoggedIn) { await checkAndShowLoginBanner(); showLoginNotification(); return; }
   await handleRefreshWithLoading(this, async () => {
     await STORAGE.remove("cache_exams");
@@ -347,7 +348,7 @@ document.getElementById("btnRefreshExams")?.addEventListener("click", async func
 });
 
 document.getElementById("btnRefreshStats")?.addEventListener("click", async function () {
-  const isLoggedIn = await checkLoginStatus();
+  const isLoggedIn = await forceCheckLoginStatus();
   if (!isLoggedIn) { await checkAndShowLoginBanner(); showLoginNotification(); return; }
   await handleRefreshWithLoading(this, async () => {
     await loadStatistics();
@@ -359,7 +360,7 @@ document.getElementById("btnRefreshAll")?.addEventListener("click", async functi
   const confirmed = await Modal.confirm("Xóa cache và tải lại dữ liệu?", { title: "Xác nhận làm mới", confirmText: "Làm mới", icon: "🔄" });
   if (!confirmed) return;
 
-  const isLoggedIn = await checkLoginStatus();
+  const isLoggedIn = await forceCheckLoginStatus();
   if (!isLoggedIn) { await checkAndShowLoginBanner(); showLoginNotification(); return; }
 
   await handleRefreshWithLoading(this, async () => {
@@ -386,7 +387,7 @@ document.getElementById("btnRefreshAll")?.addEventListener("click", async functi
 });
 
 document.getElementById("btnQuickRefresh")?.addEventListener("click", async function () {
-  const isLoggedIn = await checkLoginStatus();
+  const isLoggedIn = await forceCheckLoginStatus();
   if (!isLoggedIn) { await checkAndShowLoginBanner(); showLoginNotification(); return; }
 
   await handleRefreshWithLoading(this, async () => {

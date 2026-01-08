@@ -632,6 +632,8 @@ chrome.runtime.onInstalled.addListener(async (details) => {
 chrome.runtime.onStartup.addListener(async () => {
   await schedulePollAlarm();
   await updateActionPopup(); // Set popup behavior on startup
+  // Reset login cache on browser startup (so first extension click will check)
+  await STORAGE.set({ last_login_check_ts: 0, cached_login_status: null });
   // Also try to fetch transcript on browser startup
   fetchTranscriptInBackground();
 });

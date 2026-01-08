@@ -1,0 +1,195 @@
+/**
+ * FAP Schedule of Week - Clean Enhancement Styles
+ */
+
+/* ========== BODY ========== */
+body.fap-enhanced {
+    background: #f5f5f5 !important;
+}
+
+/* ========== HEADER WIDGET ========== */
+.fap-header-widget {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin-bottom: 12px;
+}
+
+.fap-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.fap-header-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #333;
+}
+
+.fap-header-stats {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.fap-stat {
+    font-size: 12px;
+    color: #666;
+}
+
+.fap-stat-num {
+    font-weight: 700;
+    margin-right: 3px;
+}
+
+.fap-stat-num.attended {
+    color: #e67e22;
+}
+
+.fap-stat-num.notyet {
+    color: #27ae60;
+}
+
+.fap-stat-num.absent {
+    color: #e74c3c;
+}
+
+.fap-stat-num.rate {
+    color: #3498db;
+}
+
+/* ========== TABLE WRAPPER ========== */
+.fap-schedule-wrapper {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 12px;
+}
+
+/* ========== TABLE ========== */
+.fap-schedule-grid {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.fap-schedule-grid th,
+.fap-schedule-grid td {
+    border: 1px solid #e0e0e0;
+    padding: 8px;
+    vertical-align: top;
+}
+
+/* ========== HEADERS ========== */
+.fap-day-header {
+    background: #f9f9f9 !important;
+    font-weight: 600 !important;
+    color: #444 !important;
+}
+
+/* ========== SLOT CELLS ========== */
+.fap-slot-cell {
+    background: #f9f9f9 !important;
+    font-weight: 600 !important;
+    color: #555 !important;
+    text-align: center;
+}
+
+/* ========== COURSE CELLS ========== */
+.fap-has-course {
+    background: #fff !important;
+}
+
+.fap-has-course:hover {
+    background: #fafafa !important;
+}
+
+/* ========== STATUS BACKGROUNDS ========== */
+.fap-status-attended {
+    background: rgba(230, 126, 34, 0.06) !important;
+    border-left: 3px solid #e67e22 !important;
+}
+
+.fap-status-notyet {
+    background: rgba(39, 174, 96, 0.06) !important;
+    border-left: 3px solid #27ae60 !important;
+}
+
+.fap-status-absent {
+    background: rgba(231, 76, 60, 0.06) !important;
+    border-left: 3px solid #e74c3c !important;
+}
+
+/* ========== EMPTY CELLS ========== */
+.fap-empty-cell {
+    background: #fafafa !important;
+    color: #ccc !important;
+}
+
+/* ========== TODAY ========== */
+.fap-today {
+    background: #e8f4fc !important;
+    font-weight: 600 !important;
+}
+
+/* ========== LINKS ========== */
+.fap-link {
+    display: inline-block !important;
+    font-size: 11px !important;
+    padding: 2px 6px !important;
+    border-radius: 3px !important;
+    text-decoration: none !important;
+    margin: 1px !important;
+}
+
+.fap-link-materials {
+    background: #fef5e7 !important;
+    color: #b7791f !important;
+    border: 1px solid #f6e05e !important;
+}
+
+.fap-link-materials:hover {
+    background: #fef3c7 !important;
+}
+
+.fap-link-meet {
+    background: #ebf8ff !important;
+    color: #2b6cb0 !important;
+    border: 1px solid #90cdf4 !important;
+}
+
+.fap-link-meet:hover {
+    background: #bee3f8 !important;
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 768px) {
+    .fap-header-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .fap-schedule-wrapper {
+        overflow-x: auto;
+    }
+
+    .fap-schedule-grid {
+        min-width: 600px;
+    }
+}
+
+/* ========== PRINT ========== */
+@media print {
+    body.fap-enhanced {
+        background: #fff !important;
+    }
+
+    .fap-header-widget,
+    .fap-schedule-wrapper {
+        border: 1px solid #999;
+        box-shadow: none;
+    }
+}

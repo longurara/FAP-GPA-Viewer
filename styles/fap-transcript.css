@@ -1,0 +1,248 @@
+/**
+ * FAP Transcript GPA Calculator - Styles
+ * Matches FAP's Bootstrap theme while adding modern touches
+ */
+
+/* ========== Widget Container ========== */
+.fap-gpa-widget {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: 1px solid #dee2e6;
+    border-radius: 12px;
+    padding: 20px;
+    margin: 20px 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* ========== Header ========== */
+.fap-gpa-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.fap-gpa-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #212529;
+}
+
+.fap-gpa-controls {
+    display: flex;
+    gap: 12px;
+}
+
+.fap-gpa-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #495057;
+    cursor: pointer;
+    user-select: none;
+}
+
+.fap-gpa-toggle input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: #0d6efd;
+}
+
+/* ========== Cards Grid ========== */
+.fap-gpa-cards {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 12px;
+}
+
+@media (max-width: 992px) {
+    .fap-gpa-cards {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 576px) {
+    .fap-gpa-cards {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* ========== Individual Cards ========== */
+.fap-gpa-card {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+    transition: all 0.2s ease;
+}
+
+.fap-gpa-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.fap-gpa-card-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+
+.fap-gpa-card-value {
+    font-size: 28px;
+    font-weight: 800;
+    color: #212529;
+}
+
+/* Card Variants */
+.fap-gpa-primary {
+    background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
+    border-color: #0d6efd;
+}
+
+.fap-gpa-primary .fap-gpa-card-label {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.fap-gpa-primary .fap-gpa-card-value {
+    color: white;
+}
+
+.fap-gpa-success {
+    background: linear-gradient(135deg, #198754 0%, #157347 100%);
+    border-color: #198754;
+}
+
+.fap-gpa-success .fap-gpa-card-label {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.fap-gpa-success .fap-gpa-card-value {
+    color: white;
+}
+
+.fap-gpa-info {
+    background: linear-gradient(135deg, #0dcaf0 0%, #0aa2c0 100%);
+    border-color: #0dcaf0;
+}
+
+.fap-gpa-info .fap-gpa-card-label {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.fap-gpa-info .fap-gpa-card-value {
+    color: white;
+}
+
+.fap-gpa-warning {
+    background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+    border-color: #ffc107;
+}
+
+.fap-gpa-warning .fap-gpa-card-label {
+    color: rgba(0, 0, 0, 0.6);
+}
+
+.fap-gpa-warning .fap-gpa-card-value {
+    color: #212529;
+}
+
+.fap-gpa-danger {
+    background: linear-gradient(135deg, #dc3545 0%, #bb2d3b 100%);
+    border-color: #dc3545;
+}
+
+.fap-gpa-danger .fap-gpa-card-label {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.fap-gpa-danger .fap-gpa-card-value {
+    color: white;
+}
+
+/* ========== Footer ========== */
+.fap-gpa-footer {
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid #dee2e6;
+    text-align: center;
+    color: #6c757d;
+}
+
+.fap-gpa-footer small {
+    font-size: 12px;
+}
+
+/* ========== Table Sorting ========== */
+.fap-sortable {
+    position: relative;
+    cursor: pointer !important;
+    user-select: none;
+    transition: background 0.2s ease;
+}
+
+.fap-sortable:hover {
+    background: rgba(13, 110, 253, 0.1) !important;
+}
+
+.fap-sortable::after {
+    content: '⇅';
+    position: absolute;
+    right: 8px;
+    opacity: 0.3;
+    font-size: 10px;
+}
+
+.fap-sort-asc::after {
+    content: '↑';
+    opacity: 1;
+    color: #0d6efd;
+}
+
+.fap-sort-desc::after {
+    content: '↓';
+    opacity: 1;
+    color: #0d6efd;
+}
+
+/* ========== Row Highlighting ========== */
+#ctl00_mainContent_divGrade tr:has(td:last-child span[style*="color:red"]) {
+    opacity: 0.6;
+    background: #f8f9fa !important;
+}
+
+#ctl00_mainContent_divGrade tr:has(.label-info) {
+    background: rgba(13, 202, 240, 0.05) !important;
+}
+
+#ctl00_mainContent_divGrade tr:has(.label-default) {
+    background: rgba(108, 117, 125, 0.05) !important;
+}
+
+/* Grade colors */
+#ctl00_mainContent_divGrade .label-primary {
+    font-size: 14px !important;
+    padding: 4px 8px !important;
+}
+
+/* High grades (>= 8) */
+#ctl00_mainContent_divGrade tr td:nth-child(9) .label-primary {
+    background: #198754 !important;
+}
+
+/* Animation for hidden rows */
+#ctl00_mainContent_divGrade tr {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+#ctl00_mainContent_divGrade tr[style*="display: none"] {
+    opacity: 0;
+    transform: translateX(-10px);
+}
