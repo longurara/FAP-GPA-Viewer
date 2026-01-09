@@ -4,7 +4,7 @@
 // - storage.js: STORAGE, cacheGet, cacheSet
 // - api.js: DEFAULT_URLS, fetchViaContentScript, looksLikeLoginPage, fetchHTML
 // - login.js: checkLoginStatus, checkAndShowLoginBanner, showLoginNotification
-// - update.js: UpdateModal
+
 // - calendar.js: initCalendarUI, exportScheduleICS, exportExamICS
 
 // ---------- Module References ----------
@@ -552,13 +552,7 @@ function switchTab(tabId) {
   document.getElementById(`tab-${tabId}`)?.classList.add("active");
 }
 
-// ---------- Study Plans ----------
-let studyPlans;
-function initStudyPlans() {
-  if (typeof StudyPlans !== "undefined") {
-    studyPlans = new StudyPlans();
-  }
-}
+
 
 // ---------- Keyboard Shortcuts ----------
 document.addEventListener("keydown", (e) => {
@@ -632,28 +626,8 @@ function setupEventListeners() {
       case "close-modal":
         e.target.closest(".modal-overlay, .tab-editor-modal")?.remove();
         break;
-      case "select-result":
-        const resultType = e.target.getAttribute("data-result-type");
-        if (window.advancedSearch && resultType) window.advancedSearch.selectResult(resultType);
-        break;
-      case "show-create-plan-modal":
-        if (window.studyPlans) studyPlans.showCreatePlanModal();
-        break;
-      case "create-plan":
-        if (window.studyPlans) studyPlans.createPlan();
-        break;
-      case "start-plan":
-      case "pause-plan":
-      case "resume-plan":
-      case "complete-plan":
-      case "restart-plan":
-      case "delete-plan":
-        const planId = e.target.getAttribute("data-plan-id");
-        if (window.studyPlans && planId) {
-          const method = action.replace("-plan", "Plan").replace("-", "");
-          studyPlans[method]?.(planId);
-        }
-        break;
+
+
     }
   });
 }
@@ -781,7 +755,7 @@ if (window.ThemeService) window.ThemeService.init();
 if (window.ExamService) window.ExamService.init();
 
 function initPopup() {
-  initStudyPlans();
+
   if (window.initCalendarUI) window.initCalendarUI();
   setupEventListeners();
 }

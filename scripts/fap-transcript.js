@@ -33,6 +33,10 @@
         const h2 = document.querySelector('h2');
         if (h2 && h2.textContent.includes('Grade report')) {
             h2.insertAdjacentElement('afterend', widget);
+
+            // Insert Semester GPA widget after main widget
+            const semesterWidget = createSemesterGPAWidget(courses);
+            widget.insertAdjacentElement('afterend', semesterWidget);
         }
 
         // Add sorting to table headers
@@ -205,6 +209,145 @@
                 });
             }
         }, 100);
+
+        return widget;
+    }
+
+    /**
+     * Calculate GPA for each semester
+     */
+    function calculateSemesterGPA(courses) {
+        // Group courses by semester
+        const semesterGroups = {};
+
+        courses.forEach(course => {
+            if (!course.semester || course.semester.trim() === '') return;
+
+            if (!semesterGroups[course.semester]) {
+                semesterGroups[course.semester] = {
+                    semester: course.semester,
+                    term: parseInt(course.term) || 0,
+                    courses: []
+                };
+            }
+            semesterGroups[course.semester].courses.push(course);
+        });
+
+        // Calculate GPA for each semester
+        const semesterStats = Object.values(semesterGroups).map(group => {
+            const validCourses = group.courses.filter(c => {
+                if (c.excludeFromGPA) return false;
+                if (c.status === 'Studying' || c.status === 'Not started') return false;
+                if (c.credit === 0) return false;
+                if (isNaN(c.grade) || c.grade === 0) return false;
+                return true;
+            });
+
+            const totalCredits = validCourses.reduce((sum, c) => sum + c.credit, 0);
+            const weightedSum = validCourses.reduce((sum, c) => sum + (c.grade * c.credit), 0);
+            const gpa10 = totalCredits > 0 ? weightedSum / totalCredits : 0;
+            const gpa4 = gpa10ToGpa4(gpa10);
+
+            const passed = validCourses.filter(c => c.status === 'Passed').length;
+            const failed = validCourses.filter(c => c.status === 'Failed' || c.status === 'Not Passed').length;
+            const studying = group.courses.filter(c => c.status === 'Studying').length;
+
+            return {
+                semester: group.semester,
+                term: group.term,
+                gpa10: gpa10.toFixed(2),
+                gpa4: gpa4.toFixed(2),
+                totalCredits,
+                passed,
+                failed,
+                studying,
+                totalCourses: group.courses.length,
+                validCourses: validCourses.length
+            };
+        });
+
+        // Sort by term number (ascending)
+        semesterStats.sort((a, b) => {
+            // Parse semester for secondary sorting (Fall < Spring < Summer within same year)
+            const getSeasonOrder = (sem) => {
+                if (sem.includes('Spring')) return 1;
+                if (sem.includes('Summer')) return 2;
+                if (sem.includes('Fall')) return 3;
+                return 0;
+            };
+
+            // Extract year from semester name
+            const getYear = (sem) => {
+                const match = sem.match(/\d{4}/);
+                return match ? parseInt(match[0]) : 0;
+            };
+
+            const yearA = getYear(a.semester);
+            const yearB = getYear(b.semester);
+
+            if (yearA !== yearB) return yearA - yearB;
+            return getSeasonOrder(a.semester) - getSeasonOrder(b.semester);
+        });
+
+        return semesterStats;
+    }
+
+    /**
+     * Create the Semester GPA widget HTML
+     */
+    function createSemesterGPAWidget(courses) {
+        const semesterStats = calculateSemesterGPA(courses);
+
+        const widget = document.createElement('div');
+        widget.id = 'fap-semester-gpa-widget';
+        widget.className = 'fap-semester-gpa-widget';
+
+        // Generate semester cards HTML
+        let semesterCardsHtml = '';
+        semesterStats.forEach(sem => {
+            if (sem.validCourses === 0 && sem.studying === 0) return; // Skip empty semesters
+
+            const gpaClass = parseFloat(sem.gpa10) >= 8 ? 'fap-semester-gpa-high' :
+                parseFloat(sem.gpa10) >= 6.5 ? 'fap-semester-gpa-mid' :
+                    parseFloat(sem.gpa10) > 0 ? 'fap-semester-gpa-low' : '';
+
+            const statusBadge = sem.studying > 0 ?
+                `<span class="fap-semester-badge fap-semester-studying">${sem.studying} đang học</span>` : '';
+
+            semesterCardsHtml += `
+                <div class="fap-semester-card ${gpaClass}">
+                    <div class="fap-semester-name">${sem.semester}</div>
+                    <div class="fap-semester-gpa-row">
+                        <div class="fap-semester-gpa-item">
+                            <span class="fap-semester-gpa-label">GPA (10)</span>
+                            <span class="fap-semester-gpa-value">${sem.gpa10}</span>
+                        </div>
+                        <div class="fap-semester-gpa-item">
+                            <span class="fap-semester-gpa-label">GPA (4)</span>
+                            <span class="fap-semester-gpa-value">${sem.gpa4}</span>
+                        </div>
+                    </div>
+                    <div class="fap-semester-stats">
+                        <span class="fap-semester-stat">📚 ${sem.totalCredits} tín chỉ</span>
+                        <span class="fap-semester-stat">✅ ${sem.passed} đã qua</span>
+                        ${sem.failed > 0 ? `<span class="fap-semester-stat fap-semester-failed">❌ ${sem.failed} rớt</span>` : ''}
+                        ${statusBadge}
+                    </div>
+                </div>
+            `;
+        });
+
+        widget.innerHTML = `
+            <div class="fap-semester-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                <span class="fap-semester-title">📅 GPA theo Học kỳ</span>
+                <span class="fap-semester-toggle">▼</span>
+            </div>
+            <div class="fap-semester-content">
+                <div class="fap-semester-cards">
+                    ${semesterCardsHtml}
+                </div>
+            </div>
+        `;
 
         return widget;
     }
