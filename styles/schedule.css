@@ -362,3 +362,129 @@
         justify-content: center;
     }
 }
+
+/* ========== LMS Events ========== */
+.lms-events-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px 0;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.lms-event-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    transition: all 0.2s ease;
+    border-left: 4px solid var(--accent);
+}
+
+.lms-event-card:hover {
+    transform: translateX(4px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    border-color: var(--accent);
+}
+
+.lms-event-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.lms-event-title {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text);
+    line-height: 1.4;
+    flex: 1;
+}
+
+.lms-badge {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.lms-badge-urgent {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+    animation: pulse 2s infinite;
+}
+
+.lms-badge-soon {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+}
+
+.lms-badge-normal {
+    background: var(--accent);
+    color: white;
+}
+
+.lms-badge-overdue {
+    background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+    color: white;
+}
+
+.lms-event-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.lms-event-course,
+.lms-event-time {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.lms-icon {
+    font-size: 14px;
+    width: 20px;
+    text-align: center;
+}
+
+.lms-event-actions {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+}
+
+.lms-action-btn {
+    display: inline-block;
+    padding: 8px 16px;
+    background: var(--accent);
+    color: white;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.lms-action-btn:hover {
+    background: var(--accent-hover, var(--accent));
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px var(--glow);
+}
+
+/* Dark mode adjustments */
+:root[data-theme="dark"] .lms-event-card {
+    background: rgba(30, 41, 59, 0.8);
+    border-color: rgba(71, 85, 105, 0.5);
+}
+
+:root[data-theme="dark"] .lms-event-card:hover {
+    background: rgba(30, 41, 59, 0.95);
+}

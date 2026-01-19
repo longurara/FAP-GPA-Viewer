@@ -9,12 +9,15 @@ const SCHEDULE_OF_WEEK = "https://fap.fpt.edu.vn/Report/ScheduleOfWeek.aspx";
 
 const TRANSCRIPT_URL = "https://fap.fpt.edu.vn/Grade/StudentTranscript.aspx";
 
+const LMS_CALENDAR_URL = "https://lms-hcm.fpt.edu.vn/calendar/view.php?view=upcoming";
+
 // ========== Message Types ==========
 const MSG = {
   FETCH_TRANSCRIPT: 'FETCH_TRANSCRIPT',
   TRANSCRIPT_READY: 'TRANSCRIPT_READY',
   TRANSCRIPT_LOADING: 'TRANSCRIPT_LOADING',
-  FETCH_STATUS: 'FETCH_STATUS'
+  FETCH_STATUS: 'FETCH_STATUS',
+  FETCH_LMS_EVENTS: 'FETCH_LMS_EVENTS'
 };
 
 // ========== Loading State ==========
@@ -741,6 +744,23 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         settings: cfg,
         show_login_banner: showLoginBanner,
       });
+    })();
+    return true;
+  }
+
+  // Handle FETCH_LMS_EVENTS request
+  if (msg.type === MSG.FETCH_LMS_EVENTS) {
+    (async () => {
+      try {
+        const result = await fetchViaContentScript(LMS_CALENDAR_URL);
+        if (result && result.text) {
+          sendResponse({ html: result.text });
+        } else {
+          sendResponse({ error: result?.error || 'FETCH_FAILED' });
+        }
+      } catch (e) {
+        sendResponse({ error: e.message });
+      }
     })();
     return true;
   }

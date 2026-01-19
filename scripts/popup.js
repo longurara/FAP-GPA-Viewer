@@ -45,6 +45,9 @@ const saveSettingsUI = window.saveSettingsUI || (() => window.SettingsService?.s
 // Exams - from modules/exams.js
 const loadExams = window.loadExams || (() => window.ExamService?.loadExams());
 
+// LMS Events - from modules/lms-events.js (already on window, just reference them)
+// Functions: window.loadLMSEvents, window.refreshLMSEvents, window.renderLMSEvents
+
 // Tabs - from modules/tabs.js
 const initLiquidGlassTabs = window.initLiquidGlassTabs || (() => window.TabsService?.initLiquidGlassTabs());
 
@@ -306,6 +309,19 @@ document.getElementById("btnOpenIT")?.addEventListener("click", () => chrome.tab
 document.getElementById("btnOpenAttendance")?.addEventListener("click", () => chrome.tabs.create({ url: DEFAULT_URLS.scheduleOfWeek }));
 document.getElementById("btnOpenSchedule")?.addEventListener("click", () => chrome.tabs.create({ url: DEFAULT_URLS.scheduleOfWeek }));
 document.getElementById("btnOpenExams")?.addEventListener("click", () => chrome.tabs.create({ url: DEFAULT_URLS.examSchedule }));
+
+// LMS Events buttons
+document.getElementById("btnOpenLMS2")?.addEventListener("click", () => chrome.tabs.create({ url: "https://lms-hcm.fpt.edu.vn/calendar/view.php?view=upcoming" }));
+document.getElementById("btnRefreshLMS")?.addEventListener("click", async function () {
+  await handleRefreshWithLoading(this, async () => {
+    await window.refreshLMSEvents();
+  });
+});
+document.getElementById("searchLMS")?.addEventListener("input", debounce(async () => {
+  const c = await cacheGet("cache_lms_events", 30 * 60 * 1000);
+  const searchQuery = document.getElementById("searchLMS")?.value || "";
+  window.renderLMSEvents(c?.events || [], searchQuery);
+}, 300));
 
 // Search & Filter - Use renderGPAFromCache to avoid triggering background fetch on every keystroke
 document.getElementById("searchCourse")?.addEventListener("input", debounce(renderGPAFromCache, 300));
@@ -642,6 +658,7 @@ function setupEventListeners() {
     loadAttendanceAndSchedule(),  // Schedule/Attendance - shows on Today tab
     loadTodaySchedule(),          // Today's classes
     loadExams(),                  // Exam schedule
+    window.loadLMSEvents(),       // LMS upcoming events
   ]);
   console.log("[Init] Priority 1 complete: Schedule, Today, Exams");
 

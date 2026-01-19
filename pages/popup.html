@@ -53,6 +53,7 @@
       <button data-tab="tab-att">Điểm danh</button>
       <button data-tab="tab-schedule">Lịch</button>
       <button data-tab="tab-exam">Lịch thi</button>
+      <button data-tab="tab-lms">LMS</button>
       <button data-tab="tab-bookmark">Bookmark</button>
       <button data-tab="tab-settings">Cài đặt</button>
     </nav>
@@ -314,6 +315,23 @@
       </div>
     </section>
 
+    <!-- LMS Events Tab -->
+    <section class="tab" id="tab-lms">
+      <div class="actions">
+        <button id="btnOpenLMS2">Trang LMS Calendar</button>
+        <button class="primary" id="btnRefreshLMS">Làm mới</button>
+      </div>
+      <div class="table">
+        <div class="table-head">
+          <div>📚 Thông báo LMS sắp tới</div>
+          <input id="searchLMS" placeholder="Tìm event..." />
+        </div>
+        <div id="lmsEventsList" class="lms-events-container">
+          <div class="no-class">Đang tải...</div>
+        </div>
+      </div>
+    </section>
+
     <section class="tab" id="tab-bookmark">
       <div class="table">
         <div class="table-head">
@@ -491,6 +509,7 @@
     <script src="../scripts/modules/attendance.js"></script>
 
     <script src="../scripts/modules/calendar.js"></script>
+    <script src="../scripts/modules/lms-events.js"></script>
     <!-- Main popup script -->
     <script src="../scripts/popup.js"></script>
   </div>

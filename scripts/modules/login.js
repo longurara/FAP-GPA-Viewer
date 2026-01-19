@@ -129,18 +129,10 @@ const LoginService = {
      */
     async checkAndShowLoginBanner() {
         try {
-            // Check multiple indicators to determine if login is needed
+            // Only show banner if explicitly flagged (from failed fetch)
             const showBanner = await window.STORAGE?.get("show_login_banner", false);
-            const lastFetchTime = await window.STORAGE?.get("last_successful_fetch", 0);
-            const now = Date.now();
 
-            // Show banner if:
-            // 1. Flag is explicitly set to true, OR
-            // 2. No successful fetch in the last 10 minutes (likely means login expired)
-            const shouldShow =
-                showBanner || (lastFetchTime > 0 && now - lastFetchTime > 10 * 60 * 1000);
-
-            if (shouldShow) {
+            if (showBanner) {
                 this.showLoginBanner();
             } else {
                 this.hideLoginBanner();
