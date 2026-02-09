@@ -76,7 +76,7 @@ const TodayScheduleService = {
             return;
         }
 
-        const sortedClasses = todayClasses.sort((a, b) => {
+        const sortedClasses = [...todayClasses].sort((a, b) => {
             const slotA = parseInt((a.slot || "").replace(/\D/g, "") || "999");
             const slotB = parseInt((b.slot || "").replace(/\D/g, "") || "999");
             return slotA - slotB;

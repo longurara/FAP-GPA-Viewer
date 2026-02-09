@@ -59,97 +59,13 @@ function isValidScheduleData(entries) {
   return hasValidEntry;
 }
 
-function parseTranscriptDoc(html) {
-  try {
-    const doc = new DOMParser().parseFromString(html, "text/html");
-    const tables = [...doc.querySelectorAll("table")];
-    console.log("🔍 parseTranscriptDoc: Found", tables.length, "tables");
+// NOTE: parseTranscriptDoc removed — DOMParser is not available in Service Worker.
+// Transcript parsing is done inside content script via fetchAndParseTranscriptViaTab().
 
-    for (const t of tables) {
-      const trs = [...t.querySelectorAll("tr")];
-      for (const tr of trs) {
-        const labels = [...tr.children].map((td) => NORM_TXT(td.textContent));
 
-        // Debug: Look for tables with interesting headers
-        if (labels.some(l => l.includes("CREDIT") || l.includes("GRADE") || l.includes("SUBJECT"))) {
-          console.log("🔍 Found potential header row:", labels);
-        }
 
-        if (labels.includes("CREDIT") && labels.includes("GRADE")) {
-          console.log("✅ Found transcript table header:", labels);
-          const header = [...tr.children].map((x) => NORM_TXT(x.textContent));
-          const idx = {
-            term: header.findIndex((v) => v === "TERM"),
-            semester: header.findIndex((v) => v === "SEMESTER"),
-            code: header.findIndex((v) => v.includes("SUBJECT CODE")),
-            name: header.findIndex(
-              (v) => v.includes("SUBJECT NAME") || v.includes("SUBJECT")
-            ),
-            credit: header.indexOf("CREDIT"),
-            grade: header.indexOf("GRADE"),
-            status: header.findIndex((v) => v === "STATUS"),
-          };
-          console.log("📊 Column indices:", idx);
-
-          const all = [...t.querySelectorAll("tr")];
-          const start = all.indexOf(tr) + 1;
-          const rows = [];
-          for (const r of all.slice(start)) {
-            const tds = [...r.querySelectorAll("td")];
-            if (!tds.length) continue;
-            const row = {
-              term: idx.term >= 0 ? tds[idx.term]?.textContent.trim() : "",
-              semester:
-                idx.semester >= 0 ? tds[idx.semester]?.textContent.trim() : "",
-              code: idx.code >= 0 ? tds[idx.code]?.textContent.trim() : "",
-              name: idx.name >= 0 ? tds[idx.name]?.textContent.trim() : "",
-              credit:
-                idx.credit >= 0 ? toNum(tds[idx.credit]?.textContent) : NaN,
-              grade: idx.grade >= 0 ? toNum(tds[idx.grade]?.textContent) : NaN,
-              status:
-                idx.status >= 0 ? tds[idx.status]?.textContent.trim() : "",
-            };
-            if (!row.code && !row.name && !Number.isFinite(row.credit))
-              continue;
-            rows.push(row);
-          }
-          console.log("📊 Parsed", rows.length, "course rows");
-          return rows;
-        }
-      }
-    }
-    console.log("⚠️ No transcript table found (no CREDIT+GRADE headers)");
-  } catch (e) {
-    console.error("❌ parseTranscriptDoc error:", e);
-  }
-  return [];
-}
-
-function nowHm() {
-  const d = new Date();
-  return d.toTimeString().slice(0, 5);
-} // "HH:MM"
-function within(activeFrom, activeTo) {
-  const n = nowHm();
-  return n >= activeFrom && n <= activeTo;
-}
-
-async function fetchHtml(url) {
-  const res = await fetch(url, { credentials: "include", redirect: "follow" });
-  if (res.redirected && /\/Default\.aspx$/i.test(new URL(res.url).pathname)) {
-    const last = await STORAGE.get("last_login_prompt_ts", 0);
-    const now = Date.now();
-    if (now - last > 60 * 60 * 1000) {
-      // not more than once per hour
-      const loginUrl = "https://fap.fpt.edu.vn/";
-      chrome.tabs.create({ url: loginUrl });
-      await STORAGE.set({ last_login_prompt_ts: now });
-    }
-    throw new Error("LOGIN_REQUIRED");
-  }
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return await res.text();
-}
+// NOTE: fetchHtml removed — no longer used. Schedule/transcript fetching now uses
+// fetchAndParseScheduleViaTab / fetchAndParseTranscriptViaTab which handle login detection internally.
 
 // ========== Content Script Based Fetch (for cookie access) ==========
 async function waitForTabComplete(tabId, timeoutMs = 8000) {
@@ -322,129 +238,134 @@ async function fetchAndParseTranscriptViaTab(url) {
   }
 }
 
-function looksLikeLoginPage(html) {
-  if (!html) return true;
-  const lc = html.toLowerCase().slice(0, 2000);
-  if (lc.includes("login") || lc.includes("đăng nhập") || lc.includes("dang nhap")) return true;
-  return false;
-}
 
-// Fetch HTML via content script (first-party context) for proper cookie handling
-async function fetchHtmlViaTab(url) {
-  console.log("🌐 Fetching via content script:", url);
-  const result = await fetchViaContentScript(url);
+// NOTE: parseScheduleOfWeek with DOMParser removed — not available in Service Worker.
+// Schedule parsing is now done inside content script context via fetchAndParseScheduleViaTab().
 
-  if (!result || result.error) {
-    console.error("❌ Content script fetch failed:", result?.error);
-    throw new Error(result?.error || "FETCH_FAILED");
+/**
+ * Fetch AND PARSE schedule inside content script (where DOMParser is available)
+ */
+async function fetchAndParseScheduleViaTab(url) {
+  const parsedUrl = new URL(url);
+  const targetOrigin = parsedUrl.origin;
+
+  const tabs = await chrome.tabs.query({ url: `${targetOrigin}/*`, status: "complete" });
+  let tabId;
+  let createdTab = false;
+
+  if (tabs && tabs.length > 0) {
+    tabId = tabs[0].id;
+  } else {
+    const tab = await chrome.tabs.create({ url: targetOrigin, active: false });
+    tabId = tab.id;
+    createdTab = true;
+    await waitForTabComplete(tabId);
   }
 
-  // Check if redirected to login
-  if (result.redirected && /\/Default\.aspx$/i.test(new URL(result.url).pathname)) {
-    throw new Error("LOGIN_REQUIRED");
-  }
+  try {
+    const [result] = await chrome.scripting.executeScript({
+      target: { tabId },
+      args: [url],
+      func: async (targetUrl) => {
+        try {
+          const res = await fetch(targetUrl, { credentials: "include" });
+          const html = await res.text();
 
-  // Check if looks like login page
-  if (looksLikeLoginPage(result.text)) {
-    throw new Error("LOGIN_REQUIRED");
-  }
+          if (res.redirected && /\/Default\.aspx$/i.test(new URL(res.url).pathname)) {
+            return { error: "LOGIN_REQUIRED" };
+          }
 
-  if (result.status !== 200) {
-    throw new Error(`HTTP ${result.status}`);
-  }
+          const lc = html.toLowerCase().slice(0, 2000);
+          if (lc.includes("login") || lc.includes("đăng nhập")) {
+            return { error: "LOGIN_REQUIRED" };
+          }
 
-  return result.text;
-}
-function extractFingerprint(html) {
-  const s = html.replace(/\s+/g, " ").slice(0, 20000);
-  let h = 0;
-  for (let i = 0; i < s.length; i++) {
-    h = (h * 131 + s.charCodeAt(i)) >>> 0;
-  }
-  return String(h);
-}
+          const NORM = (s) => (s || "").replace(/\s+/g, " ").trim().toUpperCase();
+          const doc = new DOMParser().parseFromString(html, "text/html");
+          const entries = [];
+          const tables = [...doc.querySelectorAll("table")];
+          let grid = null;
+          for (const t of tables) {
+            const txt = NORM(t.textContent);
+            if (txt.includes("YEAR") && txt.includes("WEEK") && /MON|TUE|WED|THU|FRI|SAT|SUN/.test(txt)) {
+              grid = t;
+              break;
+            }
+          }
+          if (!grid) return { entries: [], htmlLength: html.length };
 
-// Minimal parser to pull weekly entries with statuses
-function parseScheduleOfWeek(html) {
-  const doc = new DOMParser().parseFromString(html, "text/html");
-  const NORM = (s) => (s || "").replace(/\s+/g, " ").trim().toUpperCase();
-  const result = [];
-  const tables = [...doc.querySelectorAll("table")];
-  let grid = null;
-  for (const t of tables) {
-    const txt = NORM(t.textContent);
-    if (
-      txt.includes("YEAR") &&
-      txt.includes("WEEK") &&
-      /MON|TUE|WED|THU|FRI|SAT|SUN/.test(txt)
-    ) {
-      grid = t;
-      break;
-    }
-  }
-  if (!grid) return result;
-  const rows = [...grid.querySelectorAll("tr")];
-  // header day columns
-  let headerRowIdx = -1;
-  for (let i = 0; i < Math.min(8, rows.length); i++) {
-    const txt = NORM(rows[i].textContent);
-    if (
-      /MON/.test(txt) &&
-      /TUE/.test(txt) &&
-      /WED/.test(txt) &&
-      /THU/.test(txt) &&
-      /FRI/.test(txt)
-    ) {
-      headerRowIdx = i;
-      break;
-    }
-  }
-  if (headerRowIdx === -1) return result;
-  const headerCells = [...rows[headerRowIdx].querySelectorAll("td,th")];
-  const dayCols = [];
-  headerCells.forEach((c, i) => {
-    const text = c.textContent.trim();
-    const m = text.match(/(MON|TUE|WED|THU|FRI|SAT|SUN)/i);
-    if (m) {
-      const date = (text.match(/\d{2}\/\d{2}/) || [])[0] || null;
-      dayCols.push({ name: m[1].toUpperCase(), idx: i, date });
-    }
-  });
-  if (dayCols.length < 5) return result;
-  function isSlotLabel(s) {
-    return /^slot\s*\d+/i.test(s);
-  }
-  const slotRows = rows.filter((r) => {
-    const c0 = r.querySelector("td,th");
-    return c0 && isSlotLabel((c0.textContent || "").trim());
-  });
+          const rows = [...grid.querySelectorAll("tr")];
+          let headerRowIdx = -1;
+          for (let i = 0; i < Math.min(8, rows.length); i++) {
+            const txt = NORM(rows[i].textContent);
+            if (/MON/.test(txt) && /TUE/.test(txt) && /WED/.test(txt) && /THU/.test(txt) && /FRI/.test(txt)) {
+              headerRowIdx = i;
+              break;
+            }
+          }
+          if (headerRowIdx === -1) return { entries: [], htmlLength: html.length };
 
-  slotRows.forEach((r) => {
-    const cells = [...r.querySelectorAll("td,th")];
-    const slotName = (cells[0]?.textContent || "").trim(); // "Slot 1"
-    dayCols.forEach((d) => {
-      const cell = cells[d.idx];
-      if (!cell) return;
-      const raw = (cell.textContent || "").trim();
-      if (!raw || raw === "-") return;
-      const codeMatch = raw.match(/\b[A-Z]{3}\d{3}\b/);
-      const code = codeMatch ? codeMatch[0] : "";
-      if (!code) return;
-      let status = "";
-      if (/attended/i.test(raw)) status = "attended";
-      else if (/not yet/i.test(raw)) status = "not yet";
-      else if (/absent|v\u1eafng/i.test(raw)) status = "absent";
-      result.push({
-        key: `${d.date || d.name}|${slotName}|${code}`,
-        course: code,
-        day: d.name,
-        date: d.date,
-        slot: slotName,
-        status: status || raw,
-      });
+          const headerCells = [...rows[headerRowIdx].querySelectorAll("td,th")];
+          const dayCols = [];
+          headerCells.forEach((c, i) => {
+            const text = c.textContent.trim();
+            const m = text.match(/(MON|TUE|WED|THU|FRI|SAT|SUN)/i);
+            if (m) {
+              const date = (text.match(/\d{2}\/\d{2}/) || [])[0] || null;
+              dayCols.push({ name: m[1].toUpperCase(), idx: i, date });
+            }
+          });
+          if (dayCols.length < 5) return { entries: [], htmlLength: html.length };
+
+          const slotRows = rows.filter((r) => {
+            const c0 = r.querySelector("td,th");
+            return c0 && /^slot\s*\d+/i.test((c0.textContent || "").trim());
+          });
+
+          slotRows.forEach((r) => {
+            const cells = [...r.querySelectorAll("td,th")];
+            const slotName = (cells[0]?.textContent || "").trim();
+            dayCols.forEach((d) => {
+              const cell = cells[d.idx];
+              if (!cell) return;
+              const raw = (cell.textContent || "").trim();
+              if (!raw || raw === "-") return;
+              const codeMatch = raw.match(/\b[A-Z]{2,4}\d{3}\b/);
+              const code = codeMatch ? codeMatch[0] : "";
+              if (!code) return;
+              let status = "";
+              if (/attended/i.test(raw)) status = "attended";
+              else if (/not yet/i.test(raw)) status = "not yet";
+              else if (/absent|vắng/i.test(raw)) status = "absent";
+              entries.push({
+                key: `${d.date || d.name}|${slotName}|${code}`,
+                course: code,
+                day: d.name,
+                date: d.date,
+                slot: slotName,
+                status: status || raw,
+              });
+            });
+          });
+          return { entries, htmlLength: html.length };
+        } catch (err) {
+          return { error: err?.message || String(err) };
+        }
+      },
     });
-  });
-  return result;
+
+    if (createdTab) {
+      await chrome.tabs.remove(tabId);
+    }
+
+    if (!result || !result.result) return { error: "NO_RESULT" };
+    return result.result;
+  } catch (e) {
+    if (createdTab) {
+      try { await chrome.tabs.remove(tabId); } catch (x) { }
+    }
+    throw e;
+  }
 }
 
 // ========== Background Transcript Fetch ==========
@@ -458,7 +379,7 @@ async function fetchTranscriptInBackground(forceRefresh = false) {
   // Check cache first (unless forced refresh)
   if (!forceRefresh) {
     const cached = await STORAGE.get("cache_transcript", null);
-    const CACHE_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days - match popup logic
+    const CACHE_MAX_AGE = 30 * 60 * 1000; // 30 minutes - aligned with popup
     const cachedRows = cached?.data?.rows || [];
 
     // Only consider cache fresh if it has actual data
@@ -533,111 +454,22 @@ async function fetchTranscriptInBackground(forceRefresh = false) {
   }
 }
 
-async function pollOnce() {
-  const cfg = await STORAGE.get("cfg", {
-    activeFrom: "07:00",
-    activeTo: "17:40",
-    delayMin: 10,
-    delayMax: 30,
-    pollEvery: 30,
-  });
 
-  // Always poll, but with different intervals based on time
-  const now = new Date();
-  const currentHour = now.getHours();
-  const isActiveTime = within(cfg.activeFrom, cfg.activeTo);
 
-  // If outside active hours, poll less frequently (every 2 hours)
-  if (!isActiveTime) {
-    console.log("🕐 Outside active hours, skipping detailed polling");
-    return;
-  }
 
-  try {
-    console.log("🔄 Background polling schedule data...");
-    const html = await fetchHtml(SCHEDULE_OF_WEEK);
-    const fp = extractFingerprint(html);
-    const prevFp = await STORAGE.get("att_fp", null);
-
-    const newEntries = parseScheduleOfWeek(html);
-
-    // Validate data before saving - don't overwrite cache with empty/invalid data
-    if (!isValidScheduleData(newEntries)) {
-      console.warn("⚠️ Invalid schedule data from polling, keeping existing cache");
-      return;
-    }
-
-    await STORAGE.set({
-      att_entries: newEntries,
-      att_fp: fp,
-      last_poll_time: Date.now(),
-    });
-
-    await STORAGE.set({
-      cache_attendance: {
-        ts: Date.now(),
-        data: { entries: newEntries, todayRows: [] },
-      },
-      cache_attendance_flat: newEntries,
-    });
-
-    console.log(
-      `✅ Background polling completed: ${newEntries.length} entries`
-    );
-  } catch (e) {
-    console.error("❌ Background polling failed:", e);
-
-    // If it's a login error, don't spam retries
-    if (e.message === "LOGIN_REQUIRED") {
-      console.log("🔐 Login required, will retry later");
-      return;
-    }
-
-    // For other errors, schedule a retry
-    const retryDelay = 5 * 60 * 1000; // 5 minutes
-    setTimeout(() => {
-      console.log("🔄 Retrying background poll after error...");
-      pollOnce();
-    }, retryDelay);
-  }
-}
-
-async function schedulePollAlarm() {
-  const cfg = await STORAGE.get("cfg", { pollEvery: 30 });
-
-  // Create multiple alarms for different polling frequencies
-  chrome.alarms.create("att_poll_active", {
-    periodInMinutes: Math.max(5, cfg.pollEvery), // Active hours: every 5-30 minutes
-  });
-
-  chrome.alarms.create("att_poll_inactive", {
-    periodInMinutes: 120, // Inactive hours: every 2 hours
-  });
-
-  console.log(
-    "⏰ Scheduled polling alarms: active every",
-    Math.max(5, cfg.pollEvery),
-    "min, inactive every 120 min"
-  );
-}
 
 chrome.runtime.onInstalled.addListener(async (details) => {
-  await schedulePollAlarm();
-  await updateActionPopup(); // Set initial popup behavior
+  await updateActionPopup();
 
-  // On fresh install, start fetching transcript immediately
   if (details.reason === 'install') {
     console.log("🆕 Extension installed, starting background fetch...");
-    setTimeout(() => fetchTranscriptInBackground(), 1000);
+    fetchTranscriptInBackground();
   }
 });
 
 chrome.runtime.onStartup.addListener(async () => {
-  await schedulePollAlarm();
-  await updateActionPopup(); // Set popup behavior on startup
-  // Reset login cache on browser startup (so first extension click will check)
+  await updateActionPopup();
   await STORAGE.set({ last_login_check_ts: 0, cached_login_status: null });
-  // Also try to fetch transcript on browser startup
   fetchTranscriptInBackground();
 });
 
@@ -692,20 +524,23 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       // If missing attendance, try to fetch now
       try {
         if (!attendanceEntries) {
-          const docHtml = await fetchHtml(SCHEDULE_OF_WEEK);
-          const entries = parseScheduleOfWeek(docHtml);
-
-          // Only save to cache if data is valid (prevents overwriting with empty data)
-          if (isValidScheduleData(entries)) {
-            await STORAGE.set({
-              cache_attendance: {
-                ts: Date.now(),
-                data: { entries, todayRows: [] },
-              },
-            });
-            attendanceEntries = entries;
+          const scheduleResult = await fetchAndParseScheduleViaTab(SCHEDULE_OF_WEEK);
+          if (scheduleResult.error) {
+            if (scheduleResult.error === "LOGIN_REQUIRED") throw new Error("LOGIN_REQUIRED");
+            console.warn("⚠️ Schedule fetch error:", scheduleResult.error);
           } else {
-            console.warn("⚠️ Invalid schedule data from getAllData, not caching");
+            const entries = scheduleResult.entries || [];
+            if (isValidScheduleData(entries)) {
+              await STORAGE.set({
+                cache_attendance: {
+                  ts: Date.now(),
+                  data: { entries, todayRows: [] },
+                },
+              });
+              attendanceEntries = entries;
+            } else {
+              console.warn("⚠️ Invalid schedule data from getAllData, not caching");
+            }
           }
         }
       } catch (e) {
@@ -724,11 +559,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       await STORAGE.set({ show_login_banner: showLoginBanner });
 
       const cfg = await STORAGE.get("cfg", {
-        activeFrom: "07:00",
-        activeTo: "17:40",
-        delayMin: 10,
-        delayMax: 30,
-        pollEvery: 30,
+        viewMode: "popup",
       });
       try {
         await STORAGE.set({
@@ -767,7 +598,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 
   // Handle CFG_UPDATED
   if (msg.type === "CFG_UPDATED") {
-    Promise.all([schedulePollAlarm(), updateActionPopup()]).then(() => {
+    updateActionPopup().then(() => {
       sendResponse({ ok: true });
     });
     return true;

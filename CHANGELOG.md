@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [5.6.0] - 2026-01-19
+
+### 🎉 New Features
+
+- **LMS Calendar Integration**: New tab to view upcoming events from LMS HCM
+  - Displays assignments, quizzes, and deadlines from LMS calendar
+  - Countdown badges (urgent/soon) for upcoming events
+  - Direct links to submit assignments
+  - Search functionality to filter events
+  - Works in both Popup and Fullpage modes
+
+### 🔧 Technical Changes
+
+- Added `https://lms-hcm.fpt.edu.vn/*` to host permissions
+- Created new module: `scripts/modules/lms-events.js`
+- Added `FETCH_LMS_EVENTS` message handler in background.js
+- Added LMS tab to `popup.html` and `dashboard.html`
+- Added LMS events styling to `schedule.css`
+
+### 🐛 Bug Fixes
+
+- Fixed login banner showing too frequently (removed time-based trigger)
+- Banner now only shows when data fetch actually fails
+
+---
+
 ## [5.4.0] - 2026-01-08
 
 ### ⚡ Performance Improvements

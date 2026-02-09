@@ -62,6 +62,13 @@ const DAY_MS = window.DAY_MS || 24 * 60 * 60 * 1000;
 const EXCLUDED_KEY = window.EXCLUDED_KEY || "__FAP_EXCLUDED_CODES__";
 const EXCLUDED_DEFAULT = window.EXCLUDED_DEFAULT || ["TRS501", "ENT503", "VOV114", "VOV124", "VOV134", "OTP101"];
 
+// HTML escape helper to prevent XSS from server data
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
 // ---------- Renderers ----------
 async function renderTranscript(rows, excluded) {
   const g = computeGPA(rows, excluded);
@@ -90,6 +97,7 @@ async function renderTranscript(rows, excluded) {
     if (q && !(String(r.code).toLowerCase().includes(q) || String(r.name).toLowerCase().includes(q))) return;
 
     const courseCode = r.code || "";
+    const safeCourseCode = escapeHtml(courseCode);
     const hasNote = allNotes[courseCode] && allNotes[courseCode].trim();
     const isExcluded = excludedCourses.includes(courseCode);
 
@@ -98,17 +106,17 @@ async function renderTranscript(rows, excluded) {
     tr.innerHTML = `
         <td style="text-align: center">
           <input type="checkbox" class="exclude-checkbox" 
-                data-code="${courseCode}" 
+                data-code="${safeCourseCode}" 
                 ${isExcluded ? "checked" : ""}
                 title="Loại trừ khỏi GPA">
         </td>
-        <td class="course-code">${r.code || ""}</td>
-        <td class="course-name">${r.name || ""}</td>
+        <td class="course-code">${safeCourseCode}</td>
+        <td class="course-name">${escapeHtml(r.name || "")}</td>
         <td class="r">${Number.isFinite(r.credit) ? r.credit : ""}</td>
         <td class="r">${Number.isFinite(r.grade) ? r.grade : ""}</td>
-        <td>${r.status || ""}</td>
+        <td>${escapeHtml(r.status || "")}</td>
         <td style="text-align: center">
-          <button class="note-toggle-btn ${hasNote ? "has-note" : ""}" data-code="${courseCode}" title="Ghi chú">📝</button>
+          <button class="note-toggle-btn ${hasNote ? "has-note" : ""}" data-code="${safeCourseCode}" title="Ghi chú">📝</button>
         </td>
     `;
 
@@ -116,10 +124,11 @@ async function renderTranscript(rows, excluded) {
     noteRow.className = "note-row";
     noteRow.style.display = "none";
     noteRow.innerHTML = `
-      <td colspan="6" class="note-cell">
-        <textarea class="course-note-input" data-code="${courseCode}" placeholder="Ghi chú cho môn ${courseCode}..." rows="3">${allNotes[courseCode] || ""}</textarea>
+      <td colspan="7" class="note-cell">
+        <textarea class="course-note-input" data-code="${safeCourseCode}" placeholder="Ghi chú cho môn ${safeCourseCode}..." rows="3">${escapeHtml(allNotes[courseCode] || "")}</textarea>
       </td>
     `;
+
 
     tbody.appendChild(tr);
     tbody.appendChild(noteRow);
@@ -149,7 +158,7 @@ async function renderTranscript(rows, excluded) {
       await STORAGE.set({ excluded_courses: excl });
       tr.className = isExcl ? "course-row excluded" : "course-row";
       await renderTranscript(rows, excl);
-      Toast.success(isExcl ? `Đã loại trừ ${code} khỏi GPA` : `Đã thêm ${code} vào GPA`);
+      Toast?.success(isExcl ? `Đã loại trừ ${code} khỏi GPA` : `Đã thêm ${code} vào GPA`);
     });
 
     // Auto-save note
@@ -162,7 +171,7 @@ async function renderTranscript(rows, excluded) {
         notes[courseCode] = textarea.value;
         await STORAGE.set({ course_notes: notes });
         toggleBtn.classList.toggle("has-note", textarea.value.trim());
-        Toast.success("Đã lưu note");
+        Toast?.success("Đã lưu note");
       }, 1000);
     });
   });
@@ -211,8 +220,8 @@ async function updateAttendanceQuickStats() {
   }
 }
 
-// Cache freshness threshold (7 days)
-const GPA_CACHE_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
+// Cache freshness threshold (30 min — aligned with SWR pattern in transcript.js)
+const GPA_CACHE_MAX_AGE = 30 * 60 * 1000;
 
 /**
  * Render GPA from cache only - for search/filter operations
@@ -471,7 +480,7 @@ document.getElementById("btnResetExcluded")?.addEventListener("click", async fun
   if (confirmed) {
     await STORAGE.set({ excluded_courses: [] });
     await loadGPA();
-    Toast.success("Đã reset danh sách môn loại trừ!");
+    Toast?.success("Đã reset danh sách môn loại trừ!");
   }
 });
 
@@ -480,7 +489,7 @@ document.getElementById("btnSetDefaultExcluded")?.addEventListener("click", asyn
   if (confirmed) {
     await STORAGE.set({ excluded_courses: EXCLUDED_DEFAULT });
     await loadGPA();
-    Toast.success("Đã set mặc định loại trừ môn!");
+    Toast?.success("Đã set mặc định loại trừ môn!");
   }
 });
 
@@ -522,19 +531,7 @@ document.getElementById("btnExportPDF")?.addEventListener("click", () => {
   chrome.tabs.create({ url: chrome.runtime.getURL("pages/report.html") });
 });
 
-// ---------- Dark Mode ----------
-(async function initDarkMode() {
-  const theme = await STORAGE.get("theme", "dark");
-  document.documentElement.setAttribute("data-theme", theme);
-
-  document.getElementById("themeToggle")?.addEventListener("click", async () => {
-    const current = document.documentElement.getAttribute("data-theme");
-    const newTheme = current === "dark" ? "light" : "dark";
-    document.documentElement.setAttribute("data-theme", newTheme);
-    await STORAGE.set({ theme: newTheme });
-    if (window.gpaChartInstance) await loadStatistics();
-  });
-})();
+// Dark mode is handled by ThemeService.init() below — no duplicate IIFE needed.
 
 // ---------- Widget Controls ----------
 const HIDDEN_WIDGET_KEY = "hidden_widgets";
@@ -676,24 +673,11 @@ function setupEventListeners() {
   await checkLoginStatus();
   await checkAndShowLoginBanner();
 
-  // Periodic login check
+  // Periodic login check (every 5 min while popup is open)
   setInterval(async () => {
     await checkLoginStatus();
     await checkAndShowLoginBanner();
   }, 5 * 60 * 1000);
-
-  // Login check on visibility/focus
-  document.addEventListener("visibilitychange", async () => {
-    if (!document.hidden) {
-      await checkLoginStatus();
-      await checkAndShowLoginBanner();
-    }
-  });
-
-  window.addEventListener("focus", async () => {
-    await checkLoginStatus();
-    await checkAndShowLoginBanner();
-  });
 
   // Login status click handler
   document.getElementById("loginStatus")?.addEventListener("click", async () => {
@@ -760,9 +744,8 @@ setInterval(() => {
 
 // Init tabs
 if (window.TabsService) window.TabsService.init();
-else {
+else if (typeof initLiquidGlassTabs === 'function') {
   initLiquidGlassTabs();
-  setTimeout(() => initLiquidGlassTabs(), 100);
 }
 
 // Init theme

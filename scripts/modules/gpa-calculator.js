@@ -8,8 +8,8 @@ const GPACalculatorService = {
      */
     async initGPACalculator() {
         try {
-            const DAY_MS = window.DAY_MS || 24 * 60 * 60 * 1000;
-            const cache = await window.cacheGet?.("cache_transcript", DAY_MS);
+            const cachedObj = await window.STORAGE?.get("cache_transcript", null);
+            const cache = cachedObj?.data || cachedObj;
             if (!cache || !cache.rows) return;
 
             const excludedCourses = await window.STORAGE?.get("excluded_courses", []) || [];
@@ -48,6 +48,11 @@ const GPACalculatorService = {
 
         if (targetGPA < 0 || targetGPA > 10) {
             resultEl.textContent = "GPA 0-10!";
+            return;
+        }
+
+        if (newCredits <= 0) {
+            resultEl.textContent = "Nhập số tín chỉ > 0!";
             return;
         }
 

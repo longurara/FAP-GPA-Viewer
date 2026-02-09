@@ -60,10 +60,11 @@ const LoginService = {
             const testUrl = "https://fap.fpt.edu.vn/Student.aspx";
             const csResult = await window.fetchViaContentScript(testUrl);
 
-            const doc = csResult?.text &&
-                new DOMParser().parseFromString(csResult.text, "text/html");
+            const htmlText = csResult?.text || "";
+            const lc = htmlText.toLowerCase().slice(0, 2000);
+            const isLoginPage = !htmlText || lc.includes("login") || lc.includes("đăng nhập") || lc.includes("dang nhap");
 
-            if (!doc || window.looksLikeLoginPage(doc)) {
+            if (isLoginPage) {
                 await window.STORAGE?.set({
                     show_login_banner: true,
                     last_login_check_ts: Date.now(),

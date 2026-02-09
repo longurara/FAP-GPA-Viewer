@@ -85,25 +85,225 @@
     white-space: nowrap;
 }
 
-/* ========== Exam Styles ========== */
-.exam-urgent {
-    background: #ef4444 !important;
-    animation: pulse 2s infinite;
+/* ========== Exam Cards ========== */
+.exam-cards-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 14px;
+    max-height: 420px;
+    overflow-y: auto;
 }
 
-.exam-soon {
-    background: #f59e0b !important;
-}
-
-.exam-days {
-    display: inline-block;
-    background: rgba(239, 68, 68, 0.2);
-    color: #ef4444;
-    padding: 2px 8px;
+.exam-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
     border-radius: 12px;
+    padding: 14px 16px;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: default;
+}
+
+.exam-card:hover {
+    transform: translateX(4px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    border-color: var(--accent);
+}
+
+/* Urgency Variants */
+.exam-card--today {
+    border-left-color: #ef4444;
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.08), transparent 60%);
+    animation: examPulse 2.5s ease-in-out infinite;
+}
+
+.exam-card--urgent {
+    border-left-color: #ef4444;
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.05), transparent 60%);
+}
+
+.exam-card--soon {
+    border-left-color: #f59e0b;
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.05), transparent 60%);
+}
+
+.exam-card--past {
+    border-left-color: var(--muted);
+    opacity: 0.55;
+}
+
+.exam-card--past:hover {
+    opacity: 0.8;
+}
+
+/* Card Header */
+.exam-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.exam-card-subject {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+}
+
+.exam-code-badge {
+    display: inline-block;
+    background: var(--accent);
+    color: var(--bg);
     font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 6px;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.exam-name {
+    font-size: 14px;
     font-weight: 600;
-    margin-left: 8px;
+    color: var(--text);
+    line-height: 1.35;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Countdown Badges */
+.exam-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+    flex-shrink: 0;
+    letter-spacing: 0.2px;
+}
+
+.exam-badge--today {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+    animation: examBadgePulse 1.5s ease-in-out infinite;
+}
+
+.exam-badge--urgent {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+}
+
+.exam-badge--soon {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+}
+
+.exam-badge--normal {
+    background: rgba(96, 165, 250, 0.12);
+    color: var(--accent-2);
+}
+
+.exam-badge--past {
+    background: rgba(100, 116, 139, 0.15);
+    color: #64748b;
+}
+
+/* Card Metadata */
+.exam-card-meta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 16px;
+}
+
+.exam-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+    color: var(--muted);
+}
+
+.exam-meta-icon {
+    font-size: 13px;
+    width: 18px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+/* Empty State */
+.exam-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 40px 20px;
+    color: var(--muted);
+    font-size: 14px;
+}
+
+.exam-empty-icon {
+    font-size: 32px;
+    opacity: 0.6;
+}
+
+/* Animations */
+@keyframes examPulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+    }
+
+    50% {
+        box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
+    }
+}
+
+@keyframes examBadgePulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+/* Dark mode fine-tuning */
+:root[data-theme="dark"] .exam-card {
+    background: rgba(13, 24, 38, 0.85);
+}
+
+:root[data-theme="dark"] .exam-card:hover {
+    background: rgba(13, 24, 38, 0.95);
+}
+
+:root[data-theme="dark"] .exam-card--today {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.12), transparent 60%);
+}
+
+/* Light mode adjustments */
+:root[data-theme="light"] .exam-code-badge {
+    color: white;
+}
+
+:root[data-theme="light"] .exam-card {
+    background: rgba(255, 255, 255, 0.9);
+}
+
+:root[data-theme="light"] .exam-card:hover {
+    background: rgba(255, 255, 255, 1);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
 }
 
 /* ========== Attendance Table ========== */

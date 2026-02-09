@@ -191,13 +191,16 @@ const Toast = {
   show({ icon = "ℹ️", title = "", message = "", type = "info", duration = 3000 }) {
     if (!this.container) this.init();
 
+    // Escape helper to prevent XSS from server-derived data
+    const esc = (s) => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+
     const toast = document.createElement("div");
     toast.className = `toast ${type}`;
     toast.innerHTML = `
-      <div class="toast-icon">${icon}</div>
+      <div class="toast-icon">${esc(icon)}</div>
       <div class="toast-content">
-        ${title ? `<div class="toast-title">${title}</div>` : ""}
-        <div class="toast-message">${message}</div>
+        ${title ? `<div class="toast-title">${esc(title)}</div>` : ""}
+        <div class="toast-message">${esc(message)}</div>
       </div>
     `;
 

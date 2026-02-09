@@ -35,6 +35,11 @@ async function exportScheduleICS() {
     try {
         initCalendarService();
 
+        if (!calendarService) {
+            showToast("CalendarService chưa sẵn sàng", "error");
+            return;
+        }
+
         const btn = document.getElementById("btnExportScheduleICS");
         if (btn) {
             btn.classList.add("loading");
@@ -62,6 +67,11 @@ async function exportScheduleICS() {
 async function exportExamICS() {
     try {
         initCalendarService();
+
+        if (!calendarService) {
+            showToast("CalendarService chưa sẵn sàng", "error");
+            return;
+        }
 
         const btn = document.getElementById("btnExportExamICS");
         if (btn) {

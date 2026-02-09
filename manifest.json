@@ -17,8 +17,6 @@
   },
   "permissions": [
     "storage",
-    "notifications",
-    "alarms",
     "scripting"
   ],
   "host_permissions": [
@@ -59,6 +57,18 @@
       ],
       "css": [
         "styles/fap-schedule-week.css"
+      ],
+      "run_at": "document_end"
+    },
+    {
+      "matches": [
+        "https://fap.fpt.edu.vn/Exam/ScheduleExams.aspx*"
+      ],
+      "js": [
+        "scripts/fap-exam.js"
+      ],
+      "css": [
+        "styles/fap-exam.css"
       ],
       "run_at": "document_end"
     }

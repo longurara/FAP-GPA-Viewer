@@ -10,8 +10,8 @@ const StatisticsService = {
      */
     async loadStatistics() {
         try {
-            const DAY_MS = window.DAY_MS || 24 * 60 * 60 * 1000;
-            const cache = await window.cacheGet("cache_transcript", DAY_MS);
+            const cachedObj = await window.STORAGE?.get("cache_transcript", null);
+            const cache = cachedObj?.data || cachedObj;
             if (!cache || !cache.rows) return;
 
             // Get excluded courses first
@@ -179,18 +179,8 @@ const StatisticsService = {
      * Initialize statistics module
      */
     init() {
-        document.getElementById("btnRefreshStats")?.addEventListener("click", async function () {
-            const isLoggedIn = await window.checkLoginStatus?.();
-            if (!isLoggedIn) {
-                await window.checkAndShowLoginBanner?.();
-                window.showLoginNotification?.();
-                return;
-            }
-            await window.handleRefreshWithLoading?.(this, async () => {
-                await StatisticsService.loadStatistics();
-                await window.STORAGE?.set({ last_successful_fetch: Date.now() });
-            });
-        });
+        // Note: btnRefreshStats click handler is in popup.js (includes login check).
+        // Do NOT register a duplicate handler here.
     },
 };
 

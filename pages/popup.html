@@ -299,19 +299,9 @@
             <input id="searchExam" placeholder="Tìm môn thi..." />
           </div>
         </div>
-        <table id="tblExams">
-          <thead>
-            <tr>
-              <th>Môn</th>
-              <th>Tên môn</th>
-              <th>Ngày thi</th>
-              <th>Giờ</th>
-              <th>Phòng</th>
-              <th>Hình thức</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
+        <div id="examCardsContainer" class="exam-cards-container">
+          <div class="exam-empty"><span class="exam-empty-icon">📋</span><span>Đang tải...</span></div>
+        </div>
       </div>
     </section>
 
@@ -393,23 +383,8 @@
               <option value="fullpage">Trang mới (lớn hơn)</option>
             </select>
           </label>
-          <label class="row">
-            <span>Giờ hoạt động (hh:mm-hh:mm)</span>
-            <input id="setActiveFrom" value="07:00" />
-            <input id="setActiveTo" value="17:40" />
-          </label>
-          <label class="row">
-            <span>Trễ thông báo ngẫu nhiên (phút, min-max)</span>
-            <input id="setDelayMin" min="0" type="number" value="10" />
-            <input id="setDelayMax" min="0" type="number" value="30" />
-          </label>
-          <label class="row">
-            <span>Tần suất kiểm tra cập nhật (phút)</span>
-            <input id="setPollEvery" min="5" type="number" value="15" />
-          </label>
           <div class="row">
             <button class="primary" id="btnSaveSettings">Lưu cài đặt</button>
-            <button id="btnTestNotify">Test thông báo</button>
           </div>
         </div>
       </div>

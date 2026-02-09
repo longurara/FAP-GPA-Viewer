@@ -231,7 +231,7 @@
         return;
       }
 
-      const sorted = validEntries.sort((a, b) => {
+      const sorted = [...validEntries].sort((a, b) => {
         if (a.date && b.date) {
           const [dayA, monthA] = a.date.split("/").map(Number);
           const [dayB, monthB] = b.date.split("/").map(Number);
@@ -338,17 +338,21 @@
       console.error("[Attendance] Render error:", error);
       const tbody = document.querySelector("#tblAttendance tbody");
       if (tbody) {
-        tbody.innerHTML = `
-<tr>
-  <td colspan="4" style="text-align: center; color: #ef4444; padding: 20px;">
-    <strong>Lỗi hiển thị dữ liệu</strong><br>
-    <small>${error.message}</small><br>
-    <small style="color: var(--muted)">
-      Vui lòng thử "Làm mới" hoặc tuần này không có dữ liệu điểm danh.
-    </small>
-  </td>
-</tr>
-        `;
+        const tr = document.createElement("tr");
+        const td = document.createElement("td");
+        td.colSpan = 4;
+        td.style.cssText = "text-align: center; color: #ef4444; padding: 20px;";
+        const strong = document.createElement("strong");
+        strong.textContent = "Lỗi hiển thị dữ liệu";
+        const errSmall = document.createElement("small");
+        errSmall.textContent = error.message;
+        const hintSmall = document.createElement("small");
+        hintSmall.style.color = "var(--muted)";
+        hintSmall.textContent = 'Vui lòng thử "Làm mới" hoặc tuần này không có dữ liệu điểm danh.';
+        td.append(strong, document.createElement("br"), errSmall, document.createElement("br"), hintSmall);
+        tr.appendChild(td);
+        tbody.innerHTML = "";
+        tbody.appendChild(tr);
       }
 
       setValue?.("#attRate", "--");

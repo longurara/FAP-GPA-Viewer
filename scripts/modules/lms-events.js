@@ -10,26 +10,26 @@ function parseLMSEventsHtml(html) {
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, 'text/html');
   const events = [];
-  
+
   const eventElements = doc.querySelectorAll('div[data-type="event"]');
-  
+
   eventElements.forEach(el => {
     try {
       const eventId = el.getAttribute('data-event-id') || '';
       const title = el.getAttribute('data-event-title') || '';
       const courseId = el.getAttribute('data-course-id') || '';
       const component = el.getAttribute('data-event-component') || '';
-      
+
       // Get course name
       const courseLink = el.querySelector('a[href*="course/view.php"]');
       const courseName = courseLink ? courseLink.textContent.trim() : '';
       const courseUrl = courseLink ? courseLink.href : '';
-      
+
       // Get date/time - look for the first col-11 with time info
       const timeRows = el.querySelectorAll('.description .row .col-11');
       let dateText = '';
       let timeText = '';
-      
+
       if (timeRows.length > 0) {
         const fullDateTime = timeRows[0].textContent.trim();
         // Format: "Thursday, 22 January, 7:00 AM"
@@ -39,12 +39,12 @@ function parseLMSEventsHtml(html) {
           timeText = parts[parts.length - 1].trim();
         }
       }
-      
+
       // Get action link
       const actionLink = el.querySelector('.card-footer a.card-link');
       const actionUrl = actionLink ? actionLink.href : '';
       const actionText = actionLink ? actionLink.textContent.trim() : '';
-      
+
       // Parse date for countdown
       const dateLink = el.querySelector('a[href*="calendar/view.php?view=day"]');
       let timestamp = null;
@@ -55,7 +55,7 @@ function parseLMSEventsHtml(html) {
           timestamp = parseInt(timeMatch[1]) * 1000;
         }
       }
-      
+
       events.push({
         id: eventId,
         title: title,
@@ -73,7 +73,7 @@ function parseLMSEventsHtml(html) {
       console.warn('[LMS] Error parsing event:', err);
     }
   });
-  
+
   return events;
 }
 
@@ -87,36 +87,36 @@ async function fetchLMSEvents(forceRefresh = false) {
         return { events: cached.events, fromCache: true };
       }
     }
-    
+
     // Request background to fetch
     const response = await chrome.runtime.sendMessage({
       type: 'FETCH_LMS_EVENTS',
       force: forceRefresh
     });
-    
+
     if (response && response.error) {
       throw new Error(response.error);
     }
-    
+
     if (response && response.html) {
       const events = parseLMSEventsHtml(response.html);
-      
+
       // Cache the result
       await window.cacheSet?.(LMS_CACHE_KEY, { events, ts: Date.now() });
-      
+
       return { events, fromCache: false };
     }
-    
+
     return { events: [], fromCache: false };
   } catch (err) {
     console.error('[LMS] Error fetching events:', err);
-    
+
     // Try to return cached data on error
     const cached = await window.cacheGet?.(LMS_CACHE_KEY, Infinity);
     if (cached && cached.events) {
       return { events: cached.events, fromCache: true, error: err.message };
     }
-    
+
     return { events: [], error: err.message };
   }
 }
@@ -124,17 +124,17 @@ async function fetchLMSEvents(forceRefresh = false) {
 // Calculate countdown badge
 function getCountdownBadge(timestamp) {
   if (!timestamp) return null;
-  
+
   const now = Date.now();
   const diff = timestamp - now;
-  
+
   if (diff < 0) {
     return { type: 'overdue', text: 'Đã qua' };
   }
-  
+
   const hours = Math.floor(diff / (1000 * 60 * 60));
   const days = Math.floor(hours / 24);
-  
+
   if (hours < 24) {
     return { type: 'urgent', text: `${hours}h nữa` };
   } else if (days <= 3) {
@@ -142,65 +142,81 @@ function getCountdownBadge(timestamp) {
   } else if (days <= 7) {
     return { type: 'normal', text: `${days} ngày` };
   }
-  
+
   return null;
+}
+
+// Escape HTML to prevent XSS from server-injected content
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
 }
 
 // Render LMS events to UI
 function renderLMSEvents(events, searchQuery = '') {
   const container = document.getElementById('lmsEventsList');
   if (!container) return;
-  
+
   // Filter by search
   let filtered = events;
   if (searchQuery) {
     const q = searchQuery.toLowerCase();
-    filtered = events.filter(e => 
+    filtered = events.filter(e =>
       e.title.toLowerCase().includes(q) ||
       e.courseName.toLowerCase().includes(q)
     );
   }
-  
+
   if (filtered.length === 0) {
     container.innerHTML = `<div class="no-class">
       ${searchQuery ? 'Không tìm thấy event phù hợp' : 'Không có thông báo LMS sắp tới'}
     </div>`;
     return;
   }
-  
+
   const html = filtered.map(event => {
     const badge = getCountdownBadge(event.timestamp);
-    const badgeHtml = badge 
-      ? `<span class="lms-badge lms-badge-${badge.type}">${badge.text}</span>` 
+    const badgeHtml = badge
+      ? `<span class="lms-badge lms-badge-${escapeHtml(badge.type)}">${escapeHtml(badge.text)}</span>`
       : '';
-    
+
+    const safeTitle = escapeHtml(event.title);
+    const safeCourseName = escapeHtml(event.courseName || 'Course');
+    const safeDateText = escapeHtml(event.dateText);
+    const safeTimeText = event.timeText ? ', ' + escapeHtml(event.timeText) : '';
+    const safeActionText = escapeHtml(event.actionText || 'Xem chi tiết');
+    // Sanitize URL: only allow http/https
+    const safeActionUrl = (event.actionUrl && /^https?:\/\//i.test(event.actionUrl))
+      ? encodeURI(event.actionUrl) : '';
+
     return `
-      <div class="lms-event-card" data-event-id="${event.id}">
+      <div class="lms-event-card" data-event-id="${escapeHtml(event.id)}">
         <div class="lms-event-header">
-          <div class="lms-event-title">${event.title}</div>
+          <div class="lms-event-title">${safeTitle}</div>
           ${badgeHtml}
         </div>
         <div class="lms-event-meta">
           <div class="lms-event-course">
             <span class="lms-icon">📚</span>
-            ${event.courseName || 'Course'}
+            ${safeCourseName}
           </div>
           <div class="lms-event-time">
             <span class="lms-icon">🕐</span>
-            ${event.dateText}${event.timeText ? ', ' + event.timeText : ''}
+            ${safeDateText}${safeTimeText}
           </div>
         </div>
-        ${event.actionUrl ? `
+        ${safeActionUrl ? `
           <div class="lms-event-actions">
-            <a href="${event.actionUrl}" target="_blank" class="lms-action-btn">
-              ${event.actionText || 'Xem chi tiết'}
+            <a href="${safeActionUrl}" target="_blank" class="lms-action-btn">
+              ${safeActionText}
             </a>
           </div>
         ` : ''}
       </div>
     `;
   }).join('');
-  
+
   container.innerHTML = html;
 }
 
@@ -210,22 +226,22 @@ async function loadLMSEvents(forceRefresh = false) {
   if (container) {
     container.innerHTML = '<div class="no-class">Đang tải...</div>';
   }
-  
+
   try {
     const { events, fromCache, error } = await fetchLMSEvents(forceRefresh);
-    
+
     renderLMSEvents(events);
-    
+
     // Update quick stats if needed
     const countEl = document.getElementById('lmsEventCount');
     if (countEl) {
       countEl.textContent = events.length;
     }
-    
+
     if (error && fromCache) {
       window.Toast?.warning('Đang hiển thị dữ liệu cũ. Lỗi: ' + error);
     }
-    
+
     return events;
   } catch (err) {
     console.error('[LMS] Load error:', err);

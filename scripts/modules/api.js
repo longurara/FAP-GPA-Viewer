@@ -51,26 +51,33 @@ const ApiService = {
             await this.waitForTabComplete(tabId);
         }
 
-        const [result] = await chrome.scripting.executeScript({
-            target: { tabId },
-            args: [url],
-            func: async (targetUrl) => {
-                try {
-                    const res = await fetch(targetUrl, { credentials: "include" });
-                    const text = await res.text();
-                    return { status: res.status, redirected: res.redirected, url: res.url, text };
-                } catch (err) {
-                    return { error: err?.message || String(err) };
-                }
-            },
-        });
+        try {
+            const [result] = await chrome.scripting.executeScript({
+                target: { tabId },
+                args: [url],
+                func: async (targetUrl) => {
+                    try {
+                        const res = await fetch(targetUrl, { credentials: "include" });
+                        const text = await res.text();
+                        return { status: res.status, redirected: res.redirected, url: res.url, text };
+                    } catch (err) {
+                        return { error: err?.message || String(err) };
+                    }
+                },
+            });
 
-        if (createdTab) {
-            await chrome.tabs.remove(tabId);
+            if (createdTab) {
+                await chrome.tabs.remove(tabId);
+            }
+
+            if (!result || !result.result) return null;
+            return result.result;
+        } catch (e) {
+            if (createdTab) {
+                try { await chrome.tabs.remove(tabId); } catch (_) { }
+            }
+            throw e;
         }
-
-        if (!result || !result.result) return null;
-        return result.result;
     },
 
     /**
@@ -81,9 +88,9 @@ const ApiService = {
     looksLikeLoginPage(doc) {
         if (!doc) return true;
         const title = (doc.querySelector("title")?.textContent || "").toLowerCase();
-        if (title.includes("login") || title.includes("dang nh?p")) return true;
+        if (title.includes("login") || title.includes("đăng nhập") || title.includes("dang nhap")) return true;
         const bodyText = (doc.body?.textContent || "").slice(0, 500).toLowerCase();
-        if (bodyText.includes("login") || bodyText.includes("dang nh?p")) return true;
+        if (bodyText.includes("login") || bodyText.includes("đăng nhập") || bodyText.includes("dang nhap")) return true;
         return false;
     },
 

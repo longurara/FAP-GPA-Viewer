@@ -2,6 +2,12 @@
 // Exams Module - Exam Schedule Management
 // ===============================
 
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
 const ExamService = {
     /**
      * Parse exam schedule document from FAP
@@ -87,77 +93,98 @@ const ExamService = {
     },
 
     /**
-     * Render exam schedule table
+     * Render exam schedule as cards
      * @param {Array} exams - Exam data
      */
     renderExamSchedule(exams) {
+        const container = document.querySelector("#examCardsContainer");
         const tbody = document.querySelector("#tblExams tbody");
-        if (!tbody) return;
 
-        tbody.innerHTML = "";
+        // Use card container if available, fallback to table
+        const target = container || tbody;
+        if (!target) return;
+
+        target.innerHTML = "";
 
         if (!exams || exams.length === 0) {
-            const tr = document.createElement("tr");
-            tr.innerHTML = '<td colspan="6" style="text-align: center; color: var(--muted)">Không có lịch thi.</td>';
-            tbody.appendChild(tr);
+            target.innerHTML = '<div class="exam-empty"><span class="exam-empty-icon">📋</span><span>Không có lịch thi.</span></div>';
             return;
         }
 
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+
         exams.forEach((exam) => {
-            const tr = document.createElement("tr");
-            tr.innerHTML = `
-        <td>${exam.code}</td>
-        <td>${exam.name}</td>
-        <td>${exam.date}</td>
-        <td>${exam.time}</td>
-        <td>${exam.room}</td>
-        <td>${exam.form}</td>
-      `;
-            tbody.appendChild(tr);
+            const examDate = this.parseExamDate(exam.date);
+            const diff = examDate ? Math.ceil((examDate - now) / (1000 * 60 * 60 * 24)) : null;
+
+            // Determine urgency
+            let urgencyClass = "";
+            let badgeHtml = "";
+            if (diff !== null && diff >= 0) {
+                if (diff === 0) {
+                    urgencyClass = "exam-card--today";
+                    badgeHtml = '<span class="exam-badge exam-badge--today">HÔM NAY!</span>';
+                } else if (diff <= 3) {
+                    urgencyClass = "exam-card--urgent";
+                    badgeHtml = `<span class="exam-badge exam-badge--urgent">${diff} ngày nữa</span>`;
+                } else if (diff <= 7) {
+                    urgencyClass = "exam-card--soon";
+                    badgeHtml = `<span class="exam-badge exam-badge--soon">${diff} ngày nữa</span>`;
+                } else {
+                    badgeHtml = `<span class="exam-badge exam-badge--normal">${diff} ngày nữa</span>`;
+                }
+            } else if (diff !== null && diff < 0) {
+                urgencyClass = "exam-card--past";
+                badgeHtml = '<span class="exam-badge exam-badge--past">Đã qua</span>';
+            }
+
+            const card = document.createElement("div");
+            card.className = `exam-card ${urgencyClass}`;
+
+            // Store data for filtering
+            card.dataset.code = (exam.code || "").toLowerCase();
+            card.dataset.name = (exam.name || "").toLowerCase();
+            card.dataset.date = exam.date || "";
+            card.dataset.diff = diff !== null ? diff : "";
+
+            card.innerHTML = `
+                <div class="exam-card-header">
+                    <div class="exam-card-subject">
+                        <span class="exam-code-badge">${escapeHtml(exam.code)}</span>
+                        <span class="exam-name">${escapeHtml(exam.name)}</span>
+                    </div>
+                    ${badgeHtml}
+                </div>
+                <div class="exam-card-meta">
+                    <div class="exam-meta-item">
+                        <span class="exam-meta-icon">📅</span>
+                        <span>${escapeHtml(exam.date)}</span>
+                    </div>
+                    <div class="exam-meta-item">
+                        <span class="exam-meta-icon">⏰</span>
+                        <span>${escapeHtml(exam.time)}</span>
+                    </div>
+                    <div class="exam-meta-item">
+                        <span class="exam-meta-icon">🏫</span>
+                        <span>Phòng ${escapeHtml(exam.room)}</span>
+                    </div>
+                    <div class="exam-meta-item">
+                        <span class="exam-meta-icon">📝</span>
+                        <span>${escapeHtml(exam.form)}</span>
+                    </div>
+                </div>
+            `;
+
+            target.appendChild(card);
         });
     },
 
     /**
-     * Add countdown badges to exam dates
+     * Add countdown badges to exam dates (no-op — built into renderExamSchedule cards)
      */
     addExamCountdown() {
-        const table = document.querySelector("#tblExams tbody");
-        if (!table) return;
-
-        const rows = table.querySelectorAll("tr");
-        const now = new Date();
-        now.setHours(0, 0, 0, 0);
-
-        rows.forEach((row) => {
-            const cells = row.querySelectorAll("td");
-            if (cells.length < 3) return;
-
-            const dateCell = cells[2];
-            const dateStr = dateCell.textContent.trim();
-            const examDate = this.parseExamDate(dateStr);
-
-            if (!examDate) return;
-
-            const diff = Math.ceil((examDate - now) / (1000 * 60 * 60 * 24));
-
-            if (diff < 0) return; // Past exam
-
-            let badge = "";
-            if (diff === 0) {
-                badge = '<span class="exam-days" style="background: #ef4444; color: white;">HÔM NAY!</span>';
-                row.classList.add("exam-urgent");
-            } else if (diff <= 3) {
-                badge = `<span class="exam-days">${diff} ngày nữa</span>`;
-                row.classList.add("exam-urgent");
-            } else if (diff <= 7) {
-                badge = `<span class="exam-days" style="background: rgba(245, 158, 11, 0.2); color: #f59e0b;">${diff} ngày nữa</span>`;
-                row.classList.add("exam-soon");
-            }
-
-            if (badge) {
-                dateCell.innerHTML = dateStr + " " + badge;
-            }
-        });
+        // Countdown is now computed inline during renderExamSchedule
     },
 
     /**
@@ -167,20 +194,15 @@ const ExamService = {
         const filterValue = document.getElementById("filterExamTime")?.value || "ALL";
         const searchValue = (document.getElementById("searchExam")?.value || "").toLowerCase();
 
-        const tbody = document.querySelector("#tblExams tbody");
-        if (!tbody) return;
+        const container = document.querySelector("#examCardsContainer") || document.querySelector("#tblExams tbody");
+        if (!container) return;
 
-        const rows = tbody.querySelectorAll("tr");
-        const now = new Date();
-        now.setHours(0, 0, 0, 0);
+        const cards = container.querySelectorAll(".exam-card");
 
-        rows.forEach((row) => {
-            const cells = row.querySelectorAll("td");
-            if (cells.length < 3) return;
-
-            const code = cells[0].textContent.toLowerCase();
-            const name = cells[1].textContent.toLowerCase();
-            const dateStr = cells[2].textContent.trim().split(" ")[0];
+        cards.forEach((card) => {
+            const code = card.dataset.code || "";
+            const name = card.dataset.name || "";
+            const diff = card.dataset.diff !== "" ? parseInt(card.dataset.diff) : null;
 
             // Search filter
             let matchSearch = true;
@@ -190,28 +212,21 @@ const ExamService = {
 
             // Time filter
             let matchTime = true;
-            if (filterValue !== "ALL") {
-                const examDate = this.parseExamDate(dateStr);
-                if (!examDate) {
-                    matchTime = false;
-                } else {
-                    const diffDays = Math.ceil((examDate - now) / (1000 * 60 * 60 * 24));
-
-                    switch (filterValue) {
-                        case "THIS_WEEK":
-                            matchTime = diffDays >= 0 && diffDays <= 7;
-                            break;
-                        case "THIS_MONTH":
-                            matchTime = diffDays >= 0 && diffDays <= 30;
-                            break;
-                        case "UPCOMING":
-                            matchTime = diffDays >= 0;
-                            break;
-                    }
+            if (filterValue !== "ALL" && diff !== null) {
+                switch (filterValue) {
+                    case "THIS_WEEK":
+                        matchTime = diff >= 0 && diff <= 7;
+                        break;
+                    case "THIS_MONTH":
+                        matchTime = diff >= 0 && diff <= 30;
+                        break;
+                    case "UPCOMING":
+                        matchTime = diff >= 0;
+                        break;
                 }
             }
 
-            row.style.display = matchSearch && matchTime ? "" : "none";
+            card.style.display = matchSearch && matchTime ? "" : "none";
         });
     },
 
