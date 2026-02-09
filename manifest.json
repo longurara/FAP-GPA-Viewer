@@ -21,6 +21,7 @@
   ],
   "host_permissions": [
     "https://fap.fpt.edu.vn/*",
+    "https://feid.fpt.edu.vn/*",
     "https://lms-hcm.fpt.edu.vn/*"
   ],
   "content_scripts": [
@@ -107,6 +108,18 @@
         "styles/fap-login.css"
       ],
       "run_at": "document_end"
+    },
+    {
+      "matches": [
+        "https://feid.fpt.edu.vn/Account/Login*"
+      ],
+      "js": [
+        "scripts/feid-login.js"
+      ],
+      "css": [
+        "styles/feid-login.css"
+      ],
+      "run_at": "document_end"
     }
   ],
   "web_accessible_resources": [
@@ -125,7 +138,8 @@
         "wallpaper/sample.jpg"
       ],
       "matches": [
-        "https://fap.fpt.edu.vn/*"
+        "https://fap.fpt.edu.vn/*",
+        "https://feid.fpt.edu.vn/*"
       ]
     }
   ]
