@@ -1,0 +1,251 @@
+/**
+ * FeID Login Page - Modern Dark Theme
+ * Injected into https://feid.fpt.edu.vn/Account/Login*
+ * Wallpaper background with glassmorphic cards
+ */
+
+/* ========== Page Background ========== */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif !important;
+    min-height: 100vh !important;
+    margin: 0 !important;
+    /* background-image set by JS */
+}
+
+/* ========== Navbar ========== */
+.nav-page .navbar {
+    background: rgba(10, 15, 30, 0.8) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+    padding: 10px 20px !important;
+}
+
+.navbar-brand {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+}
+
+.navbar-brand img {
+    height: 36px !important;
+    width: auto !important;
+}
+
+.navbar-brand .brand-text {
+    color: rgba(255, 255, 255, 0.9) !important;
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.3px !important;
+}
+
+/* ========== Body Container ========== */
+.body-container {
+    max-width: 1000px !important;
+    padding: 0 20px !important;
+}
+
+/* ========== Login Page Title ========== */
+.login-page .lead {
+    text-align: center !important;
+    margin: 48px 0 36px !important;
+}
+
+.login-page .lead h1 {
+    font-size: 32px !important;
+    font-weight: 800 !important;
+    color: white !important;
+    letter-spacing: -0.5px !important;
+    margin: 0 !important;
+    text-shadow: 0 2px 20px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* ========== Cards Container ========== */
+.login-page>.row {
+    display: flex !important;
+    gap: 20px !important;
+    flex-wrap: nowrap !important;
+    align-items: stretch !important;
+}
+
+.login-page>.row>.col-sm-6 {
+    flex: 1 !important;
+    max-width: none !important;
+}
+
+/* ========== Cards — Glassmorphic ========== */
+.login-page .card {
+    background: rgba(20, 30, 50, 0.65) !important;
+    backdrop-filter: blur(20px) saturate(1.2) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(1.2) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 20px !important;
+    overflow: hidden !important;
+    box-shadow:
+        0 0 60px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+    height: 100% !important;
+}
+
+/* ========== Card Header ========== */
+.login-page .card-header {
+    background: rgba(255, 255, 255, 0.04) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+    padding: 20px 28px !important;
+}
+
+.login-page .card-header h4 {
+    color: white !important;
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    margin: 0 !important;
+    letter-spacing: 0.2px !important;
+}
+
+/* ========== Card Body ========== */
+.login-page .card-body {
+    padding: 28px !important;
+}
+
+/* ========== Form Labels ========== */
+.login-page label {
+    color: rgba(255, 255, 255, 0.7) !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.8px !important;
+    margin-bottom: 6px !important;
+}
+
+/* ========== Form Inputs ========== */
+.login-page .form-control {
+    background: rgba(255, 255, 255, 0.06) !important;
+    border: 2px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 12px !important;
+    padding: 12px 16px !important;
+    font-size: 15px !important;
+    color: white !important;
+    transition: all 0.25s ease !important;
+}
+
+.login-page .form-control::placeholder {
+    color: rgba(255, 255, 255, 0.3) !important;
+    font-size: 13px !important;
+}
+
+.login-page .form-control:focus {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2), 0 0 20px rgba(59, 130, 246, 0.1) !important;
+    outline: none !important;
+    color: white !important;
+}
+
+/* ========== Form Groups ========== */
+.login-page .form-group {
+    margin-bottom: 20px !important;
+}
+
+/* ========== Login Button ========== */
+.login-page .card-body .btn-outline-primary[value="login"] {
+    width: 100% !important;
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+    border: none !important;
+    border-radius: 12px !important;
+    padding: 14px 24px !important;
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    color: white !important;
+    cursor: pointer !important;
+    transition: all 0.25s ease !important;
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.35) !important;
+    letter-spacing: 0.5px !important;
+}
+
+.login-page .card-body .btn-outline-primary[value="login"]:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 10px 30px rgba(59, 130, 246, 0.45) !important;
+    background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%) !important;
+}
+
+.login-page .card-body .btn-outline-primary[value="login"]:active {
+    transform: translateY(0) !important;
+}
+
+/* ========== Forgot Password Link ========== */
+.login-page .form-group.mt-3 a {
+    color: rgba(255, 255, 255, 0.5) !important;
+    font-size: 13px !important;
+    text-decoration: none !important;
+    transition: color 0.2s ease !important;
+    font-style: italic !important;
+}
+
+.login-page .form-group.mt-3 a:hover {
+    color: #60a5fa !important;
+    text-decoration: underline !important;
+}
+
+/* ========== SSO Buttons (Google, Microsoft) ========== */
+.login-page .list-inline {
+    padding: 0 !important;
+    margin: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 14px !important;
+}
+
+.login-page .list-inline-item {
+    margin: 0 !important;
+    display: block !important;
+}
+
+.login-page .list-inline-item .btn-outline-primary {
+    width: 100% !important;
+    background: rgba(255, 255, 255, 0.06) !important;
+    border: 2px solid rgba(255, 255, 255, 0.12) !important;
+    border-radius: 12px !important;
+    padding: 14px 20px !important;
+    font-size: 15px !important;
+    font-weight: 600 !important;
+    color: white !important;
+    transition: all 0.25s ease !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    text-decoration: none !important;
+    text-align: left !important;
+    justify-content: center !important;
+}
+
+.login-page .list-inline-item .btn-outline-primary:hover {
+    background: rgba(59, 130, 246, 0.15) !important;
+    border-color: rgba(59, 130, 246, 0.5) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2) !important;
+}
+
+.login-page .list-inline-item .btn-outline-primary img {
+    width: 28px !important;
+    height: 28px !important;
+    flex-shrink: 0 !important;
+}
+
+/* ========== Responsive ========== */
+@media (max-width: 768px) {
+    .login-page .lead {
+        margin: 32px 0 24px !important;
+    }
+
+    .login-page .lead h1 {
+        font-size: 24px !important;
+    }
+
+    .login-page>.row {
+        flex-direction: column !important;
+    }
+
+    .login-page .card-body {
+        padding: 20px !important;
+    }
+}
