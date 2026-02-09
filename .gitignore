@@ -11,3 +11,8 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Archives
+*.rar
+*.zip
+*.7z

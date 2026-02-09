@@ -1,0 +1,431 @@
+/**
+ * FAP Subject Fees Page - Enhanced Styles
+ * Injected into https://fap.fpt.edu.vn/FrontOffice/SubjectFees.aspx
+ * Beautifies the subject fees table with modern styling
+ */
+
+/* ========== Page Background ========== */
+body {
+    background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 50%, #f0f9ff 100%) !important;
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif !important;
+}
+
+/* ========== Container ========== */
+.container {
+    max-width: 1200px !important;
+    margin: 0 auto !important;
+    padding: 0 16px !important;
+}
+
+/* ========== Header ========== */
+h1 {
+    font-size: 24px !important;
+    font-weight: 800 !important;
+    color: #1e293b !important;
+    letter-spacing: -0.5px !important;
+}
+
+/* ========== Breadcrumb ========== */
+.breadcrumb {
+    background: rgba(255, 255, 255, 0.7) !important;
+    border: 1px solid rgba(226, 232, 240, 0.8) !important;
+    border-radius: 10px !important;
+    padding: 10px 280px 10px 20px !important;
+    backdrop-filter: blur(8px) !important;
+    font-size: 14px !important;
+    clear: both !important;
+    position: relative !important;
+}
+
+.breadcrumb a {
+    color: #0d6efd !important;
+    text-decoration: none !important;
+}
+
+.breadcrumb a:hover {
+    color: #0b5ed7 !important;
+    text-decoration: underline !important;
+}
+
+/* ========== Page Title (h2) ========== */
+h2 {
+    font-size: 22px !important;
+    font-weight: 700 !important;
+    color: #1e293b !important;
+    margin-bottom: 20px !important;
+    padding-bottom: 12px !important;
+    border-bottom: 3px solid #0d6efd !important;
+    display: inline-block !important;
+}
+
+/* ========== Search & Stats Bar (injected by JS) ========== */
+.fap-fees-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.fap-fees-search {
+    flex: 1;
+    min-width: 220px;
+    padding: 10px 16px 10px 40px;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 14px;
+    background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.44.706a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z'/%3E%3C/svg%3E") no-repeat 12px center;
+    transition: all 0.2s ease;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.fap-fees-search:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15);
+}
+
+.fap-fees-search::placeholder {
+    color: #94a3b8;
+}
+
+.fap-fees-count {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: linear-gradient(135deg, #0d6efd, #6366f1);
+    color: white;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.fap-fees-count::before {
+    content: "📚";
+    font-size: 14px;
+}
+
+/* ========== Table Container ========== */
+#ctl00_mainContent_gvSubjects {
+    width: 100% !important;
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+    border: none !important;
+    border-radius: 16px !important;
+    overflow: hidden !important;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.04) !important;
+    background: white !important;
+    font-size: 14px !important;
+}
+
+/* ========== Table Header ========== */
+#ctl00_mainContent_gvSubjects>tbody>tr:first-child {
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%) !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 10 !important;
+}
+
+#ctl00_mainContent_gvSubjects>tbody>tr:first-child>th {
+    padding: 14px 16px !important;
+    font-weight: 700 !important;
+    font-size: 12px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.8px !important;
+    color: #e2e8f0 !important;
+    border: none !important;
+    text-align: left !important;
+    white-space: nowrap !important;
+}
+
+/* First header cell rounded */
+#ctl00_mainContent_gvSubjects>tbody>tr:first-child>th:first-child {
+    border-radius: 16px 0 0 0 !important;
+}
+
+/* Last header cell rounded */
+#ctl00_mainContent_gvSubjects>tbody>tr:first-child>th:last-child {
+    border-radius: 0 16px 0 0 !important;
+}
+
+/* Credits & Fee headers centered/right */
+#ctl00_mainContent_gvSubjects>tbody>tr:first-child>th:nth-child(3) {
+    text-align: center !important;
+}
+
+#ctl00_mainContent_gvSubjects>tbody>tr:first-child>th:nth-child(4),
+#ctl00_mainContent_gvSubjects>tbody>tr:first-child>th:nth-child(5) {
+    text-align: right !important;
+}
+
+/* ========== Table Body Rows ========== */
+#ctl00_mainContent_gvSubjects>tbody>tr:not(:first-child) {
+    transition: all 0.2s ease !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+}
+
+#ctl00_mainContent_gvSubjects>tbody>tr:not(:first-child):hover {
+    background: linear-gradient(135deg, rgba(13, 110, 253, 0.04), rgba(99, 102, 241, 0.03)) !important;
+    transform: scale(1.002) !important;
+}
+
+/* Zebra striping */
+#ctl00_mainContent_gvSubjects>tbody>tr:not(:first-child):nth-child(even) {
+    background-color: #f8fafc !important;
+}
+
+#ctl00_mainContent_gvSubjects>tbody>tr:not(:first-child):nth-child(even):hover {
+    background: linear-gradient(135deg, rgba(13, 110, 253, 0.04), rgba(99, 102, 241, 0.03)) !important;
+}
+
+/* ========== Table Cells ========== */
+#ctl00_mainContent_gvSubjects>tbody>tr:not(:first-child)>td {
+    padding: 11px 16px !important;
+    border: none !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+    vertical-align: middle !important;
+    color: #334155 !important;
+}
+
+/* SubjectCode - badge style */
+#ctl00_mainContent_gvSubjects>tbody>tr:not(:first-child)>td:first-child {
+    font-weight: 700 !important;
+    color: #0d6efd !important;
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace !important;
+    font-size: 13px !important;
+    letter-spacing: 0.3px !important;
+    white-space: nowrap !important;
+}
+
+/* SubjectName */
+#ctl00_mainContent_gvSubjects>tbody>tr:not(:first-child)>td:nth-child(2) {
+    font-weight: 500 !important;
+    color: #1e293b !important;
+    max-width: 400px !important;
+}
+
+/* Number Credits - centered */
+#ctl00_mainContent_gvSubjects>tbody>tr:not(:first-child)>td:nth-child(3) {
+    text-align: center !important;
+    font-weight: 700 !important;
+    color: #6366f1 !important;
+    font-size: 14px !important;
+}
+
+/* Fee - right aligned, currency style */
+#ctl00_mainContent_gvSubjects>tbody>tr:not(:first-child)>td:nth-child(4) {
+    text-align: right !important;
+    font-weight: 600 !important;
+    color: #059669 !important;
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace !important;
+    font-size: 13px !important;
+    white-space: nowrap !important;
+}
+
+/* Fee International - right aligned */
+#ctl00_mainContent_gvSubjects>tbody>tr:not(:first-child)>td:nth-child(5) {
+    text-align: right !important;
+    font-weight: 600 !important;
+    color: #d97706 !important;
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace !important;
+    font-size: 13px !important;
+    white-space: nowrap !important;
+}
+
+/* Last row rounded bottom */
+#ctl00_mainContent_gvSubjects>tbody>tr:last-child>td:first-child {
+    border-radius: 0 0 0 16px !important;
+}
+
+#ctl00_mainContent_gvSubjects>tbody>tr:last-child>td:last-child {
+    border-radius: 0 0 16px 0 !important;
+}
+
+/* ========== Hidden row (search filter) ========== */
+.fap-fees-hidden {
+    display: none !important;
+}
+
+/* ========== No Results Message ========== */
+.fap-fees-no-results {
+    text-align: center;
+    padding: 48px 24px;
+    color: #94a3b8;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.fap-fees-no-results::before {
+    content: "🔍";
+    display: block;
+    font-size: 40px;
+    margin-bottom: 12px;
+}
+
+/* ========== Scroll-to-Top Button ========== */
+.fap-fees-scroll-top {
+    position: fixed;
+    bottom: 32px;
+    right: 32px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #0d6efd, #6366f1);
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 20px;
+    line-height: 44px;
+    text-align: center;
+    box-shadow: 0 4px 16px rgba(13, 110, 253, 0.3);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    z-index: 9999;
+}
+
+.fap-fees-scroll-top.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+.fap-fees-scroll-top:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(13, 110, 253, 0.4);
+}
+
+/* ========== Footer Support Section ========== */
+#ctl00_divSupporthcm,
+#ctl00_divSupportdn,
+#ctl00_divSupporthn,
+#ctl00_divSupportct {
+    background: rgba(255, 255, 255, 0.8) !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 12px !important;
+    padding: 16px 24px !important;
+    margin: 12px 0 !important;
+    backdrop-filter: blur(8px) !important;
+    font-size: 14px !important;
+    color: #475569 !important;
+}
+
+/* ========== App Footer ========== */
+#cssTable {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
+    border-radius: 12px !important;
+    border: none !important;
+    overflow: hidden !important;
+}
+
+#cssTable td {
+    border: none !important;
+    color: #94a3b8 !important;
+    padding: 16px !important;
+}
+
+#cssTable a {
+    color: #60a5fa !important;
+    text-decoration: none !important;
+}
+
+#cssTable a:hover {
+    color: #93bbfc !important;
+    text-decoration: underline !important;
+}
+
+/* ========== User Info Bar ========== */
+#ctl00_divUser {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    float: right !important;
+    max-width: 70% !important;
+    margin: 8px 0 !important;
+    position: relative !important;
+    z-index: 20 !important;
+}
+
+#ctl00_divUser .label.label-success {
+    background: linear-gradient(135deg, #1e3a5f 0%, #0d2137 100%) !important;
+    border: none !important;
+    border-radius: 20px !important;
+    padding: 6px 14px !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    letter-spacing: 0.3px !important;
+    color: white !important;
+    display: inline-block !important;
+}
+
+#ctl00_divUser a.label.label-success {
+    background: rgba(13, 110, 253, 0.1) !important;
+    color: #0d6efd !important;
+    font-weight: 600 !important;
+    border: 1px solid rgba(13, 110, 253, 0.2) !important;
+}
+
+/* Campus badge - position inside the breadcrumb bar */
+#ctl00_lblCampusName {
+    position: absolute !important;
+    right: 12px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    z-index: 25 !important;
+    margin: 0 !important;
+}
+
+/* ========== Responsive ========== */
+@media (max-width: 768px) {
+    #ctl00_mainContent_gvSubjects {
+        font-size: 12px !important;
+        border-radius: 10px !important;
+    }
+
+    #ctl00_mainContent_gvSubjects>tbody>tr:first-child>th,
+    #ctl00_mainContent_gvSubjects>tbody>tr:not(:first-child)>td {
+        padding: 8px 10px !important;
+    }
+
+    .fap-fees-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .fap-fees-search {
+        width: 100%;
+    }
+
+    .fap-fees-scroll-top {
+        bottom: 20px;
+        right: 20px;
+        width: 38px;
+        height: 38px;
+        font-size: 16px;
+        line-height: 38px;
+    }
+}
+
+/* ========== Print ========== */
+@media print {
+    body {
+        background: white !important;
+    }
+
+    .fap-fees-toolbar,
+    .fap-fees-scroll-top {
+        display: none !important;
+    }
+
+    #ctl00_mainContent_gvSubjects {
+        box-shadow: none !important;
+        border: 1px solid #ddd !important;
+    }
+
+    #ctl00_mainContent_gvSubjects>tbody>tr:first-child {
+        position: static !important;
+    }
+}

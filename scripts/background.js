@@ -453,9 +453,66 @@ async function fetchTranscriptInBackground(forceRefresh = false) {
     loadingState.transcript = false;
   }
 }
+// ========== Auto-disable on sensitive pages (transparency) ==========
+const SENSITIVE_URLS = [
+  "fap.fpt.edu.vn/FrontOffice/ShoppingCart.aspx"
+];
 
+const sensitiveTabIds = new Set();
 
+function isSensitivePage(url) {
+  return url && SENSITIVE_URLS.some(s => url.includes(s));
+}
 
+async function disableOnTab(tabId) {
+  if (sensitiveTabIds.has(tabId)) return;
+  sensitiveTabIds.add(tabId);
+  console.log("🔒 Sensitive page — pausing extension on tab", tabId);
+
+  // Grey out icon + show OFF badge
+  chrome.action.setIcon({ tabId, path: { "128": "assets/icons/icon128.png" } });
+  chrome.action.setBadgeText({ tabId, text: "OFF" });
+  chrome.action.setBadgeBackgroundColor({ tabId, color: "#dc3545" });
+  chrome.action.setTitle({ tabId, title: "FAP Dashboard — Tạm tắt (trang thanh toán)" });
+  chrome.action.setPopup({ tabId, popup: "" }); // disable popup
+
+  // Remove any injected CSS on this tab
+  try {
+    await chrome.scripting.removeCSS({
+      target: { tabId }, files: [
+        "styles/fap-subjectfees.css"
+      ]
+    });
+  } catch (_) { /* tab may not have these styles */ }
+}
+
+function enableOnTab(tabId) {
+  if (!sensitiveTabIds.has(tabId)) return;
+  sensitiveTabIds.delete(tabId);
+  console.log("� Left sensitive page — restoring extension on tab", tabId);
+
+  // Restore icon + clear badge
+  chrome.action.setIcon({ tabId, path: { "128": "assets/icons/icon128.png" } });
+  chrome.action.setBadgeText({ tabId, text: "" });
+  chrome.action.setTitle({ tabId, title: "FAP Dashboard" });
+  chrome.action.setPopup({ tabId, popup: "pages/popup.html" });
+}
+
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  const url = changeInfo.url || tab.url;
+  if (!url) return;
+
+  if (isSensitivePage(url)) {
+    disableOnTab(tabId);
+  } else if (sensitiveTabIds.has(tabId)) {
+    enableOnTab(tabId);
+  }
+});
+
+// Clean up when tab is closed
+chrome.tabs.onRemoved.addListener((tabId) => {
+  sensitiveTabIds.delete(tabId);
+});
 
 
 chrome.runtime.onInstalled.addListener(async (details) => {

@@ -71,6 +71,29 @@
         "styles/fap-exam.css"
       ],
       "run_at": "document_end"
+    },
+    {
+      "matches": [
+        "https://fap.fpt.edu.vn/FrontOffice/SubjectFees.aspx*"
+      ],
+      "js": [
+        "scripts/fap-subjectfees.js"
+      ],
+      "css": [
+        "styles/fap-subjectfees.css"
+      ],
+      "run_at": "document_end"
+    },
+    {
+      "matches": [
+        "https://fap.fpt.edu.vn/CmsFAP/News.aspx*",
+        "https://fap.fpt.edu.vn/CmsFAP/PlusNews.aspx*",
+        "https://fap.fpt.edu.vn/CmsFAP/NewsDetail.aspx*"
+      ],
+      "css": [
+        "styles/fap-news.css"
+      ],
+      "run_at": "document_end"
     }
   ],
   "web_accessible_resources": [

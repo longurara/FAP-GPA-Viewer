@@ -24,6 +24,52 @@ body {
     display: none !important;
 }
 
+/* ========== User Info Bar ========== */
+#ctl00_divUser {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    float: right !important;
+    max-width: 70% !important;
+    margin: 8px 0 !important;
+    position: relative !important;
+    z-index: 20 !important;
+}
+
+#ctl00_divUser .label.label-success {
+    background: linear-gradient(135deg, #1e3a5f 0%, #0d2137 100%) !important;
+    border: none !important;
+    border-radius: 20px !important;
+    padding: 6px 14px !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    letter-spacing: 0.3px !important;
+    color: white !important;
+    transition: all 0.2s ease !important;
+    display: inline-block !important;
+}
+
+#ctl00_divUser .label.label-success:hover {
+    background: linear-gradient(135deg, #2d4a6f 0%, #1a3050 100%) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(13, 33, 55, 0.3) !important;
+}
+
+#ctl00_divUser a.label.label-success {
+    background: rgba(13, 110, 253, 0.1) !important;
+    color: #0d6efd !important;
+    font-weight: 600 !important;
+    border: 1px solid rgba(13, 110, 253, 0.2) !important;
+}
+
+#ctl00_divUser a.label.label-success:hover {
+    background: rgba(13, 110, 253, 0.2) !important;
+    text-decoration: none !important;
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.15) !important;
+}
+
 /* ========== Breadcrumb ========== */
 .breadcrumb {
     background: white !important;

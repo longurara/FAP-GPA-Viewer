@@ -62,6 +62,49 @@ const DAY_MS = window.DAY_MS || 24 * 60 * 60 * 1000;
 const EXCLUDED_KEY = window.EXCLUDED_KEY || "__FAP_EXCLUDED_CODES__";
 const EXCLUDED_DEFAULT = window.EXCLUDED_DEFAULT || ["TRS501", "ENT503", "VOV114", "VOV124", "VOV134", "OTP101"];
 
+// ---------- Stability: Refresh Cooldown ----------
+const REFRESH_COOLDOWN_MS = 10000; // 10 seconds
+let _lastRefreshTs = 0;
+
+function isRefreshOnCooldown() {
+  const now = Date.now();
+  if (now - _lastRefreshTs < REFRESH_COOLDOWN_MS) {
+    const remaining = Math.ceil((REFRESH_COOLDOWN_MS - (now - _lastRefreshTs)) / 1000);
+    Toast?.warning(`Vui lòng đợi ${remaining}s trước khi làm mới lại.`, "Quá nhanh");
+    return true;
+  }
+  return false;
+}
+
+function markRefreshUsed() {
+  _lastRefreshTs = Date.now();
+}
+
+// ---------- Stability: Safe Chrome API Wrappers ----------
+function safeOpenTab(url) {
+  try {
+    chrome.tabs.create({ url }, () => {
+      if (chrome.runtime.lastError) {
+        console.warn("[SafeOpen] Failed to open tab:", chrome.runtime.lastError.message);
+      }
+    });
+  } catch (e) {
+    console.error("[SafeOpen] Exception:", e);
+  }
+}
+
+function safeSendMessage(msg) {
+  try {
+    chrome.runtime.sendMessage(msg, () => {
+      if (chrome.runtime.lastError) {
+        console.warn("[SafeMsg] Message failed:", chrome.runtime.lastError.message);
+      }
+    });
+  } catch (e) {
+    console.error("[SafeMsg] Exception:", e);
+  }
+}
+
 // HTML escape helper to prevent XSS from server data
 function escapeHtml(str) {
   const div = document.createElement('div');
@@ -280,11 +323,16 @@ async function loadGPA(forceFetch = false) {
   }
 }
 
-// ---------- Loading States ----------
+// ---------- Loading States (with cooldown) ----------
 async function handleRefreshWithLoading(btn, fn) {
+  // Rate-limit: prevent rapid-fire refreshes
+  if (isRefreshOnCooldown()) return;
+  markRefreshUsed();
+
   btn.classList.remove("btn-success", "btn-error");
   const orig = btn.textContent;
   btn.classList.add("btn-loading");
+  btn.disabled = true;
   btn.textContent = "Đang tải...";
 
   try {
@@ -295,6 +343,7 @@ async function handleRefreshWithLoading(btn, fn) {
     setTimeout(() => {
       btn.classList.remove("btn-success");
       btn.textContent = orig;
+      btn.disabled = false;
     }, 2000);
   } catch (e) {
     btn.classList.remove("btn-loading");
@@ -304,23 +353,24 @@ async function handleRefreshWithLoading(btn, fn) {
     setTimeout(() => {
       btn.classList.remove("btn-error");
       btn.textContent = orig;
+      btn.disabled = false;
     }, 2000);
   }
 }
 window.handleRefreshWithLoading = handleRefreshWithLoading;
 
-// ---------- Button Event Listeners ----------
-document.getElementById("btnOpenFAP")?.addEventListener("click", () => chrome.tabs.create({ url: "https://fap.fpt.edu.vn/" }));
-document.getElementById("btnOpenTranscript")?.addEventListener("click", () => chrome.tabs.create({ url: DEFAULT_URLS.transcript }));
-document.getElementById("btnOpenLMS")?.addEventListener("click", () => chrome.tabs.create({ url: "https://lms-hcm.fpt.edu.vn/" }));
-document.getElementById("btnOpenFAP2")?.addEventListener("click", () => chrome.tabs.create({ url: "https://fap.fpt.edu.vn/" }));
-document.getElementById("btnOpenIT")?.addEventListener("click", () => chrome.tabs.create({ url: "https://it-hcm.fpt.edu.vn/" }));
-document.getElementById("btnOpenAttendance")?.addEventListener("click", () => chrome.tabs.create({ url: DEFAULT_URLS.scheduleOfWeek }));
-document.getElementById("btnOpenSchedule")?.addEventListener("click", () => chrome.tabs.create({ url: DEFAULT_URLS.scheduleOfWeek }));
-document.getElementById("btnOpenExams")?.addEventListener("click", () => chrome.tabs.create({ url: DEFAULT_URLS.examSchedule }));
+// ---------- Button Event Listeners (using safeOpenTab) ----------
+document.getElementById("btnOpenFAP")?.addEventListener("click", () => safeOpenTab("https://fap.fpt.edu.vn/"));
+document.getElementById("btnOpenTranscript")?.addEventListener("click", () => safeOpenTab(DEFAULT_URLS.transcript));
+document.getElementById("btnOpenLMS")?.addEventListener("click", () => safeOpenTab("https://lms-hcm.fpt.edu.vn/"));
+document.getElementById("btnOpenFAP2")?.addEventListener("click", () => safeOpenTab("https://fap.fpt.edu.vn/"));
+document.getElementById("btnOpenIT")?.addEventListener("click", () => safeOpenTab("https://it-hcm.fpt.edu.vn/"));
+document.getElementById("btnOpenAttendance")?.addEventListener("click", () => safeOpenTab(DEFAULT_URLS.scheduleOfWeek));
+document.getElementById("btnOpenSchedule")?.addEventListener("click", () => safeOpenTab(DEFAULT_URLS.scheduleOfWeek));
+document.getElementById("btnOpenExams")?.addEventListener("click", () => safeOpenTab(DEFAULT_URLS.examSchedule));
 
 // LMS Events buttons
-document.getElementById("btnOpenLMS2")?.addEventListener("click", () => chrome.tabs.create({ url: "https://lms-hcm.fpt.edu.vn/calendar/view.php?view=upcoming" }));
+document.getElementById("btnOpenLMS2")?.addEventListener("click", () => safeOpenTab("https://lms-hcm.fpt.edu.vn/calendar/view.php?view=upcoming"));
 document.getElementById("btnRefreshLMS")?.addEventListener("click", async function () {
   await handleRefreshWithLoading(this, async () => {
     await window.refreshLMSEvents();
@@ -403,7 +453,7 @@ document.getElementById("btnRefreshAll")?.addEventListener("click", async functi
     setValue("#credits", "⏳");
 
     // Request FORCED background fetch for transcript
-    chrome.runtime.sendMessage({ type: 'FETCH_TRANSCRIPT', force: true });
+    safeSendMessage({ type: 'FETCH_TRANSCRIPT', force: true });
 
     // Refresh attendance and exams (these are fast)
     await Promise.all([refreshAttendance(), loadExams()]);
@@ -431,7 +481,7 @@ document.getElementById("btnQuickRefresh")?.addEventListener("click", async func
     setValue("#gpa10Quick", "⏳");
 
     // Request FORCED background fetch for transcript (non-blocking)
-    chrome.runtime.sendMessage({ type: 'FETCH_TRANSCRIPT', force: true });
+    safeSendMessage({ type: 'FETCH_TRANSCRIPT', force: true });
 
     // Refresh other data (these are fast)
     await Promise.all([refreshAttendance(), loadExams(), loadTodaySchedule(), initGPACalculator()]);
@@ -442,7 +492,7 @@ document.getElementById("btnQuickRefresh")?.addEventListener("click", async func
 
 // Settings
 document.getElementById("btnSaveSettings")?.addEventListener("click", saveSettingsUI);
-document.getElementById("btnTestNotify")?.addEventListener("click", () => chrome.runtime.sendMessage({ type: "TEST_NOTIFY" }));
+document.getElementById("btnTestNotify")?.addEventListener("click", () => safeSendMessage({ type: "TEST_NOTIFY" }));
 
 // Copy GPA
 document.getElementById("btnCopyGPA")?.addEventListener("click", async function () {
@@ -528,7 +578,7 @@ document.getElementById("btnExportCSV")?.addEventListener("click", exportToCSV);
 
 // Export PDF
 document.getElementById("btnExportPDF")?.addEventListener("click", () => {
-  chrome.tabs.create({ url: chrome.runtime.getURL("pages/report.html") });
+  safeOpenTab(chrome.runtime.getURL("pages/report.html"));
 });
 
 // Dark mode is handled by ThemeService.init() below — no duplicate IIFE needed.
@@ -681,13 +731,34 @@ function setupEventListeners() {
 
   // Login status click handler
   document.getElementById("loginStatus")?.addEventListener("click", async () => {
-    chrome.tabs.create({ url: "https://fap.fpt.edu.vn/" });
+    safeOpenTab("https://fap.fpt.edu.vn/");
   });
 
   // Version badge
   const curr = chrome.runtime.getManifest().version;
   const badge = document.getElementById("verBadge");
   if (badge) badge.textContent = `v${curr}`;
+
+  // ---------- Last Fetch Time Indicator ----------
+  async function updateLastFetchTime() {
+    const ts = await STORAGE.get("last_successful_fetch", 0);
+    const el = document.getElementById("lastFetchTime");
+    if (!el || !ts) { if (el) el.textContent = ""; return; }
+    const diff = Date.now() - ts;
+    const mins = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+    let text;
+    if (mins < 1) text = "Vừa cập nhật";
+    else if (mins < 60) text = `${mins} phút trước`;
+    else if (hours < 24) text = `${hours} giờ trước`;
+    else text = `${days} ngày trước`;
+    el.textContent = `🕐 ${text}`;
+    // Warn if stale (>1 hour)
+    el.style.color = hours >= 1 ? "#e67e22" : "";
+  }
+  await updateLastFetchTime();
+  setInterval(updateLastFetchTime, 30000);
 })();
 
 // ========== Reactive Updates: Listen for Background Fetch ==========
@@ -725,16 +796,7 @@ chrome.storage.onChanged.addListener(async (changes, area) => {
   }
 });
 
-// Listen for messages from background (for logging only - rendering is handled by storage.onChanged)
-chrome.runtime.onMessage.addListener((msg) => {
-  if (msg.type === 'TRANSCRIPT_READY') {
-    console.log("[Message] Received TRANSCRIPT_READY with", msg.rows?.length || 0, "courses");
-    // Don't re-render here - storage.onChanged will handle it to avoid duplicates
-  }
-  if (msg.type === 'TRANSCRIPT_LOADING') {
-    console.log("[Message] Background is loading transcript...");
-  }
-});
+// Redundant TRANSCRIPT_READY/LOADING listener removed — storage.onChanged handles re-rendering.
 
 // Update countdown every minute
 setInterval(() => {

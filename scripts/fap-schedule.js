@@ -38,6 +38,9 @@
             }
         }
 
+        // Enhance existing page elements
+        enhancePageElements();
+
         // Load schedule data
         loadSchedule();
     }
@@ -88,6 +91,97 @@
         }, 100);
 
         return widget;
+    }
+
+    /**
+     * Enhance existing page elements with better UX
+     */
+    function enhancePageElements() {
+        // 1) Add toggle button for IMPORTANT NOTICE table
+        addNoticeToggle();
+
+        // 2) Add emoji icons to section headers
+        addSectionIcons();
+
+        // 3) Enable smooth scrolling
+        document.documentElement.style.scrollBehavior = 'smooth';
+    }
+
+    /**
+     * Add collapse/expand toggle for the notice table
+     */
+    function addNoticeToggle() {
+        const mainDiv = document.getElementById('ctl00_mainContent_divMain');
+        if (!mainDiv) return;
+
+        // Find the first .box (News / Important Notice section)
+        const newsBox = mainDiv.querySelector('.box');
+        if (!newsBox) return;
+
+        // Find the notice table inside
+        const noticeTable = newsBox.querySelector('table');
+        if (!noticeTable) return;
+
+        // Create toggle button
+        const toggle = document.createElement('button');
+        toggle.className = 'fap-notice-toggle';
+        toggle.innerHTML = '📋 Thu gọn';
+        toggle.type = 'button';
+
+        let collapsed = false;
+        noticeTable.classList.add('fap-notice-expanded');
+
+        toggle.addEventListener('click', () => {
+            collapsed = !collapsed;
+            if (collapsed) {
+                noticeTable.classList.remove('fap-notice-expanded');
+                noticeTable.classList.add('fap-notice-collapsed');
+                toggle.innerHTML = '📋 Xem thêm';
+            } else {
+                noticeTable.classList.remove('fap-notice-collapsed');
+                noticeTable.classList.add('fap-notice-expanded');
+                toggle.innerHTML = '📋 Thu gọn';
+            }
+        });
+
+        // Insert toggle before the table
+        noticeTable.parentElement.insertBefore(toggle, noticeTable);
+    }
+
+    /**
+     * Add emoji icons to Academic Information section headers
+     */
+    function addSectionIcons() {
+        const icons = {
+            'Registration': '📝',
+            'Thủ tục': '📝',
+            'Information': '🔍',
+            'Tra cứu': '🔍',
+            'Feedback': '💬',
+            'Ý kiến': '💬',
+            'Reports': '📊',
+            'Báo cáo': '📊',
+            'Others': '📌',
+            'Khác': '📌',
+            'Regulations': '📜',
+            'Quy định': '📜',
+            'Coursera': '🎓',
+            'FPTU-Coursera': '🎓'
+        };
+
+        const h4s = document.querySelectorAll('#ctl00_mainContent_divMain .box h4');
+        h4s.forEach(h4 => {
+            const text = h4.textContent.trim();
+            for (const [keyword, icon] of Object.entries(icons)) {
+                if (text.includes(keyword)) {
+                    // Only add icon if not already present
+                    if (!h4.textContent.includes(icon)) {
+                        h4.insertAdjacentHTML('afterbegin', icon + ' ');
+                    }
+                    break;
+                }
+            }
+        });
     }
 
     /**

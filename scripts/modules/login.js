@@ -149,7 +149,11 @@ const LoginService = {
     async handleLoginNow() {
         try {
             const loginUrl = "https://fap.fpt.edu.vn/";
-            chrome.tabs.create({ url: loginUrl });
+            chrome.tabs.create({ url: loginUrl }, () => {
+                if (chrome.runtime.lastError) {
+                    console.warn("[Login] Failed to open tab:", chrome.runtime.lastError.message);
+                }
+            });
             this.hideLoginBanner();
             await window.STORAGE?.set({ show_login_banner: false });
 
