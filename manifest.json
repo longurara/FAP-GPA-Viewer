@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "FAP Dashboard",
+  "name": "FPT FAP Dashboard",
   "version": "5.9.0",
   "description": "Xem GPA, điểm danh, lịch học, lịch thi, thống kê, tính toán GPA, export calendar và nhiều tính năng nâng cao",
   "icons": {
