@@ -1,0 +1,536 @@
+/**
+ * FAP Login Page - Modern Dark Login with Wallpaper
+ * Injected into https://fap.fpt.edu.vn/ (when not logged in)
+ * Centered glassmorphic card over wallpaper background
+ */
+
+/* ========== Hide Chat Widget ========== */
+#chat-widget-container>div:first-child {
+    display: none !important;
+}
+
+/* ========== Page Base ========== */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif !important;
+    min-height: 100vh !important;
+    margin: 0 !important;
+    /* background-image set by fap-login.js */
+}
+
+/* ========== Hide everything we don't need ========== */
+.container>.row:first-child {
+    display: none !important;
+}
+
+.breadcrumb {
+    display: none !important;
+}
+
+#ctl00_mainContent_divcontent>.row>.col-md-6:first-child {
+    display: none !important;
+}
+
+#cssTable {
+    display: none !important;
+}
+
+/* Kill wrapper table borders */
+.col-md-12>form>table,
+.col-md-12>form>table>tbody>tr,
+.col-md-12>form>table>tbody>tr>td {
+    border: none !important;
+    padding: 0 !important;
+    background: transparent !important;
+}
+
+/* ========== Center the Login Card ========== */
+.container {
+    max-width: 100% !important;
+    padding: 0 !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    min-height: 100vh !important;
+}
+
+.container>.row:nth-child(2) {
+    width: 100% !important;
+    display: flex !important;
+    justify-content: center !important;
+    margin: 0 !important;
+}
+
+.container>.row:nth-child(2)>.col-md-12 {
+    display: flex !important;
+    justify-content: center !important;
+    padding: 0 !important;
+    width: 100% !important;
+}
+
+#ctl00_mainContent_divcontent {
+    width: 100% !important;
+    max-width: 520px !important;
+    margin: 0 auto !important;
+    padding: 0 20px !important;
+}
+
+#ctl00_mainContent_divcontent>.row {
+    display: block !important;
+    margin: 0 !important;
+}
+
+#ctl00_mainContent_divcontent>.row>.col-md-6:last-child {
+    width: 100% !important;
+    padding: 0 !important;
+    float: none !important;
+}
+
+/* ========== The Login Card — Glassmorphic ========== */
+#ctl00_mainContent_divcontent .col-md-6:last-child>div {
+    background: rgba(20, 30, 50, 0.65) !important;
+    backdrop-filter: blur(20px) saturate(1.2) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(1.2) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 24px !important;
+    padding: 48px 40px 40px !important;
+    height: auto !important;
+    box-shadow:
+        0 0 80px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+}
+
+/* ========== Fieldset Reset ========== */
+#ctl00_mainContent_divcontent fieldset {
+    border: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* ========== Legend — "Đăng nhập" heading ========== */
+#ctl00_mainContent_divcontent .col-md-6:last-child legend {
+    text-align: center !important;
+    border: none !important;
+    margin-bottom: 32px !important;
+    width: 100% !important;
+}
+
+#ctl00_mainContent_divcontent .col-md-6:last-child legend .label {
+    background: none !important;
+    border: none !important;
+    color: rgba(255, 255, 255, 0.55) !important;
+    font-size: 15px !important;
+    font-weight: 400 !important;
+    padding: 0 !important;
+    display: block !important;
+    letter-spacing: 0.3px !important;
+}
+
+#ctl00_mainContent_divcontent .col-md-6:last-child legend::before {
+    content: "Đăng nhập";
+    display: block !important;
+    font-size: 36px !important;
+    font-weight: 800 !important;
+    color: white !important;
+    margin-bottom: 8px !important;
+    letter-spacing: -0.5px !important;
+}
+
+/* ========== Login Form Layout ========== */
+#loginform {
+    width: 100% !important;
+}
+
+#loginform>br {
+    display: none !important;
+}
+
+#loginform .row {
+    margin: 0 0 16px 0 !important;
+    display: block !important;
+    width: 100% !important;
+}
+
+#loginform .row .col-xs-3,
+#loginform .row .col-xs-6 {
+    width: 100% !important;
+    float: none !important;
+    padding: 0 !important;
+}
+
+#loginform .lef_m {
+    margin-left: 0 !important;
+    display: block !important;
+}
+
+/* ========== Campus Dropdown (native — hidden, replaced by custom JS dropdown) ========== */
+#ctl00_mainContent_ddlCampus {
+    display: none !important;
+}
+
+#ctl00_mainContent_ddlCampus option {
+    background: #0f1e3c !important;
+    color: white !important;
+    padding: 12px !important;
+    font-size: 15px !important;
+}
+
+#ctl00_mainContent_ddlCampus:focus {
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2), 0 0 20px rgba(59, 130, 246, 0.15) !important;
+    outline: none !important;
+}
+
+#ctl00_mainContent_ddlCampus:hover {
+    border-color: rgba(59, 130, 246, 0.7) !important;
+}
+
+/* ========== Google Login Button — filled red/coral ========== */
+#ctl00_mainContent_btnLogin {
+    width: 100% !important;
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%) !important;
+    border: none !important;
+    border-radius: 14px !important;
+    padding: 16px 24px !important;
+    font-size: 18px !important;
+    font-weight: 700 !important;
+    color: white !important;
+    transition: all 0.25s ease !important;
+    text-decoration: none !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 12px !important;
+    box-sizing: border-box !important;
+    cursor: pointer !important;
+    box-shadow: 0 6px 20px rgba(231, 76, 60, 0.35) !important;
+    letter-spacing: 0.3px !important;
+}
+
+#ctl00_mainContent_btnLogin:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 10px 30px rgba(231, 76, 60, 0.45) !important;
+    text-decoration: none !important;
+    background: linear-gradient(135deg, #ef5350 0%, #d32f2f 100%) !important;
+}
+
+#ctl00_mainContent_btnLogin:active {
+    transform: translateY(0) !important;
+}
+
+#ctl00_mainContent_btnLogin .fa {
+    font-size: 22px !important;
+    color: white !important;
+}
+
+#ctl00_mainContent_btnLogin span[style] {
+    margin-left: 0 !important;
+    color: white !important;
+    font-size: 18px !important;
+}
+
+/* ========== K19 Notice — divider style ========== */
+#loginform>.row:nth-child(2) {
+    margin: 24px 0 24px 0 !important;
+    text-align: center !important;
+    position: relative !important;
+}
+
+#loginform>.row:nth-child(2) span {
+    margin: 0 !important;
+    position: relative !important;
+    z-index: 1 !important;
+    display: block !important;
+    text-align: center !important;
+}
+
+#loginform>.row:nth-child(2) b {
+    font-size: 13px !important;
+    color: rgba(255, 255, 255, 0.6) !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 2px !important;
+    display: inline-block !important;
+}
+
+/* ========== FeID Login Button — filled blue ========== */
+#loginform>.row:nth-child(3) {
+    margin-bottom: 0 !important;
+}
+
+#loginform>.row:nth-child(3) .col-xs-3:first-child {
+    display: none !important;
+}
+
+#ctl00_mainContent_btnloginFeId {
+    width: 100% !important;
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+    border: none !important;
+    border-radius: 14px !important;
+    padding: 16px 24px !important;
+    font-size: 18px !important;
+    font-weight: 700 !important;
+    color: white !important;
+    transition: all 0.25s ease !important;
+    text-decoration: none !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 12px !important;
+    box-sizing: border-box !important;
+    cursor: pointer !important;
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.35) !important;
+    letter-spacing: 0.3px !important;
+}
+
+#ctl00_mainContent_btnloginFeId:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 10px 30px rgba(59, 130, 246, 0.45) !important;
+    text-decoration: none !important;
+    background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%) !important;
+}
+
+#ctl00_mainContent_btnloginFeId:active {
+    transform: translateY(0) !important;
+}
+
+#ctl00_mainContent_btnloginFeId .fa {
+    font-size: 22px !important;
+    color: white !important;
+}
+
+#ctl00_mainContent_btnloginFeId span[style] {
+    margin-left: 0 !important;
+    color: white !important;
+    font-size: 18px !important;
+}
+
+/* ========== Hide empty row ========== */
+#loginform>.row:nth-child(4) {
+    display: none !important;
+}
+
+/* ========== Error/Info message ========== */
+#ctl00_mainContent_lblMessage {
+    color: #fbbf24 !important;
+    font-size: 13px !important;
+    text-align: center !important;
+    display: block !important;
+    margin-top: 16px !important;
+}
+
+/* ========== Notification Modals ========== */
+.modal {
+    background: rgba(0, 0, 0, 0.7) !important;
+    backdrop-filter: blur(8px) !important;
+}
+
+.modal-content {
+    background: rgba(20, 30, 50, 0.9) !important;
+    backdrop-filter: blur(20px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 20px !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5) !important;
+    overflow: hidden !important;
+    color: white !important;
+}
+
+.modal-header {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    padding: 16px 24px !important;
+}
+
+.modal-header .modal-title {
+    color: white !important;
+    font-weight: 700 !important;
+}
+
+.modal-header .close {
+    color: white !important;
+    opacity: 0.6 !important;
+    text-shadow: none !important;
+}
+
+.modal-body {
+    padding: 24px !important;
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.modal-body .form-control {
+    background: rgba(255, 255, 255, 0.06) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-radius: 12px !important;
+    padding: 12px 16px !important;
+    color: white !important;
+}
+
+.modal-body .btn-danger,
+.modal-footer .btn-danger {
+    background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+    border: none !important;
+    border-radius: 10px !important;
+    font-weight: 600 !important;
+    color: white !important;
+    padding: 8px 24px !important;
+}
+
+.modal-footer {
+    border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+    padding: 16px 24px !important;
+}
+
+/* ========== Responsive ========== */
+@media (max-width: 600px) {
+    #ctl00_mainContent_divcontent {
+        max-width: 100% !important;
+        padding: 0 12px !important;
+    }
+
+    #ctl00_mainContent_divcontent .col-md-6:last-child>div {
+        padding: 36px 24px 32px !important;
+        border-radius: 20px !important;
+    }
+
+    #ctl00_mainContent_divcontent .col-md-6:last-child legend::before {
+        font-size: 28px !important;
+    }
+
+    #ctl00_mainContent_btnLogin,
+    #ctl00_mainContent_btnloginFeId {
+        padding: 14px 20px !important;
+        font-size: 16px !important;
+    }
+
+    #ctl00_mainContent_ddlCampus {
+        padding: 14px 16px !important;
+        font-size: 15px !important;
+    }
+}
+
+/* ========== Custom Dropdown (replaces native <select>) ========== */
+.fap-dropdown {
+    position: relative;
+    width: 100%;
+    margin-bottom: 4px;
+    user-select: none;
+}
+
+.fap-dropdown-selected {
+    background: rgba(15, 30, 60, 0.7);
+    border: 2px solid rgba(59, 130, 246, 0.5);
+    border-radius: 14px;
+    padding: 16px 20px;
+    font-size: 17px;
+    font-weight: 600;
+    color: white;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.fap-dropdown-selected:hover {
+    border-color: rgba(59, 130, 246, 0.7);
+}
+
+.fap-dropdown.open .fap-dropdown-selected {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2), 0 0 20px rgba(59, 130, 246, 0.15);
+    border-radius: 14px 14px 0 0;
+}
+
+.fap-dropdown-selected svg {
+    flex-shrink: 0;
+    opacity: 0.6;
+    transition: transform 0.25s ease;
+}
+
+.fap-dropdown.open .fap-dropdown-selected svg {
+    transform: rotate(180deg);
+    opacity: 1;
+}
+
+.fap-dropdown-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: rgba(12, 22, 45, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 2px solid rgba(59, 130, 246, 0.5);
+    border-top: 1px solid rgba(59, 130, 246, 0.25);
+    border-radius: 0 0 14px 14px;
+    overflow: hidden;
+    z-index: 100;
+    max-height: 0;
+    opacity: 0;
+    transition: max-height 0.3s ease, opacity 0.2s ease;
+    pointer-events: none;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+
+.fap-dropdown.open .fap-dropdown-list {
+    max-height: 320px;
+    opacity: 1;
+    pointer-events: auto;
+    overflow-y: auto;
+}
+
+.fap-dropdown-item {
+    padding: 14px 20px;
+    font-size: 15px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.8);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    position: relative;
+}
+
+.fap-dropdown-item:last-child {
+    border-bottom: none;
+}
+
+.fap-dropdown-item:hover {
+    background: rgba(59, 130, 246, 0.2);
+    color: white;
+    padding-left: 26px;
+}
+
+.fap-dropdown-item.active {
+    background: rgba(59, 130, 246, 0.25);
+    color: white;
+    font-weight: 700;
+}
+
+.fap-dropdown-item.active::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: #3b82f6;
+    border-radius: 0 2px 2px 0;
+}
+
+/* Scrollbar for dropdown list */
+.fap-dropdown-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.fap-dropdown-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.fap-dropdown-list::-webkit-scrollbar-thumb {
+    background: rgba(59, 130, 246, 0.3);
+    border-radius: 3px;
+}
+
+.fap-dropdown-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(59, 130, 246, 0.5);
+}

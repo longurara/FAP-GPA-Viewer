@@ -94,6 +94,19 @@
         "styles/fap-news.css"
       ],
       "run_at": "document_end"
+    },
+    {
+      "matches": [
+        "https://fap.fpt.edu.vn/",
+        "https://fap.fpt.edu.vn/Default.aspx*"
+      ],
+      "js": [
+        "scripts/fap-login.js"
+      ],
+      "css": [
+        "styles/fap-login.css"
+      ],
+      "run_at": "document_end"
     }
   ],
   "web_accessible_resources": [
@@ -107,7 +120,9 @@
         "styles/timer-icons.css",
         "assets/icons/icon128.png",
         "scripts/vendor/chart.min.js",
-        "scripts/auto-calendar.js"
+        "scripts/auto-calendar.js",
+        "wallpaper/wallpaper1.jpg",
+        "wallpaper/sample.jpg"
       ],
       "matches": [
         "https://fap.fpt.edu.vn/*"

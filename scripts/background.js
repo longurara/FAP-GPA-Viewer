@@ -560,8 +560,10 @@ chrome.runtime.onInstalled.addListener(async (details) => {
 
 chrome.runtime.onStartup.addListener(async () => {
   await updateActionPopup();
+  // Reset login cache so next popup open will recheck
   await STORAGE.set({ last_login_check_ts: 0, cached_login_status: null });
-  fetchTranscriptInBackground();
+  // NOTE: Do NOT fetch transcript here — it creates visible FAP tabs on Chrome launch.
+  // Data will be fetched when user opens the popup/dashboard.
 });
 
 // ========== View Mode Handler ==========
