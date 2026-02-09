@@ -12,6 +12,11 @@ const StorageService = {
     async get(key, defaultValue) {
         return new Promise((resolve) => {
             chrome.storage.local.get({ [key]: defaultValue }, (result) => {
+                if (chrome.runtime.lastError) {
+                    console.warn("[Storage] get error:", chrome.runtime.lastError.message);
+                    resolve(defaultValue);
+                    return;
+                }
                 resolve(result[key]);
             });
         });
@@ -24,7 +29,12 @@ const StorageService = {
      */
     async set(obj) {
         return new Promise((resolve) => {
-            chrome.storage.local.set(obj, resolve);
+            chrome.storage.local.set(obj, () => {
+                if (chrome.runtime.lastError) {
+                    console.warn("[Storage] set error:", chrome.runtime.lastError.message);
+                }
+                resolve();
+            });
         });
     },
 
@@ -35,7 +45,12 @@ const StorageService = {
      */
     async remove(keys) {
         return new Promise((resolve) => {
-            chrome.storage.local.remove(keys, resolve);
+            chrome.storage.local.remove(keys, () => {
+                if (chrome.runtime.lastError) {
+                    console.warn("[Storage] remove error:", chrome.runtime.lastError.message);
+                }
+                resolve();
+            });
         });
     },
 

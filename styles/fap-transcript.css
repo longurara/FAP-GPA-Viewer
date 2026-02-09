@@ -1,7 +1,434 @@
 /**
- * FAP Transcript GPA Calculator - Styles
- * Matches FAP's Bootstrap theme while adding modern touches
+ * FAP Transcript Page - Base Page Styles
+ * Injected into https://fap.fpt.edu.vn/Grade/StudentTranscript.aspx
+ * Beautifies the entire page with modern styling
  */
+
+/* ========== Hide Chat Widget Loading ========== */
+#chat-widget-container>div:first-child {
+    display: none !important;
+}
+
+/* ========== General Page Tweaks ========== */
+body {
+    background: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 100%) !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif !important;
+}
+
+.container {
+    max-width: 1100px !important;
+}
+
+/* ========== Hide Original FAP App Banner ========== */
+.container>.row:first-child>.col-md-6:last-child {
+    display: none !important;
+}
+
+/* ========== User Info Bar ========== */
+#ctl00_divUser {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    float: right !important;
+    max-width: 70% !important;
+    margin: 8px 0 !important;
+    position: relative !important;
+    z-index: 20 !important;
+}
+
+#ctl00_divUser .label.label-success {
+    background: linear-gradient(135deg, #1e3a5f 0%, #0d2137 100%) !important;
+    border: none !important;
+    border-radius: 20px !important;
+    padding: 6px 14px !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    letter-spacing: 0.3px !important;
+    color: white !important;
+    transition: all 0.2s ease !important;
+    display: inline-block !important;
+}
+
+#ctl00_divUser .label.label-success:hover {
+    background: linear-gradient(135deg, #2d4a6f 0%, #1a3050 100%) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(13, 33, 55, 0.3) !important;
+}
+
+#ctl00_divUser a.label.label-success {
+    background: rgba(13, 110, 253, 0.1) !important;
+    color: #0d6efd !important;
+    font-weight: 600 !important;
+    border: 1px solid rgba(13, 110, 253, 0.2) !important;
+}
+
+#ctl00_divUser a.label.label-success:hover {
+    background: rgba(13, 110, 253, 0.2) !important;
+    text-decoration: none !important;
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.15) !important;
+}
+
+/* ========== Breadcrumb ========== */
+.breadcrumb {
+    background: white !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 10px !important;
+    padding: 12px 20px !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+    margin-bottom: 16px !important;
+}
+
+.breadcrumb a {
+    color: #0d6efd !important;
+    text-decoration: none !important;
+}
+
+.breadcrumb a:hover {
+    color: #0b5ed7 !important;
+    text-decoration: underline !important;
+}
+
+/* ========== Page Title ========== */
+h2 {
+    font-size: 20px !important;
+    font-weight: 700 !important;
+    color: #1e293b !important;
+    margin-bottom: 16px !important;
+    padding-bottom: 12px !important;
+    border-bottom: 3px solid #0d6efd !important;
+    display: inline-block !important;
+}
+
+h2 .label.label-default {
+    background: linear-gradient(135deg, #1e3a5f 0%, #0d2137 100%) !important;
+    border-radius: 6px !important;
+    padding: 4px 10px !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    vertical-align: middle !important;
+}
+
+h2 .label.label-info {
+    background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%) !important;
+    border-radius: 6px !important;
+    padding: 4px 10px !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    vertical-align: middle !important;
+}
+
+/* ========== Transcript Table Container ========== */
+#ctl00_mainContent_divGrade {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
+    border: 1px solid #e2e8f0;
+    margin-bottom: 20px;
+}
+
+#ctl00_mainContent_divGrade>.table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    font-size: 13.5px !important;
+    margin-bottom: 0 !important;
+}
+
+/* ========== Table Header ========== */
+#ctl00_mainContent_divGrade thead tr {
+    background: linear-gradient(135deg, #1e3a5f 0%, #0d2137 100%) !important;
+}
+
+#ctl00_mainContent_divGrade thead th {
+    color: white !important;
+    font-weight: 600 !important;
+    font-size: 11.5px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    padding: 14px 12px !important;
+    border: none !important;
+    text-align: left !important;
+    white-space: nowrap !important;
+}
+
+#ctl00_mainContent_divGrade thead th:first-child {
+    border-radius: 16px 0 0 0 !important;
+    text-align: center !important;
+    width: 36px !important;
+}
+
+#ctl00_mainContent_divGrade thead th:last-child {
+    border-radius: 0 16px 0 0 !important;
+}
+
+/* ========== Table Body Rows ========== */
+#ctl00_mainContent_divGrade tbody tr {
+    transition: all 0.2s ease !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+}
+
+#ctl00_mainContent_divGrade tbody tr:hover {
+    background: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%) !important;
+    transform: scale(1.002) !important;
+    box-shadow: 0 2px 8px rgba(13, 110, 253, 0.08) !important;
+}
+
+#ctl00_mainContent_divGrade tbody tr:last-child {
+    border-bottom: none !important;
+}
+
+/* Alternate row colors */
+#ctl00_mainContent_divGrade tbody tr:nth-child(even) {
+    background: #fafbfc !important;
+}
+
+#ctl00_mainContent_divGrade tbody tr:nth-child(even):hover {
+    background: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%) !important;
+}
+
+/* ========== Table Cells ========== */
+#ctl00_mainContent_divGrade tbody td {
+    padding: 12px !important;
+    vertical-align: middle !important;
+    color: #334155 !important;
+    border: none !important;
+    font-size: 13px !important;
+}
+
+/* No column - center */
+#ctl00_mainContent_divGrade tbody td:first-child {
+    text-align: center !important;
+    font-weight: 600 !important;
+    color: #94a3b8 !important;
+    font-size: 12.5px !important;
+}
+
+/* Term column */
+#ctl00_mainContent_divGrade tbody td:nth-child(2) {
+    text-align: center !important;
+    font-weight: 700 !important;
+    color: #475569 !important;
+}
+
+/* Semester column */
+#ctl00_mainContent_divGrade tbody td:nth-child(3) {
+    font-weight: 600 !important;
+    color: #475569 !important;
+    white-space: nowrap !important;
+}
+
+/* Subject Code column */
+#ctl00_mainContent_divGrade tbody td:nth-child(4) {
+    font-weight: 700 !important;
+    color: #0d6efd !important;
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace !important;
+    font-size: 12.5px !important;
+    letter-spacing: 0.3px !important;
+}
+
+/* Prerequisite column */
+#ctl00_mainContent_divGrade tbody td:nth-child(5) {
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace !important;
+    font-size: 11.5px !important;
+    color: #64748b !important;
+}
+
+/* Replaced Subject column */
+#ctl00_mainContent_divGrade tbody td:nth-child(6) {
+    font-size: 12px !important;
+}
+
+/* Subject Name column */
+#ctl00_mainContent_divGrade tbody td:nth-child(7) {
+    font-weight: 600 !important;
+    color: #1e293b !important;
+    max-width: 300px !important;
+}
+
+/* Credit column */
+#ctl00_mainContent_divGrade tbody td:nth-child(8) {
+    text-align: center !important;
+    font-weight: 700 !important;
+    color: #475569 !important;
+}
+
+/* Grade column */
+#ctl00_mainContent_divGrade tbody td:nth-child(9) {
+    text-align: center !important;
+}
+
+/* Status column */
+#ctl00_mainContent_divGrade tbody td:nth-child(10) {
+    text-align: center !important;
+}
+
+/* ========== Status Label Overrides ========== */
+#ctl00_mainContent_divGrade .label {
+    border-radius: 6px !important;
+    padding: 4px 10px !important;
+    font-size: 11.5px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.3px !important;
+    display: inline-block !important;
+    transition: all 0.2s ease !important;
+}
+
+/* Passed */
+#ctl00_mainContent_divGrade .label-success {
+    background: linear-gradient(135deg, #198754 0%, #157347 100%) !important;
+    color: white !important;
+}
+
+/* Studying */
+#ctl00_mainContent_divGrade .label-info {
+    background: linear-gradient(135deg, #0dcaf0 0%, #0aa2c0 100%) !important;
+    color: white !important;
+}
+
+/* Not started */
+#ctl00_mainContent_divGrade .label-default {
+    background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%) !important;
+    color: white !important;
+}
+
+/* Replaced subjects */
+#ctl00_mainContent_divGrade .label-warning {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+    color: white !important;
+    font-size: 11px !important;
+}
+
+/* Grade badge */
+#ctl00_mainContent_divGrade .label-primary {
+    font-size: 13px !important;
+    padding: 4px 10px !important;
+    border-radius: 6px !important;
+    font-weight: 700 !important;
+    background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%) !important;
+}
+
+/* ========== Conditional Grade Note (red *) ========== */
+#ctl00_mainContent_divGrade td:last-child span[style*="color:red"] {
+    font-size: 16px !important;
+    font-weight: 800 !important;
+}
+
+/* ========== Export Button ========== */
+#ctl00_mainContent_btnExport {
+    background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 10px !important;
+    padding: 10px 24px !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    margin-top: 16px !important;
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.25) !important;
+}
+
+#ctl00_mainContent_btnExport:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 20px rgba(13, 110, 253, 0.35) !important;
+}
+
+#ctl00_mainContent_btnExport:active {
+    transform: translateY(0) !important;
+}
+
+/* ========== "Những môn ngoài khung chương trình" Section ========== */
+#ctl00_mainContent_divGrade+table h2 .label-primary {
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important;
+    border-radius: 8px !important;
+    padding: 6px 14px !important;
+    font-size: 15px !important;
+}
+
+/* Not-in-curriculum note */
+#ctl00_mainContent_divGrade tbody tr:last-child td[colspan] {
+    background: #f8fafc !important;
+    border-top: 2px solid #e2e8f0 !important;
+    padding: 12px 16px !important;
+    font-size: 13px !important;
+    color: #64748b !important;
+    border-radius: 0 0 16px 16px !important;
+}
+
+/* ========== Footer Styling ========== */
+#cssTable {
+    margin-top: 24px !important;
+}
+
+#cssTable td {
+    padding: 16px !important;
+    font-size: 13px !important;
+    color: #64748b !important;
+}
+
+#ctl00_divSupporthcm {
+    background: white !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 10px !important;
+    padding: 16px 20px !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+    font-size: 13.5px !important;
+    color: #475569 !important;
+    line-height: 1.6 !important;
+}
+
+#ctl00_divSupporthcm strong {
+    color: #0d6efd !important;
+}
+
+/* ========== Responsive ========== */
+@media (max-width: 768px) {
+    #ctl00_mainContent_divGrade>.table {
+        font-size: 12px !important;
+    }
+
+    #ctl00_mainContent_divGrade thead th,
+    #ctl00_mainContent_divGrade tbody td {
+        padding: 8px 6px !important;
+    }
+
+    #ctl00_mainContent_divGrade tbody td:nth-child(7) {
+        max-width: 150px !important;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* Hide less important columns on mobile */
+    #ctl00_mainContent_divGrade thead th:nth-child(5),
+    #ctl00_mainContent_divGrade tbody td:nth-child(5),
+    #ctl00_mainContent_divGrade thead th:nth-child(6),
+    #ctl00_mainContent_divGrade tbody td:nth-child(6) {
+        display: none !important;
+    }
+}
+
+/* ========== Print-friendly ========== */
+@media print {
+    body {
+        background: white !important;
+    }
+
+    #ctl00_mainContent_divGrade {
+        box-shadow: none !important;
+        border: 1px solid #ddd !important;
+    }
+
+    #ctl00_mainContent_divGrade thead tr {
+        background: #333 !important;
+    }
+}
+
+/* =============================================================
+   FAP Transcript GPA Calculator - Widget Styles (below)
+   ============================================================= */
 
 /* ========== Widget Container ========== */
 .fap-gpa-widget {

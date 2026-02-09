@@ -71,8 +71,13 @@ function isValidScheduleData(entries) {
 async function waitForTabComplete(tabId, timeoutMs = 8000) {
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
-    const tab = await chrome.tabs.get(tabId);
-    if (tab.status === "complete") return true;
+    try {
+      const tab = await chrome.tabs.get(tabId);
+      if (tab.status === "complete") return true;
+    } catch (_) {
+      // Tab was closed/removed during polling
+      return false;
+    }
     await new Promise((r) => setTimeout(r, 150));
   }
   return false;
@@ -486,16 +491,20 @@ async function disableOnTab(tabId) {
   } catch (_) { /* tab may not have these styles */ }
 }
 
-function enableOnTab(tabId) {
+async function enableOnTab(tabId) {
   if (!sensitiveTabIds.has(tabId)) return;
   sensitiveTabIds.delete(tabId);
-  console.log("� Left sensitive page — restoring extension on tab", tabId);
+  console.log("🔓 Left sensitive page — restoring extension on tab", tabId);
 
   // Restore icon + clear badge
   chrome.action.setIcon({ tabId, path: { "128": "assets/icons/icon128.png" } });
   chrome.action.setBadgeText({ tabId, text: "" });
   chrome.action.setTitle({ tabId, title: "FAP Dashboard" });
-  chrome.action.setPopup({ tabId, popup: "pages/popup.html" });
+
+  // Respect user's viewMode setting when restoring popup
+  const cfg = await STORAGE.get("cfg", { viewMode: "popup" });
+  const popup = (cfg.viewMode === "fullpage") ? "" : "pages/popup.html";
+  chrome.action.setPopup({ tabId, popup });
 }
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
@@ -519,7 +528,32 @@ chrome.runtime.onInstalled.addListener(async (details) => {
   await updateActionPopup();
 
   if (details.reason === 'install') {
-    console.log("🆕 Extension installed, starting background fetch...");
+    console.log("🆕 Extension installed, setting up defaults...");
+
+    // Set default wallpaper for new users
+    try {
+      const sampleUrl = chrome.runtime.getURL("wallpaper/sample.jpg");
+      const res = await fetch(sampleUrl);
+      const blob = await res.blob();
+
+      // Convert to data URL via FileReader workaround (Service Worker)
+      const arrayBuffer = await blob.arrayBuffer();
+      const uint8Array = new Uint8Array(arrayBuffer);
+      let binary = "";
+      for (let i = 0; i < uint8Array.length; i++) {
+        binary += String.fromCharCode(uint8Array[i]);
+      }
+      const dataUrl = `data:${blob.type || "image/jpeg"};base64,${btoa(binary)}`;
+
+      await STORAGE.set({
+        background_image: dataUrl,
+        background_opacity: 53
+      });
+      console.log("🖼️ Default wallpaper set successfully");
+    } catch (e) {
+      console.warn("⚠️ Could not set default wallpaper:", e.message);
+    }
+
     fetchTranscriptInBackground();
   }
 });

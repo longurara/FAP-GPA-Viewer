@@ -21,8 +21,13 @@ const ApiService = {
     async waitForTabComplete(tabId, timeoutMs = 8000) {
         const start = Date.now();
         while (Date.now() - start < timeoutMs) {
-            const tab = await chrome.tabs.get(tabId);
-            if (tab.status === "complete") return true;
+            try {
+                const tab = await chrome.tabs.get(tabId);
+                if (tab.status === "complete") return true;
+            } catch (_) {
+                // Tab was closed/removed during polling
+                return false;
+            }
             await new Promise((r) => setTimeout(r, 150));
         }
         return false;

@@ -40,7 +40,7 @@
 /* ========== Buttons ========== */
 .actions button,
 .form button,
-.settings-section button {
+.settings-section button:not(.theme-preset) {
     background: var(--card-bg);
     border: 1px solid var(--border);
     color: var(--text);
@@ -468,28 +468,30 @@ td.r {
 /* ========== Theme Presets ========== */
 .theme-presets {
     display: flex;
-    gap: 8px;
+    gap: 10px;
 }
 
 .theme-preset {
-    width: 28px;
-    height: 28px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
-    border: 2px solid var(--border);
+    border: 3px solid transparent;
     background: var(--preset-color);
     cursor: pointer;
     transition: all 0.2s ease;
     padding: 0;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.15), inset 0 0 0 1px rgba(0, 0, 0, 0.1);
 }
 
 .theme-preset:hover {
-    transform: scale(1.15);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    transform: scale(1.2);
+    box-shadow: 0 0 12px var(--preset-color), 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .theme-preset.active {
     border-color: var(--text);
-    box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
+    box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--preset-color), 0 0 12px var(--preset-color);
+    transform: scale(1.1);
 }
 
 /* ========== Exclude Info Card ========== */
