@@ -13,7 +13,7 @@
 
 <p align="center">
   <a href="https://github.com/longurara/FAP-GPA-Viewer/releases">
-    <img src="https://img.shields.io/badge/version-5.0.0-blue?style=flat-square" alt="Version">
+    <img src="https://img.shields.io/badge/version-5.9.0-blue?style=flat-square" alt="Version">
   </a>
   <a href="LICENSE.md">
     <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="License">
