@@ -3,10 +3,17 @@
 // ===============================
 
 const GPACalculatorService = {
+    _lastInitTs: 0,
+
     /**
      * Initialize GPA Calculator with current values
+     * Guarded to avoid redundant storage reads within 5 seconds
      */
     async initGPACalculator() {
+        const now = Date.now();
+        if (now - this._lastInitTs < 5000) return;
+        this._lastInitTs = now;
+
         try {
             const cachedObj = await window.STORAGE?.get("cache_transcript", null);
             const cache = cachedObj?.data || cachedObj;
@@ -94,10 +101,14 @@ const GPACalculatorService = {
         }
     },
 
+    _initialized: false,
+
     /**
-     * Initialize event listeners
+     * Initialize event listeners (only once)
      */
     init() {
+        if (this._initialized) return;
+        this._initialized = true;
         document.getElementById("btnCalculateGPA")?.addEventListener("click", () => this.calculate());
         document.getElementById("btnResetCalc")?.addEventListener("click", () => this.reset());
     },

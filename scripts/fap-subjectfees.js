@@ -7,6 +7,25 @@
 (function () {
     "use strict";
 
+    // CSS gate: only inject CSS + run enhancements when styling is enabled
+    chrome.storage.local.get("page_styles", function (data) {
+        var styles = data.page_styles || {};
+        if (styles.fees === false) return;
+
+        // Inject CSS programmatically (removed from manifest to allow toggle control)
+        var link = document.createElement("link");
+        link.rel = "stylesheet";
+        link.href = chrome.runtime.getURL("styles/fap-subjectfees.css");
+        document.head.appendChild(link);
+
+        // Run on DOM ready
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", enhanceSubjectFees);
+        } else {
+            enhanceSubjectFees();
+        }
+    });
+
     /**
      * Main enhancement function
      */
@@ -140,10 +159,4 @@
         console.log("[FAP Dashboard] Subject Fees enhanced ✓ (" + dataRows.length + " subjects)");
     }
 
-    // Run on DOM ready
-    if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", enhanceSubjectFees);
-    } else {
-        enhanceSubjectFees();
-    }
 })();

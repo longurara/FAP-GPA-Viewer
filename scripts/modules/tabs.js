@@ -6,6 +6,8 @@ const TabsService = {
     isDragging: false,
     dragStartX: 0,
     indicatorStartLeft: 0,
+    _initialized: false,
+    _cachedBtnPositions: null,
 
     /**
      * Initialize Liquid Glass Tabs with draggable indicator
@@ -38,7 +40,7 @@ const TabsService = {
             indicator.style.width = `${width}px`;
 
             if (instant) {
-                indicator.offsetHeight; // Force reflow
+                indicator.offsetHeight; // Force reflow (intentional, needed for animation reset)
                 indicator.style.transition = "all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)";
             }
         }
@@ -49,23 +51,27 @@ const TabsService = {
             indicator.style.width = `${width}px`;
         }
 
-        // Find closest tab to a given x position
+        // Find closest tab using cached positions (or live positions if not cached)
         function findClosestTab(xPos) {
+            const positions = self._cachedBtnPositions;
+            if (positions) {
+                let closestBtn = null, minDist = Infinity;
+                for (const pos of positions) {
+                    const dist = Math.abs(pos.center - xPos);
+                    if (dist < minDist) { minDist = dist; closestBtn = pos.btn; }
+                }
+                return closestBtn;
+            }
+            // Fallback: live calculation
             let closestBtn = null;
             let minDistance = Infinity;
-
             buttons.forEach((btn) => {
                 const rect = btn.getBoundingClientRect();
                 const tabsRect = tabsContainer.getBoundingClientRect();
                 const btnCenter = rect.left - tabsRect.left + rect.width / 2 + tabsContainer.scrollLeft;
                 const distance = Math.abs(btnCenter - xPos);
-
-                if (distance < minDistance) {
-                    minDistance = distance;
-                    closestBtn = btn;
-                }
+                if (distance < minDistance) { minDistance = distance; closestBtn = btn; }
             });
-
             return closestBtn;
         }
 
@@ -99,6 +105,7 @@ const TabsService = {
 
             const tabsRect = tabsContainer.getBoundingClientRect();
             const clickX = e.clientX - tabsRect.left + tabsContainer.scrollLeft;
+            self._cachedBtnPositions = null; // Clear cache for live calc
             const closestButton = findClosestTab(clickX);
 
             if (!closestButton) return;
@@ -118,11 +125,21 @@ const TabsService = {
             document.getElementById(id)?.classList.add("active");
         });
 
-        // Draggable indicator
+        // Draggable indicator — cache positions on drag start
         indicator.addEventListener("mousedown", (e) => {
             self.isDragging = true;
             self.dragStartX = e.clientX;
             self.indicatorStartLeft = parseFloat(indicator.style.left) || 0;
+
+            // Cache button positions once at drag start (avoid per-frame getBoundingClientRect)
+            const tabsRect = tabsContainer.getBoundingClientRect();
+            self._cachedBtnPositions = [...buttons].map(btn => {
+                const rect = btn.getBoundingClientRect();
+                return {
+                    btn,
+                    center: rect.left - tabsRect.left + rect.width / 2 + tabsContainer.scrollLeft,
+                };
+            });
 
             indicator.style.transition = "none";
             indicator.style.cursor = "grabbing";
@@ -130,27 +147,35 @@ const TabsService = {
             e.preventDefault();
         });
 
+        // rAF-throttled mousemove (prevents layout thrashing at 60Hz)
+        let _rafId = null;
         document.addEventListener("mousemove", (e) => {
             if (!self.isDragging) return;
+            if (_rafId) return; // Skip if rAF pending
 
-            const deltaX = e.clientX - self.dragStartX;
-            const newLeft = self.indicatorStartLeft + deltaX;
-            const maxLeft = tabsContainer.scrollWidth - parseFloat(indicator.style.width);
-            const constrainedLeft = Math.max(0, Math.min(newLeft, maxLeft));
+            _rafId = requestAnimationFrame(() => {
+                _rafId = null;
+                const deltaX = e.clientX - self.dragStartX;
+                const newLeft = self.indicatorStartLeft + deltaX;
+                const maxLeft = tabsContainer.scrollWidth - parseFloat(indicator.style.width);
+                const constrainedLeft = Math.max(0, Math.min(newLeft, maxLeft));
 
-            setIndicatorPosition(constrainedLeft, parseFloat(indicator.style.width));
+                setIndicatorPosition(constrainedLeft, parseFloat(indicator.style.width));
 
-            const closestTab = findClosestTab(constrainedLeft + parseFloat(indicator.style.width) / 2);
-            if (closestTab) {
-                buttons.forEach((b) => b.classList.remove("hover-preview"));
-                closestTab.classList.add("hover-preview");
-            }
+                const centerX = constrainedLeft + parseFloat(indicator.style.width) / 2;
+                const closestTab = findClosestTab(centerX);
+                if (closestTab) {
+                    buttons.forEach((b) => b.classList.remove("hover-preview"));
+                    closestTab.classList.add("hover-preview");
+                }
+            });
         });
 
         document.addEventListener("mouseup", () => {
             if (!self.isDragging) return;
 
             self.isDragging = false;
+            self._cachedBtnPositions = null; // Clear cache
             indicator.style.cursor = "grab";
             document.body.style.userSelect = "";
 
@@ -181,7 +206,7 @@ const TabsService = {
             }
         });
 
-        // Update on resize
+        // Update on resize (debounced)
         let resizeTimeout;
         window.addEventListener("resize", () => {
             clearTimeout(resizeTimeout);
@@ -239,30 +264,16 @@ const TabsService = {
         });
 
         document.querySelectorAll(".tab").forEach((s) => s.classList.remove("active"));
-        document.getElementById(tabId)?.classList.add("active");
+        document.getElementById("tab-" + tabId)?.classList.add("active");
     },
 
     /**
-     * Initialize tabs module
+     * Initialize tabs module (guard against double init)
      */
     init() {
+        if (this._initialized) return;
+        this._initialized = true;
         this.initLiquidGlassTabs();
-
-        // Reinitialize after short delay
-        setTimeout(() => {
-            const firstTab = document.querySelector(".tabs button.active");
-            if (firstTab) {
-                const indicator = document.querySelector(".tab-indicator");
-                const tabsContainer = document.querySelector(".tabs");
-                if (indicator && tabsContainer) {
-                    const buttonRect = firstTab.getBoundingClientRect();
-                    const tabsRect = tabsContainer.getBoundingClientRect();
-                    const left = buttonRect.left - tabsRect.left + tabsContainer.scrollLeft;
-                    indicator.style.left = `${left}px`;
-                    indicator.style.width = `${buttonRect.width}px`;
-                }
-            }
-        }, 100);
     },
 };
 

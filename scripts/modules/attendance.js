@@ -1,6 +1,11 @@
 // Attendance parsing, rendering, and loading utilities
 (function (global) {
-  const log = (...args) => console.log("[Attendance]", ...args);
+  // Debug logging — disabled in production to reduce console noise
+  const DEBUG = false;
+  const log = (...args) => { if (DEBUG) console.log("[Attendance]", ...args); };
+
+  // escapeHtml is accessed as a bare global — resolves to window.escapeHtml set by utils.js
+  const _esc = () => window.escapeHtml || ((s) => String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"));
 
   // Use centralized isValidScheduleData from utils.js (exposed as window.isValidScheduleData)
   // const isValidScheduleData = window.isValidScheduleData; // available globally
@@ -130,13 +135,13 @@
 
         if (!cellText || cellText === "-") continue;
 
-        const codeMatch = cellText.match(/\b([A-Z]{2,4}\d{3})\b/);
+        const codeMatch = cellText.match(/\b([A-Za-z]{2,4}\d{2,3}[a-z]?)\b/);
         if (!codeMatch) {
           log(`  Col ${colIdx}: skip (no course code)`);
           continue;
         }
 
-        const courseCode = codeMatch[1];
+        const courseCode = codeMatch[1].toUpperCase();
         const roomMatch = cellText.match(/at\s+(P\.\d+|[A-Z]+\d+|NVH\d+)/i);
         let room = roomMatch ? roomMatch[1] : "";
 
@@ -205,6 +210,9 @@
       updateQuickAttendanceStats(entries);
     }
 
+    // Cache tbody selector (used multiple times in this function)
+    const tbody = document.querySelector("#tblAttendance tbody");
+
     try {
       if (!Array.isArray(entries)) {
         throw new Error("Entries khong phai array");
@@ -212,7 +220,7 @@
 
       const validEntries = entries.filter((e) => {
         if (!e || typeof e !== "object") return false;
-        if (!e.course || !/^[A-Z]{2,4}\d{3}$/.test(e.course)) return false;
+        if (!e.course || !/^[A-Z]{2,4}\d{2,3}[A-Z]?$/.test(e.course)) return false;
         return true;
       });
 
@@ -220,8 +228,6 @@
 
       if (validEntries.length === 0) {
         log("No valid entries found - likely empty schedule");
-        // Try rendering empty state instead of throwing
-        const tbody = document.querySelector("#tblAttendance tbody");
         if (tbody) {
           tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--muted); padding: 20px;">Không có dữ liệu điểm danh.</td></tr>`;
         }
@@ -231,30 +237,47 @@
         return;
       }
 
+      // Sort by date (handle cross-year boundaries using current year context)
+      const currentYear = new Date().getFullYear();
+      const currentMonth = new Date().getMonth() + 1;
       const sorted = [...validEntries].sort((a, b) => {
         if (a.date && b.date) {
           const [dayA, monthA] = a.date.split("/").map(Number);
           const [dayB, monthB] = b.date.split("/").map(Number);
-          if (monthA !== monthB) return monthB - monthA;
-          if (dayA !== dayB) return dayB - dayA;
+          // Infer year: if month is far ahead of current month, it's likely previous year
+          const yearA = (monthA > currentMonth + 6) ? currentYear - 1 : currentYear;
+          const yearB = (monthB > currentMonth + 6) ? currentYear - 1 : currentYear;
+          const dateA = new Date(yearA, monthA - 1, dayA);
+          const dateB = new Date(yearB, monthB - 1, dayB);
+          if (dateA.getTime() !== dateB.getTime()) return dateB - dateA;
         }
         const slotA = parseInt((a.slot || "").replace(/\D/g, "") || "999");
         const slotB = parseInt((b.slot || "").replace(/\D/g, "") || "999");
         return slotA - slotB;
       });
 
+      // Build date options from ALL valid entries (before day/search filtering)
+      // to prevent options from disappearing when a day filter is active
       const filterSelect = document.getElementById("filterDay");
       if (filterSelect) {
-        const existingOptions = new Set([...filterSelect.options].map((o) => o.value));
-        const uniqueDates = [...new Set(sorted.map((e) => e.date).filter(Boolean))];
-        uniqueDates.forEach((date) => {
-          if (!existingOptions.has(date)) {
-            const option = document.createElement("option");
-            option.value = date;
-            option.textContent = date;
-            filterSelect.appendChild(option);
+        const currentValue = filterSelect.value;
+        [...filterSelect.options].forEach((opt) => {
+          if (opt.value !== "ALL" && !/^(MON|TUE|WED|THU|FRI|SAT|SUN)$/.test(opt.value)) {
+            opt.remove();
           }
         });
+        // Use validEntries (unfiltered) instead of sorted/filtered
+        const uniqueDates = [...new Set(validEntries.map((e) => e.date).filter(Boolean))];
+        uniqueDates.forEach((date) => {
+          const option = document.createElement("option");
+          option.value = date;
+          option.textContent = date;
+          filterSelect.appendChild(option);
+        });
+        // Restore previous selection if still valid
+        if ([...filterSelect.options].some((o) => o.value === currentValue)) {
+          filterSelect.value = currentValue;
+        }
       }
 
       const filterValue = filterSelect?.value || "ALL";
@@ -297,25 +320,22 @@
         );
       }
 
-      const tbody = document.querySelector("#tblAttendance tbody");
       if (!tbody) throw new Error("Khong tim thay tbody");
 
-      tbody.innerHTML = "";
-
       if (filtered.length === 0) {
-        const tr = document.createElement("tr");
-        tr.innerHTML =
-          '<td colspan="4" style="text-align: center; color: var(--muted)">Khong co du lieu</td>';
-        tbody.appendChild(tr);
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--muted)">Khong co du lieu</td></tr>';
         return;
       }
 
+      // Use DocumentFragment for batch DOM insertion (single reflow)
+      const fragment = document.createDocumentFragment();
       filtered.forEach((entry) => {
         const tr = document.createElement("tr");
-        const dayDisplay = entry.date || entry.day || "";
-        const slotDisplay = entry.slot || "";
-        const courseDisplay = entry.course || "";
-        const statusDisplay = entry.status || "";
+        const esc = _esc();
+        const dayDisplay = esc(entry.date || entry.day || "");
+        const slotDisplay = esc(entry.slot || "");
+        const courseDisplay = esc(entry.course || "");
+        const statusDisplay = esc(entry.status || "");
 
         tr.innerHTML = `
           <td>${dayDisplay}</td>
@@ -324,19 +344,23 @@
           <td>${statusDisplay}</td>
         `;
 
-        if (statusDisplay.toLowerCase().includes("attended")) {
-          tr.style.color = "#10b981";
-        } else if (statusDisplay.toLowerCase().includes("absent")) {
-          tr.style.color = "#ef4444";
+        // Use CSS classes instead of inline styles
+        const statusLower = statusDisplay.toLowerCase();
+        if (statusLower.includes("attended")) {
+          tr.classList.add("status-attended");
+        } else if (statusLower.includes("absent")) {
+          tr.classList.add("status-absent");
         }
 
-        tbody.appendChild(tr);
+        fragment.appendChild(tr);
       });
+
+      tbody.innerHTML = "";
+      tbody.appendChild(fragment); // SINGLE DOM mutation
 
       log("Render attendance success");
     } catch (error) {
       console.error("[Attendance] Render error:", error);
-      const tbody = document.querySelector("#tblAttendance tbody");
       if (tbody) {
         const tr = document.createElement("tr");
         const td = document.createElement("td");
@@ -386,64 +410,80 @@
       return slotA - slotB;
     });
 
+    // Use DocumentFragment for batch DOM insertion (single reflow)
+    const fragment = document.createDocumentFragment();
     sorted.forEach((entry) => {
       const tr = document.createElement("tr");
       if (entry.room === "Online") tr.classList.add("online-class");
+      const esc = _esc();
 
       tr.innerHTML = `
-        <td>${typeof dayToVietnamese === "function" ? dayToVietnamese(entry.day) || "" : entry.day || ""}</td>
-        <td>${entry.slot || ""}</td>
-        <td>${entry.time || ""}</td>
-        <td>${entry.course || ""}</td>
-        <td class="${entry.room === "Online" ? "online-room" : ""}">${entry.room || ""}</td>
-        <td>${entry.status || ""}</td>
+        <td>${esc(typeof dayToVietnamese === "function" ? dayToVietnamese(entry.day) || "" : entry.day || "")}</td>
+        <td>${esc(entry.slot || "")}</td>
+        <td>${esc(entry.time || "")}</td>
+        <td>${esc(entry.course || "")}</td>
+        <td class="${entry.room === "Online" ? "online-room" : ""}">${esc(entry.room || "")}</td>
+        <td>${esc(entry.status || "")}</td>
       `;
-      tbody.appendChild(tr);
+      fragment.appendChild(tr);
     });
+
+    tbody.appendChild(fragment); // SINGLE DOM mutation
   }
 
+  let _refreshing = false;
+
   async function refreshAttendance() {
-    const doc = await fetchHTML(DEFAULT_URLS.scheduleOfWeek);
-    if (doc === null) {
-      const cachedEntries = await STORAGE.get("cache_attendance_flat", []);
-      await STORAGE.set({ cache_attendance_fallback_ts: Date.now() });
-      renderAttendance(cachedEntries);
-      renderScheduleWeek(cachedEntries);
-      updateQuickAttendanceStats?.(cachedEntries);
+    // Guard: prevent concurrent refreshes from multiple callers
+    if (_refreshing) {
+      log("refreshAttendance already in progress, skipping");
       return;
     }
+    _refreshing = true;
+    try {
+      const doc = await window.fetchHTML?.(DEFAULT_URLS.scheduleOfWeek) ?? null;
+      if (doc === null) {
+        const cachedEntries = await window.STORAGE?.get("cache_attendance_flat", []) ?? [];
+        await window.STORAGE?.set({ cache_attendance_fallback_ts: Date.now() });
+        renderAttendance(cachedEntries);
+        renderScheduleWeek(cachedEntries);
+        updateQuickAttendanceStats?.(cachedEntries);
+        return;
+      }
 
-    const parsed = parseScheduleOfWeek(doc);
+      const parsed = parseScheduleOfWeek(doc);
 
-    // Validate data before saving - don't overwrite cache with empty/invalid data
-    if (!window.isValidScheduleData(parsed.entries)) {
-      log("⚠️ Invalid schedule data, using cached data instead");
-      const cachedEntries = await STORAGE.get("cache_attendance_flat", []);
-      renderAttendance(cachedEntries);
-      renderScheduleWeek(cachedEntries);
-      updateQuickAttendanceStats?.(cachedEntries);
-      return;
+      // Validate data before saving - don't overwrite cache with empty/invalid data
+      if (!window.isValidScheduleData?.(parsed.entries)) {
+        log("⚠️ Invalid schedule data, using cached data instead");
+        const cachedEntries = await window.STORAGE?.get("cache_attendance_flat", []) ?? [];
+        renderAttendance(cachedEntries);
+        renderScheduleWeek(cachedEntries);
+        updateQuickAttendanceStats?.(cachedEntries);
+        return;
+      }
+
+      await window.cacheSet?.("cache_attendance", parsed);
+      // Single merged STORAGE.set call instead of 2 separate ones
+      await window.STORAGE?.set({
+        cache_attendance_flat: parsed.entries,
+        cache_attendance_fallback_ts: null,
+        show_login_banner: false,
+        last_successful_fetch: Date.now(),
+      });
+      renderAttendance(parsed.entries);
+      renderScheduleWeek(parsed.entries);
+      updateQuickAttendanceStats?.(parsed.entries);
+    } finally {
+      _refreshing = false;
     }
-
-    await cacheSet("cache_attendance", parsed);
-    await STORAGE.set({
-      cache_attendance_flat: parsed.entries,
-      cache_attendance_fallback_ts: null,
-    });
-    await STORAGE.set({
-      show_login_banner: false,
-      last_successful_fetch: Date.now(),
-    });
-    renderAttendance(parsed.entries);
-    renderScheduleWeek(parsed.entries);
-    updateQuickAttendanceStats?.(parsed.entries);
   }
 
   async function loadAttendanceAndSchedule() {
     try {
       // Stale-While-Revalidate
       const CACHE_KEY = "cache_attendance";
-      const cachedObj = await STORAGE.get(CACHE_KEY, null);
+      const cachedObj = await window.STORAGE?.get(CACHE_KEY, null) ?? null;
       const cachedData = cachedObj ? cachedObj.data : null;
       const cachedTs = cachedObj ? cachedObj.ts : 0;
 
@@ -460,7 +500,7 @@
 
       // 2. Check stale
       // 4 hours TTL (approx 4-6 times/day as requested)
-      const isStale = !cachedObj || Date.now() - cachedTs > 4 * 60 * 60 * 1000;
+      const isStale = !cachedObj || Date.now() - cachedTs > (window.TIME_CONSTANTS?.CACHE_TTL_TODAY || 4 * 60 * 60 * 1000);
 
       if (isStale) {
         log("[SWR] Attendance stale/missing, refreshing...");
@@ -483,31 +523,16 @@
     }
   }
 
-  async function debugAttendanceData() {
-    log("=== DEBUG ATTENDANCE DATA ===");
-    try {
-      const attCache = await cacheGet("cache_attendance", 10 * 60 * 1000);
-      console.log("Cache data:", attCache);
-      const storageData = await STORAGE.get("cache_attendance", null);
-      console.log("Storage data:", storageData);
-      const flatData = await STORAGE.get("cache_attendance_flat", []);
-      console.log("Flat data:", flatData);
-      if (!attCache?.entries || attCache.entries.length === 0) {
-        console.log("No cache data, forcing refresh...");
-        await refreshAttendance();
-      }
-    } catch (error) {
-      console.error("[Attendance] Debug error:", error);
-    }
-  }
-
   global.Attendance = {
     parseScheduleOfWeek,
     renderAttendance,
     renderScheduleWeek,
     refreshAttendance,
     loadAttendanceAndSchedule,
-    debugAttendanceData,
   };
+
+  // Expose refreshAttendance directly on window for cross-module access
+  // (today-schedule.js checks window.refreshAttendance for SWR revalidation)
+  global.refreshAttendance = refreshAttendance;
 })(window);
 

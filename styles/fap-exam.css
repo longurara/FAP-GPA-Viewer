@@ -20,8 +20,18 @@ body {
 }
 
 /* ========== Hide Original FAP App Banner ========== */
-.container>.row:first-child>.col-md-6:last-child {
+.container>.row:first-child>.col-md-6:last-child,
+.container>.row>.col-md-6:has(img[alt="apple store"]),
+.container>.row>.col-md-6:has(img[alt="google store"]) {
     display: none !important;
+}
+
+/* ========== Header Title ========== */
+h1 {
+    font-size: 24px !important;
+    font-weight: 800 !important;
+    color: #1e293b !important;
+    letter-spacing: -0.5px !important;
 }
 
 /* ========== User Info Bar ========== */
@@ -36,6 +46,7 @@ body {
     margin: 8px 0 !important;
     position: relative !important;
     z-index: 20 !important;
+    font-size: 0 !important;
 }
 
 #ctl00_divUser .label.label-success {

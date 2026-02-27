@@ -63,76 +63,84 @@
 
         <!-- Today's Schedule Tab -->
         <section class="tab active" id="tab-today">
-            <div class="widgets-container" id="widgetsContainer">
-                <!-- Today's Schedule Widget -->
-                <div class="widget" data-widget="today-schedule">
-                    <div class="widget-header">
-                        <div class="widget-title">📅 Lịch hôm nay</div>
-                    </div>
-                    <div class="widget-content" id="todayClasses">
-                        <div class="no-class">Đang tải...</div>
-                    </div>
+            <!-- Quick Stats Strip -->
+            <div class="today-stats">
+                <div class="today-stat-item">
+                    <span class="today-stat-label">GPA</span>
+                    <span class="today-stat-value" id="gpa10Quick">--</span>
                 </div>
+                <div class="today-stat-sep"></div>
+                <div class="today-stat-item">
+                    <span class="today-stat-label">Chuyen can</span>
+                    <span class="today-stat-value" id="attRateQuick">--</span>
+                </div>
+                <button id="btnQuickRefresh" class="today-refresh-btn" title="Lam moi tat ca">&#8635;</button>
             </div>
 
-            <div class="cards">
-                <div class="card">
-                    <div class="label">GPA (10)</div>
-                    <div class="value" id="gpa10Quick">--</div>
+            <!-- Schedule Panel -->
+            <div class="today-panel" data-widget="today-schedule">
+                <div class="today-panel-head">
+                    <span class="today-panel-icon">📅</span>
+                    <span class="today-panel-title">Lich hom nay</span>
                 </div>
-                <div class="card">
-                    <div class="label">% chuyên cần</div>
-                    <div class="value" id="attRateQuick">--</div>
+                <div class="widget-content" id="todayClasses">
+                    <div class="no-class">Dang tai...</div>
                 </div>
-            </div>
-
-            <div class="actions">
-                <button id="btnQuickRefresh" class="primary">Làm mới tất cả</button>
             </div>
         </section>
 
         <section class="tab" id="tab-gpa">
-            <div class="cards">
-                <div class="card">
-                    <div class="label">GPA (10)</div>
-                    <div class="value" id="gpa10">--</div>
+            <!-- GPA Hero Card -->
+            <div class="gpa-hero">
+                <div class="gpa-scores">
+                    <div class="gpa-score-block">
+                        <div class="gpa-score-label">GPA (thang 10)</div>
+                        <div class="gpa-score-value" id="gpa10">--</div>
+                    </div>
+                    <div class="gpa-score-divider"></div>
+                    <div class="gpa-score-block">
+                        <div class="gpa-score-label">GPA (thang 4)</div>
+                        <div class="gpa-score-value gpa-score-secondary" id="gpa4">--</div>
+                    </div>
                 </div>
-                <div class="card">
-                    <div class="label">GPA (4)</div>
-                    <div class="value" id="gpa4">--</div>
-                </div>
-                <div class="card">
-                    <div class="label">Tổng tín chỉ</div>
-                    <div class="value" id="credits">--</div>
-                </div>
-                <div class="card exclude-info">
-                    <div class="label">Môn loại trừ</div>
-                    <div class="value" id="excludedCount">0</div>
-                    <div class="exclude-detail" id="excludedDetail">Không có môn nào</div>
+                <div class="gpa-meta">
+                    <div class="gpa-meta-item">
+                        <span class="gpa-meta-icon">📚</span>
+                        <span class="gpa-meta-text"><strong id="credits">--</strong> tin chi</span>
+                    </div>
+                    <div class="gpa-meta-item">
+                        <span class="gpa-meta-icon">🚫</span>
+                        <span class="gpa-meta-text"><strong id="excludedCount">0</strong> mon loai tru</span>
+                    </div>
+                    <div class="gpa-meta-detail" id="excludedDetail">Khong co mon nao</div>
                 </div>
             </div>
-            <div class="actions">
-                <button id="btnOpenTranscript">Trang Transcript</button>
-                <button id="btnCopyGPA">Copy GPA</button>
-                <button id="btnResetExcluded">Reset loại trừ</button>
-                <button id="btnSetDefaultExcluded">Mặc định</button>
-                <button id="btnRefreshAll">Làm mới</button>
+
+            <!-- Action Bar -->
+            <div class="gpa-actions">
+                <button id="btnCopyGPA" class="gpa-btn">Copy GPA</button>
+                <button id="btnRefreshAll" class="gpa-btn">Lam moi</button>
+                <button id="btnOpenTranscript" class="gpa-btn">Transcript</button>
+                <button id="btnResetExcluded" class="gpa-btn">Reset</button>
+                <button id="btnSetDefaultExcluded" class="gpa-btn">Mac dinh</button>
             </div>
+
+            <!-- Course Table -->
             <div class="table">
                 <div class="table-head">
-                    <div>Danh sách môn</div>
-                    <input id="searchCourse" placeholder="Tìm môn..." />
+                    <div>Danh sach mon hoc</div>
+                    <input id="searchCourse" placeholder="Tim mon..." />
                 </div>
                 <table id="tblCourses">
                     <thead>
                         <tr>
                             <th style="width: 40px">🚫</th>
                             <th>Code</th>
-                            <th>Tên môn</th>
+                            <th>Ten mon</th>
                             <th class="r">TC</th>
-                            <th class="r">Điểm</th>
-                            <th>Trạng thái</th>
-                            <th style="width: 60px">📝</th>
+                            <th class="r">Diem</th>
+                            <th>Trang thai</th>
+                            <th style="width: 50px">📝</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -142,66 +150,80 @@
 
         <!-- GPA Calculator Tab -->
         <section class="tab" id="tab-calc">
-            <div class="cards">
-                <div class="card">
-                    <div class="label">GPA hiện tại (10)</div>
-                    <div class="value" id="calcCurrentGPA">--</div>
+            <!-- Calculator Hero Card -->
+            <div class="calc-hero">
+                <div class="calc-scores">
+                    <div class="calc-score-block">
+                        <div class="calc-score-label">GPA hien tai (10)</div>
+                        <div class="calc-score-value" id="calcCurrentGPA">--</div>
+                    </div>
+                    <div class="calc-score-divider"></div>
+                    <div class="calc-score-block">
+                        <div class="calc-score-label">Tong tin chi</div>
+                        <div class="calc-score-value calc-score-secondary" id="calcCurrentCredits">--</div>
+                    </div>
                 </div>
-                <div class="card">
-                    <div class="label">Tổng tín chỉ hiện tại</div>
-                    <div class="value" id="calcCurrentCredits">--</div>
-                </div>
-                <div class="card">
-                    <div class="label">GPA mục tiêu</div>
-                    <input type="number" id="calcTargetGPA" class="calc-input-large" placeholder="3.5" step="0.1"
+                <div class="calc-target-row">
+                    <span class="calc-target-label">GPA muc tieu</span>
+                    <input type="number" id="calcTargetGPA" class="calc-target-input" placeholder="3.5" step="0.1"
                         min="0" max="10" />
                 </div>
             </div>
             <div class="calc-form">
                 <div class="calc-row">
-                    <label class="calc-label">Số tín chỉ môn mới:</label>
+                    <label class="calc-label">So tin chi mon moi:</label>
                     <input type="number" id="calcNewCredits" class="calc-input-small" value="3" min="1" max="10" />
                 </div>
                 <div class="calc-row-result">
-                    <label class="calc-label">Điểm cần đạt:</label>
+                    <label class="calc-label">Diem can dat:</label>
                     <div id="calcResult">--</div>
                 </div>
                 <div class="calc-actions">
-                    <button id="btnCalculateGPA" class="primary">🧮 Tính toán</button>
-                    <button id="btnResetCalc">↻ Reset</button>
+                    <button id="btnCalculateGPA" class="calc-action-btn calc-action-primary">Tinh toan</button>
+                    <button id="btnResetCalc" class="calc-action-btn">Reset</button>
                 </div>
             </div>
-            <p class="hint" style="margin-top: 12px">💡 Công cụ giúp bạn tính toán cần bao nhiêu điểm để đạt GPA mục
-                tiêu.</p>
+            <p class="hint" style="margin-top: 12px">Cong cu giup ban tinh toan can bao nhieu diem de dat GPA muc
+                tieu.</p>
         </section>
 
         <!-- Statistics Tab -->
         <section class="tab" id="tab-stats">
             <div class="stats-grid">
                 <div class="stat-card">
-                    <div class="stat-label">Điểm trung bình</div>
+                    <div class="stat-icon-badge">📊</div>
+                    <div class="stat-label">Diem trung binh</div>
                     <div class="stat-value" id="statAvgGrade">--</div>
-                    <div class="stat-detail">Trung bình các môn đã học</div>
+                    <div class="stat-detail">Trung binh cac mon da hoc</div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-label">Môn điểm cao nhất</div>
+                <div class="stat-card stat-card--best">
+                    <div class="stat-icon-badge">🏆</div>
+                    <div class="stat-label">Mon diem cao nhat</div>
                     <div class="stat-value" id="statBestGrade">--</div>
                     <div class="stat-detail" id="statBestCourse">--</div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-label">Môn điểm thấp nhất</div>
+                <div class="stat-card stat-card--worst">
+                    <div class="stat-icon-badge">📉</div>
+                    <div class="stat-label">Mon diem thap nhat</div>
                     <div class="stat-value" id="statWorstGrade">--</div>
                     <div class="stat-detail" id="statWorstCourse">--</div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-label">Tỷ lệ Pass</div>
+                <div class="stat-card stat-card--pass">
+                    <div class="stat-icon-badge">✅</div>
+                    <div class="stat-label">Ty le Pass</div>
                     <div class="stat-value" id="statPassRate">--</div>
-                    <div class="stat-detail">Môn đạt / tổng môn</div>
+                    <div class="stat-detail">Mon dat / tong mon</div>
                 </div>
             </div>
 
-            <div class="chart-container">
-                <canvas id="gpaChart"></canvas>
+            <div class="chart-panel">
+                <div class="chart-panel-head">
+                    <span class="chart-panel-icon">📈</span>
+                    <span class="chart-panel-title">GPA theo hoc ky</span>
+                </div>
+                <div class="chart-panel-body">
+                    <canvas id="gpaChart"></canvas>
+                </div>
             </div>
 
             <!-- Analytics Dashboard removed -->
@@ -209,48 +231,56 @@
 
         <!-- Attendance Tab -->
         <section class="tab" id="tab-att">
-            <div class="cards">
-                <div class="card">
-                    <div class="label">% chuyên cần</div>
-                    <div class="value" id="attRate">--</div>
+            <!-- Attendance Stats Strip -->
+            <div class="att-stats">
+                <div class="att-stat-item">
+                    <span class="att-stat-label">Chuyen can</span>
+                    <span class="att-stat-value" id="attRate">--</span>
                 </div>
-                <div class="card">
-                    <div class="label">Có mặt</div>
-                    <div class="value" id="attPresent">--</div>
+                <div class="att-stat-sep"></div>
+                <div class="att-stat-item">
+                    <span class="att-stat-label">Co mat</span>
+                    <span class="att-stat-value att-stat-good" id="attPresent">--</span>
                 </div>
-                <div class="card">
-                    <div class="label">Vắng / Muộn</div>
-                    <div class="value" id="attAbsentLate">--</div>
+                <div class="att-stat-sep"></div>
+                <div class="att-stat-item">
+                    <span class="att-stat-label">Vang / Muon</span>
+                    <span class="att-stat-value att-stat-warn" id="attAbsentLate">--</span>
                 </div>
             </div>
-            <div class="actions">
-                <button id="btnOpenAttendance">Trang Attendance</button>
-                <button class="primary" id="btnRefreshAttendance">Làm mới</button>
+            <!-- Action Bar -->
+            <div class="att-actions">
+                <button id="btnOpenAttendance" class="att-btn">Trang Attendance</button>
+                <button id="btnRefreshAttendance" class="att-btn">Lam moi</button>
             </div>
-            <div class="table">
-                <div class="table-head">
-                    <div>Nhật ký điểm danh (gần nhất → xa)</div>
+            <!-- Attendance Panel -->
+            <div class="att-panel">
+                <div class="att-panel-head">
+                    <div class="att-panel-title-row">
+                        <span class="att-panel-icon">📋</span>
+                        <span class="att-panel-title">Nhat ky diem danh</span>
+                    </div>
                     <div style="display: flex; gap: 8px; align-items: center">
-                        <select id="filterDay">
-                            <option value="ALL">Tất cả ngày</option>
-                            <option value="MON">Thứ 2</option>
-                            <option value="TUE">Thứ 3</option>
-                            <option value="WED">Thứ 4</option>
-                            <option value="THU">Thứ 5</option>
-                            <option value="FRI">Thứ 6</option>
-                            <option value="SAT">Thứ 7</option>
-                            <option value="SUN">Chủ nhật</option>
+                        <select id="filterDay" class="att-filter">
+                            <option value="ALL">Tat ca ngay</option>
+                            <option value="MON">Thu 2</option>
+                            <option value="TUE">Thu 3</option>
+                            <option value="WED">Thu 4</option>
+                            <option value="THU">Thu 5</option>
+                            <option value="FRI">Thu 6</option>
+                            <option value="SAT">Thu 7</option>
+                            <option value="SUN">Chu nhat</option>
                         </select>
-                        <input id="searchAtt" placeholder="Tìm theo môn / trạng thái..." />
+                        <input id="searchAtt" class="att-search" placeholder="Tim theo mon / trang thai..." />
                     </div>
                 </div>
                 <table id="tblAttendance">
                     <thead>
                         <tr>
-                            <th>Ngày</th>
+                            <th>Ngay</th>
                             <th>Slot</th>
-                            <th>Môn</th>
-                            <th>Trạng thái</th>
+                            <th>Mon</th>
+                            <th>Trang thai</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -259,24 +289,29 @@
         </section>
 
         <section class="tab" id="tab-schedule">
-            <div class="actions">
-                <button id="btnOpenSchedule">Trang Schedule</button>
-                <button class="primary" id="btnRefreshSchedule">Làm mới</button>
-                <button id="btnExportScheduleICS" class="export-btn">📅 Export .ics</button>
+            <!-- Action Bar -->
+            <div class="sched-actions">
+                <button id="btnOpenSchedule" class="sched-btn">Trang Schedule</button>
+                <button id="btnRefreshSchedule" class="sched-btn">Lam moi</button>
+                <button id="btnExportScheduleICS" class="sched-btn export-btn">Export .ics</button>
             </div>
-            <div class="table">
-                <div class="table-head">
-                    <div>Lịch cả tuần</div>
+            <!-- Schedule Panel -->
+            <div class="sched-panel">
+                <div class="sched-panel-head">
+                    <div class="sched-panel-title-row">
+                        <span class="sched-panel-icon">📅</span>
+                        <span class="sched-panel-title">Lich ca tuan</span>
+                    </div>
                 </div>
                 <table id="tblScheduleWeek">
                     <thead>
                         <tr>
-                            <th>Thứ</th>
+                            <th>Thu</th>
                             <th>Slot</th>
-                            <th>Giờ</th>
-                            <th>Môn</th>
-                            <th>Phòng</th>
-                            <th>Ghi chú</th>
+                            <th>Gio</th>
+                            <th>Mon</th>
+                            <th>Phong</th>
+                            <th>Ghi chu</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -285,157 +320,269 @@
         </section>
 
         <section class="tab" id="tab-exam">
-            <div class="actions">
-                <button id="btnOpenExams">Trang Lịch thi</button>
-                <button class="primary" id="btnRefreshExams">Làm mới</button>
-                <button id="btnExportExamICS" class="export-btn">📝 Export .ics</button>
+            <!-- Action Bar -->
+            <div class="exam-actions">
+                <button id="btnOpenExams" class="exam-btn">Trang Lich thi</button>
+                <button id="btnRefreshExams" class="exam-btn">Lam moi</button>
+                <button id="btnExportExamICS" class="exam-btn export-btn">Export .ics</button>
             </div>
-            <div class="table">
-                <div class="table-head">
-                    <div>Lịch thi các môn</div>
-                    <div style="display: flex; gap: 8px">
-                        <select id="filterExamTime">
-                            <option value="ALL">Tất cả</option>
-                            <option value="THIS_WEEK">Tuần này</option>
-                            <option value="THIS_MONTH">Tháng này</option>
-                            <option value="UPCOMING">Sắp tới</option>
+            <!-- Exam Panel -->
+            <div class="exam-panel">
+                <div class="exam-panel-head">
+                    <div class="exam-panel-title-row">
+                        <span class="exam-panel-icon">📝</span>
+                        <span class="exam-panel-title">Lich thi cac mon</span>
+                    </div>
+                    <div style="display: flex; gap: 8px; align-items: center">
+                        <select id="filterExamTime" class="exam-filter">
+                            <option value="ALL">Tat ca</option>
+                            <option value="THIS_WEEK">Tuan nay</option>
+                            <option value="THIS_MONTH">Thang nay</option>
+                            <option value="UPCOMING">Sap toi</option>
                         </select>
-                        <input id="searchExam" placeholder="Tìm môn thi..." />
+                        <input id="searchExam" class="exam-search" placeholder="Tim mon thi..." />
                     </div>
                 </div>
-                <table id="tblExams">
-                    <thead>
-                        <tr>
-                            <th>Môn</th>
-                            <th>Tên môn</th>
-                            <th>Ngày thi</th>
-                            <th>Giờ</th>
-                            <th>Phòng</th>
-                            <th>Hình thức</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
+                <div id="examCardsContainer" class="exam-cards-container">
+                    <div class="exam-empty"><span class="exam-empty-icon">📋</span><span>Dang tai...</span></div>
+                </div>
             </div>
         </section>
 
         <!-- LMS Events Tab -->
         <section class="tab" id="tab-lms">
-            <div class="actions">
-                <button id="btnOpenLMS2">Trang LMS Calendar</button>
-                <button class="primary" id="btnRefreshLMS">Làm mới</button>
+            <!-- Action Bar -->
+            <div class="lms-actions">
+                <button id="btnOpenLMS2" class="lms-btn">Trang LMS</button>
+                <button id="btnRefreshLMS" class="lms-btn">Lam moi</button>
             </div>
-            <div class="table">
-                <div class="table-head">
-                    <div>📚 Thông báo LMS sắp tới</div>
-                    <input id="searchLMS" placeholder="Tìm event..." />
+
+            <!-- Events Panel -->
+            <div class="lms-panel">
+                <div class="lms-panel-head">
+                    <div class="lms-panel-title-row">
+                        <span class="lms-panel-icon">📚</span>
+                        <span class="lms-panel-title">Thong bao LMS</span>
+                        <span class="lms-event-count" id="lmsEventCount">0</span>
+                    </div>
+                    <input id="searchLMS" class="lms-search" placeholder="Tim event..." />
                 </div>
                 <div id="lmsEventsList" class="lms-events-container">
-                    <div class="no-class">Đang tải...</div>
+                    <div class="no-class">Dang tai...</div>
                 </div>
             </div>
         </section>
 
         <section class="tab" id="tab-bookmark">
-            <div class="table">
-                <div class="table-head">
-                    <div>Truy cập nhanh</div>
+            <!-- Bookmark Panel -->
+            <div class="bookmark-panel">
+                <div class="bookmark-panel-head">
+                    <span class="bookmark-panel-icon">🔗</span>
+                    <span class="bookmark-panel-title">Truy cap nhanh</span>
                 </div>
-                <div class="book-grid">
-                    <button id="btnOpenLMS">LMS HCM</button>
-                    <button id="btnOpenFAP2">FAP</button>
-                    <button id="btnOpenIT">IT HCM</button>
+                <div class="bookmark-grid">
+                    <button id="btnOpenLMS" class="bookmark-card">
+                        <span class="bookmark-card-icon">📚</span>
+                        <span class="bookmark-card-label">LMS HCM</span>
+                        <span class="bookmark-card-desc">Learning Management</span>
+                    </button>
+                    <button id="btnOpenFAP2" class="bookmark-card">
+                        <span class="bookmark-card-icon">🎓</span>
+                        <span class="bookmark-card-label">FAP</span>
+                        <span class="bookmark-card-desc">Academic Portal</span>
+                    </button>
+                    <button id="btnOpenIT" class="bookmark-card">
+                        <span class="bookmark-card-icon">💻</span>
+                        <span class="bookmark-card-label">IT HCM</span>
+                        <span class="bookmark-card-desc">IT Department</span>
+                    </button>
                 </div>
             </div>
         </section>
 
         <section class="tab" id="tab-settings">
+            <!-- Appearance Section -->
             <div class="settings-section">
-                <h3 class="section-title">🎨 Giao diện</h3>
-                <div class="form">
-                    <div class="row">
-                        <span>Theme presets:</span>
-                        <div class="theme-presets">
-                            <button class="theme-preset" data-theme="blue" style="--preset-color: #60a5fa"
-                                title="Blue (Default)"></button>
-                            <button class="theme-preset" data-theme="green" style="--preset-color: #10b981"
-                                title="Green"></button>
-                            <button class="theme-preset" data-theme="purple" style="--preset-color: #a78bfa"
-                                title="Purple"></button>
-                            <button class="theme-preset" data-theme="pink" style="--preset-color: #f472b6"
-                                title="Pink"></button>
-                            <button class="theme-preset" data-theme="orange" style="--preset-color: #fb923c"
-                                title="Orange"></button>
-                            <button class="theme-preset" data-theme="red" style="--preset-color: #ef4444"
-                                title="Red"></button>
+                <h3 class="section-title"><span class="section-icon">🎨</span> Giao dien</h3>
+
+                <div class="setting-group">
+                    <div class="setting-label">Mau chu de</div>
+                    <div class="theme-presets">
+                        <button class="theme-preset" data-theme="blue" style="--preset-color: #60a5fa"
+                            title="Blue (Default)"><span class="preset-ring"></span></button>
+                        <button class="theme-preset" data-theme="green" style="--preset-color: #10b981"
+                            title="Green"><span class="preset-ring"></span></button>
+                        <button class="theme-preset" data-theme="purple" style="--preset-color: #a78bfa"
+                            title="Purple"><span class="preset-ring"></span></button>
+                        <button class="theme-preset" data-theme="pink" style="--preset-color: #f472b6"
+                            title="Pink"><span class="preset-ring"></span></button>
+                        <button class="theme-preset" data-theme="orange" style="--preset-color: #fb923c"
+                            title="Orange"><span class="preset-ring"></span></button>
+                        <button class="theme-preset" data-theme="red" style="--preset-color: #ef4444" title="Red"><span
+                                class="preset-ring"></span></button>
+                        <div class="color-picker-wrapper">
+                            <input type="color" id="customAccentColor" value="#60a5fa" title="Chon mau tuy chinh" />
+                            <span class="color-picker-label">+</span>
                         </div>
                     </div>
-                    <div class="row">
-                        <span>Custom accent color:</span>
-                        <input type="color" id="customAccentColor" value="#60a5fa" />
-                    </div>
-                    <div class="row">
-                        <span>Background image:</span>
-                        <div class="bg-controls">
-                            <input type="file" id="bgImageInput" accept="image/*" style="display: none" />
-                            <button id="btnSelectBg" class="secondary">📁 Chọn ảnh</button>
-                            <button id="btnRemoveBg" class="secondary">🗑️ Xóa</button>
-                            <button id="btnPresetBg" class="secondary">🎨 Presets</button>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <span>Background opacity:</span>
-                        <input type="range" id="bgOpacity" min="0" max="100" value="20" />
-                        <span id="bgOpacityValue">20%</span>
-                    </div>
+                </div>
+
+                <div class="setting-group">
+                    <div class="setting-label">Hinh nen</div>
                     <div class="bg-preview" id="bgPreview"></div>
+                    <div class="bg-controls">
+                        <input type="file" id="bgImageInput" accept="image/*" style="display: none" />
+                        <button id="btnSelectBg" class="setting-btn"><span class="btn-icon">📁</span> Chon anh</button>
+                        <button id="btnPresetBg" class="setting-btn"><span class="btn-icon">🎨</span> Presets</button>
+                        <button id="btnRemoveBg" class="setting-btn setting-btn-danger"><span
+                                class="btn-icon">🗑️</span> Xoa</button>
+                    </div>
                 </div>
-            </div>
 
-            <div class="settings-section">
-                <h3 class="section-title">⚙️ Hệ thống</h3>
-                <div class="form">
-                    <label class="row">
-                        <span>Chế độ hiển thị</span>
-                        <select id="setViewMode">
-                            <option value="popup">Popup (mặc định)</option>
-                            <option value="fullpage">Trang mới (lớn hơn)</option>
-                        </select>
-                    </label>
-                    <label class="row">
-                        <span>Giờ hoạt động (hh:mm-hh:mm)</span>
-                        <input id="setActiveFrom" value="07:00" />
-                        <input id="setActiveTo" value="17:40" />
-                    </label>
-                    <label class="row">
-                        <span>Trễ thông báo ngẫu nhiên (phút, min-max)</span>
-                        <input id="setDelayMin" min="0" type="number" value="10" />
-                        <input id="setDelayMax" min="0" type="number" value="30" />
-                    </label>
-                    <label class="row">
-                        <span>Tần suất kiểm tra cập nhật (phút)</span>
-                        <input id="setPollEvery" min="5" type="number" value="15" />
-                    </label>
-                    <div class="row">
-                        <button class="primary" id="btnSaveSettings">Lưu cài đặt</button>
-                        <button id="btnTestNotify">Test thông báo</button>
+                <div class="setting-group">
+                    <div class="setting-row-between">
+                        <div class="setting-label">Do trong</div>
+                        <span class="opacity-badge" id="bgOpacityValue">20%</span>
+                    </div>
+                    <div class="slider-container">
+                        <input type="range" id="bgOpacity" min="0" max="100" value="20" />
+                        <div class="slider-track-fill"></div>
                     </div>
                 </div>
             </div>
 
+            <!-- Page Style Toggles Section -->
             <div class="settings-section">
-                <h3 class="section-title">📤 Export</h3>
-                <div class="form">
-                    <div class="row">
-                        <button id="btnExportPDF">📄 Export PDF</button>
-                        <button id="btnExportCSV">📊 Export CSV</button>
+                <h3 class="section-title"><span class="section-icon">🖌️</span> Tuy chinh giao dien trang</h3>
+                <div class="setting-group">
+                    <div class="page-style-toggles" id="pageStyleToggles">
+                        <div class="page-style-row">
+                            <label class="page-style-label" for="toggle-style-login">Trang dang nhap FAP<div
+                                    class="page-style-desc">Default.aspx</div></label>
+                            <label class="toggle-switch"><input type="checkbox" id="toggle-style-login" checked /><span
+                                    class="toggle-slider"></span></label>
+                        </div>
+                        <div class="page-style-row">
+                            <label class="page-style-label" for="toggle-style-feid_login">Trang dang nhap FeID<div
+                                    class="page-style-desc">feid.fpt.edu.vn/Account/Login</div></label>
+                            <label class="toggle-switch"><input type="checkbox" id="toggle-style-feid_login"
+                                    checked /><span class="toggle-slider"></span></label>
+                        </div>
+                        <div class="page-style-row">
+                            <label class="page-style-label" for="toggle-style-student">Trang sinh vien<div
+                                    class="page-style-desc">Student.aspx</div></label>
+                            <label class="toggle-switch"><input type="checkbox" id="toggle-style-student"
+                                    checked /><span class="toggle-slider"></span></label>
+                        </div>
+                        <div class="page-style-row">
+                            <label class="page-style-label" for="toggle-style-schedule">Lich hoc tuan<div
+                                    class="page-style-desc">ScheduleOfWeek.aspx</div></label>
+                            <label class="toggle-switch"><input type="checkbox" id="toggle-style-schedule"
+                                    checked /><span class="toggle-slider"></span></label>
+                        </div>
+                        <div class="page-style-row">
+                            <label class="page-style-label" for="toggle-style-transcript">Bang diem<div
+                                    class="page-style-desc">StudentTranscript.aspx</div></label>
+                            <label class="toggle-switch"><input type="checkbox" id="toggle-style-transcript"
+                                    checked /><span class="toggle-slider"></span></label>
+                        </div>
+                        <div class="page-style-row">
+                            <label class="page-style-label" for="toggle-style-exam">Lich thi<div
+                                    class="page-style-desc">ScheduleExams.aspx</div></label>
+                            <label class="toggle-switch"><input type="checkbox" id="toggle-style-exam" checked /><span
+                                    class="toggle-slider"></span></label>
+                        </div>
+                        <div class="page-style-row">
+                            <label class="page-style-label" for="toggle-style-fees">Hoc phi<div class="page-style-desc">
+                                    SubjectFees.aspx</div></label>
+                            <label class="toggle-switch"><input type="checkbox" id="toggle-style-fees" checked /><span
+                                    class="toggle-slider"></span></label>
+                        </div>
+                        <div class="page-style-row">
+                            <label class="page-style-label" for="toggle-style-news">Tin tuc<div class="page-style-desc">
+                                    News.aspx, PlusNews.aspx</div></label>
+                            <label class="toggle-switch"><input type="checkbox" id="toggle-style-news" checked /><span
+                                    class="toggle-slider"></span></label>
+                        </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Extra Features Section -->
+            <div class="settings-section">
+                <h3 class="section-title"><span class="section-icon">🧩</span> Chuc nang bo sung</h3>
+                <div class="setting-group">
+                    <div class="page-style-toggles">
+                        <div class="page-style-row">
+                            <label class="page-style-label" for="toggle-feature-moveclass">Chuyen lop nhanh<div
+                                    class="page-style-desc">Hien thi bang thoi khoa bieu va cong cu chuyen lop tren
+                                    trang MoveSubject.aspx</div></label>
+                            <label class="toggle-switch"><input type="checkbox" id="toggle-feature-moveclass" /><span
+                                    class="toggle-slider"></span></label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Section -->
+            <div class="settings-section">
+                <h3 class="section-title"><span class="section-icon">⚙️</span> He thong</h3>
+
+                <div class="setting-group">
+                    <div class="setting-label">Che do hien thi</div>
+                    <select id="setViewMode" class="setting-select">
+                        <option value="popup">Popup (mac dinh)</option>
+                        <option value="fullpage">Trang moi (lon hon)</option>
+                    </select>
+                </div>
+
+                <div class="setting-group">
+                    <div class="setting-label">Gio hoat dong</div>
+                    <div class="setting-row-inline">
+                        <input id="setActiveFrom" value="07:00" class="setting-input" />
+                        <span class="setting-separator">-</span>
+                        <input id="setActiveTo" value="17:40" class="setting-input" />
+                    </div>
+                </div>
+
+                <div class="setting-group">
+                    <div class="setting-label">Tre thong bao ngau nhien (phut)</div>
+                    <div class="setting-row-inline">
+                        <input id="setDelayMin" min="0" type="number" value="10" class="setting-input" />
+                        <span class="setting-separator">-</span>
+                        <input id="setDelayMax" min="0" type="number" value="30" class="setting-input" />
+                    </div>
+                </div>
+
+                <div class="setting-group">
+                    <div class="setting-label">Tan suat kiem tra cap nhat (phut)</div>
+                    <input id="setPollEvery" min="5" type="number" value="15" class="setting-input" />
+                </div>
+
+                <div class="setting-group setting-actions-row">
+                    <button class="primary setting-btn-primary" id="btnSaveSettings">Luu cai dat</button>
+                    <button id="btnTestNotify" class="setting-btn">Test thong bao</button>
+                </div>
+            </div>
+
+            <!-- Export Section -->
+            <div class="settings-section">
+                <h3 class="section-title"><span class="section-icon">📤</span> Xuat du lieu</h3>
+                <div class="export-grid">
+                    <button id="btnExportPDF" class="export-card">
+                        <span class="export-icon">📄</span>
+                        <span class="export-label">Export PDF</span>
+                    </button>
+                    <button id="btnExportCSV" class="export-card">
+                        <span class="export-icon">📊</span>
+                        <span class="export-label">Export CSV</span>
+                    </button>
                 </div>
             </div>
 
             <p class="hint">
-                Cài đặt này dùng cho service worker để tự kiểm tra cập nhật điểm danh và nhắc bạn sau khi hệ thống cập
-                nhật.
+                Cai dat nay dung cho service worker de tu kiem tra cap nhat diem danh va nhac ban sau khi he thong cap
+                nhat.
             </p>
         </section>
 
@@ -498,30 +645,30 @@
             </div>
         </div>
 
-        <script src="../scripts/auto-calendar.js"></script>
-        <script src="../assets/vendor/chart.min.js"></script>
-        <!-- Core utility modules (load first) -->
-        <script src="../scripts/modules/utils.js"></script>
-        <script src="../scripts/modules/storage.js"></script>
-        <script src="../scripts/modules/api.js"></script>
+        <!-- Core utility modules (load first, defer preserves order) -->
+        <script src="../scripts/modules/utils.js" defer></script>
+        <script src="../scripts/modules/storage.js" defer></script>
+        <script src="../scripts/modules/api.js" defer></script>
         <!-- Feature modules -->
-        <script src="../scripts/modules/ui.js"></script>
-        <script src="../scripts/modules/login.js"></script>
-        <script src="../scripts/modules/transcript.js"></script>
-        <script src="../scripts/modules/exams.js"></script>
-        <script src="../scripts/modules/today-schedule.js"></script>
-        <script src="../scripts/modules/settings.js"></script>
-        <script src="../scripts/modules/statistics.js"></script>
-        <script src="../scripts/modules/theme.js"></script>
-        <script src="../scripts/modules/tabs.js"></script>
-        <script src="../scripts/modules/gpa-calculator.js"></script>
+        <script src="../scripts/modules/ui.js" defer></script>
+        <script src="../scripts/modules/login.js" defer></script>
+        <script src="../scripts/modules/transcript.js" defer></script>
+        <script src="../scripts/modules/exams.js" defer></script>
+        <script src="../scripts/modules/today-schedule.js" defer></script>
+        <script src="../scripts/modules/settings.js" defer></script>
+        <script src="../scripts/modules/statistics.js" defer></script>
+        <script src="../scripts/modules/theme.js" defer></script>
+        <script src="../scripts/modules/tabs.js" defer></script>
+        <script src="../scripts/modules/gpa-calculator.js" defer></script>
 
-        <script src="../scripts/modules/attendance.js"></script>
+        <script src="../scripts/modules/attendance.js" defer></script>
 
-        <script src="../scripts/modules/calendar.js"></script>
-        <script src="../scripts/modules/lms-events.js"></script>
+        <script src="../scripts/modules/calendar.js" defer></script>
+        <script src="../scripts/modules/lms-events.js" defer></script>
+        <script src="../scripts/auto-calendar.js" defer></script>
+        <!-- chart.min.js lazy-loaded by statistics.js when needed -->
         <!-- Main popup script -->
-        <script src="../scripts/popup.js"></script>
+        <script src="../scripts/popup.js" defer></script>
     </div>
 </body>
 

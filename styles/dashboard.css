@@ -109,6 +109,7 @@ body.fullpage-mode th {
 /* Settings sections */
 body.fullpage-mode .settings-section {
     margin-bottom: 24px;
+    padding: 26px;
 }
 
 body.fullpage-mode .section-title {
@@ -116,14 +117,23 @@ body.fullpage-mode .section-title {
     margin-bottom: 14px;
 }
 
-body.fullpage-mode .form .row {
-    margin-bottom: 14px;
+body.fullpage-mode .setting-group {
+    margin-bottom: 20px;
 }
 
-body.fullpage-mode .form input,
-body.fullpage-mode .form select {
-    padding: 9px 12px;
+body.fullpage-mode .setting-input,
+body.fullpage-mode .setting-select {
+    padding: 11px 14px;
+    font-size: 14px;
+}
+
+body.fullpage-mode .setting-btn {
+    padding: 10px 16px;
     font-size: 13px;
+}
+
+body.fullpage-mode .export-card {
+    padding: 22px 16px;
 }
 
 /* Statistics grid */
@@ -140,13 +150,13 @@ body.fullpage-mode .stat-value {
     font-size: 26px;
 }
 
-/* Chart container */
+/* Chart container (legacy — see .chart-panel overrides below) */
 body.fullpage-mode .chart-container {
     max-height: 350px;
     margin-top: 20px;
 }
 
-/* Widgets container */
+/* Widgets container (legacy) */
 body.fullpage-mode .widgets-container {
     margin-bottom: 16px;
 }
@@ -154,6 +164,41 @@ body.fullpage-mode .widgets-container {
 body.fullpage-mode .widget {
     padding: 16px;
     border-radius: 14px;
+}
+
+/* Today tab fullpage overrides */
+body.fullpage-mode .today-stats {
+    padding: 18px 28px;
+    border-radius: 18px;
+    margin-bottom: 18px;
+}
+
+body.fullpage-mode .today-stat-value {
+    font-size: 32px;
+}
+
+body.fullpage-mode .today-stat-sep {
+    height: 42px;
+    margin: 0 14px;
+}
+
+body.fullpage-mode .today-refresh-btn {
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    font-size: 22px;
+}
+
+body.fullpage-mode .today-panel {
+    border-radius: 18px;
+}
+
+body.fullpage-mode .today-panel-head {
+    padding: 16px 22px;
+}
+
+body.fullpage-mode .today-panel .widget-content {
+    padding: 14px 18px;
 }
 
 /* Bookmark grid */
@@ -195,6 +240,33 @@ body.fullpage-mode .calc-form {
     padding: 16px;
 }
 
+/* GPA Hero & Actions fullpage overrides */
+body.fullpage-mode .gpa-hero {
+    padding: 26px 32px;
+    border-radius: 20px;
+    margin-bottom: 16px;
+}
+
+body.fullpage-mode .gpa-score-value {
+    font-size: 44px;
+}
+
+body.fullpage-mode .gpa-score-divider {
+    height: 60px;
+    margin: 0 28px;
+}
+
+body.fullpage-mode .gpa-actions {
+    gap: 10px;
+    margin-bottom: 18px;
+}
+
+body.fullpage-mode .gpa-btn {
+    padding: 10px 18px;
+    font-size: 14px;
+    border-radius: 11px;
+}
+
 body.fullpage-mode .calc-input-large {
     font-size: 18px;
     padding: 10px;
@@ -219,6 +291,205 @@ body.fullpage-mode .class-course {
     font-size: 13px;
 }
 
+/* LMS tab fullpage overrides */
+body.fullpage-mode .lms-actions {
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+body.fullpage-mode .lms-btn {
+    padding: 10px 18px;
+    font-size: 14px;
+    border-radius: 11px;
+}
+
+body.fullpage-mode .lms-panel {
+    border-radius: 18px;
+}
+
+body.fullpage-mode .lms-panel-head {
+    padding: 16px 22px;
+}
+
+body.fullpage-mode .lms-search {
+    width: 180px;
+    font-size: 13px;
+}
+
+body.fullpage-mode .lms-events-container {
+    padding: 12px 18px;
+    max-height: 520px;
+}
+
+body.fullpage-mode .lms-event-card {
+    padding: 16px 18px;
+}
+
+/* Exam tab fullpage overrides */
+body.fullpage-mode .exam-actions {
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+body.fullpage-mode .exam-btn {
+    padding: 10px 18px;
+    font-size: 14px;
+    border-radius: 11px;
+}
+
+body.fullpage-mode .exam-panel {
+    border-radius: 18px;
+}
+
+body.fullpage-mode .exam-panel-head {
+    padding: 16px 22px;
+}
+
+body.fullpage-mode .exam-search {
+    width: 180px;
+    font-size: 13px;
+}
+
+body.fullpage-mode .exam-cards-container {
+    max-height: 520px;
+}
+
+body.fullpage-mode .exam-card {
+    padding: 16px 18px;
+}
+
+/* Attendance tab fullpage overrides */
+body.fullpage-mode .att-stats {
+    padding: 18px 28px;
+    border-radius: 18px;
+    margin-bottom: 18px;
+}
+
+body.fullpage-mode .att-stat-value {
+    font-size: 32px;
+}
+
+body.fullpage-mode .att-stat-sep {
+    height: 42px;
+    margin: 0 14px;
+}
+
+body.fullpage-mode .att-actions {
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+body.fullpage-mode .att-btn {
+    padding: 10px 18px;
+    font-size: 14px;
+    border-radius: 11px;
+}
+
+body.fullpage-mode .att-panel {
+    border-radius: 18px;
+}
+
+body.fullpage-mode .att-panel-head {
+    padding: 16px 22px;
+}
+
+body.fullpage-mode .att-search {
+    width: 180px;
+    font-size: 13px;
+}
+
+/* Schedule tab fullpage overrides */
+body.fullpage-mode .sched-actions {
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+body.fullpage-mode .sched-btn {
+    padding: 10px 18px;
+    font-size: 14px;
+    border-radius: 11px;
+}
+
+body.fullpage-mode .sched-panel {
+    border-radius: 18px;
+}
+
+body.fullpage-mode .sched-panel-head {
+    padding: 16px 22px;
+}
+
+/* Chart panel fullpage overrides */
+body.fullpage-mode .chart-panel {
+    border-radius: 18px;
+    margin-top: 24px;
+}
+
+body.fullpage-mode .chart-panel-head {
+    padding: 16px 22px;
+}
+
+body.fullpage-mode .chart-panel-body {
+    max-height: 350px;
+    padding: 24px;
+}
+
+/* Calculator tab fullpage overrides */
+body.fullpage-mode .calc-hero {
+    padding: 26px 32px;
+    border-radius: 20px;
+    margin-bottom: 16px;
+}
+
+body.fullpage-mode .calc-score-value {
+    font-size: 44px;
+}
+
+body.fullpage-mode .calc-score-divider {
+    height: 60px;
+    margin: 0 28px;
+}
+
+body.fullpage-mode .calc-target-input {
+    font-size: 22px;
+    width: 100px;
+    padding: 10px 12px;
+}
+
+body.fullpage-mode .calc-action-btn {
+    padding: 13px 24px;
+    font-size: 15px;
+    border-radius: 11px;
+}
+
+/* Bookmark tab fullpage overrides */
+body.fullpage-mode .bookmark-panel {
+    border-radius: 18px;
+}
+
+body.fullpage-mode .bookmark-panel-head {
+    padding: 16px 22px;
+}
+
+body.fullpage-mode .bookmark-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    padding: 20px;
+}
+
+body.fullpage-mode .bookmark-card {
+    padding: 24px 18px;
+    border-radius: 16px;
+}
+
+body.fullpage-mode .bookmark-card-icon {
+    font-size: 32px;
+}
+
+body.fullpage-mode .bookmark-card-label {
+    font-size: 15px;
+}
+
+
 /* Responsive for medium screens */
 @media (max-width: 900px) {
     body.fullpage-mode .cards {
@@ -230,6 +501,10 @@ body.fullpage-mode .class-course {
     }
 
     body.fullpage-mode .book-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    body.fullpage-mode .bookmark-grid {
         grid-template-columns: repeat(3, 1fr);
     }
 }
@@ -249,6 +524,10 @@ body.fullpage-mode .class-course {
     }
 
     body.fullpage-mode .book-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    body.fullpage-mode .bookmark-grid {
         grid-template-columns: repeat(2, 1fr);
     }
 

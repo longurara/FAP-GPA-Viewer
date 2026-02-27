@@ -5,6 +5,9 @@ const LMS_CALENDAR_URL = 'https://lms-hcm.fpt.edu.vn/calendar/view.php?view=upco
 const LMS_CACHE_KEY = 'cache_lms_events';
 const LMS_CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 
+// escapeHtml is accessed as a bare global — resolves to window.escapeHtml set by utils.js
+
+
 // Parse LMS events from HTML
 function parseLMSEventsHtml(html) {
   const parser = new DOMParser();
@@ -101,8 +104,8 @@ async function fetchLMSEvents(forceRefresh = false) {
     if (response && response.html) {
       const events = parseLMSEventsHtml(response.html);
 
-      // Cache the result
-      await window.cacheSet?.(LMS_CACHE_KEY, { events, ts: Date.now() });
+      // Cache the result (cacheSet already wraps with { ts, data })
+      await window.cacheSet?.(LMS_CACHE_KEY, { events });
 
       return { events, fromCache: false };
     }
@@ -146,12 +149,6 @@ function getCountdownBadge(timestamp) {
   return null;
 }
 
-// Escape HTML to prevent XSS from server-injected content
-function escapeHtml(str) {
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
-}
 
 // Render LMS events to UI
 function renderLMSEvents(events, searchQuery = '') {
@@ -170,7 +167,7 @@ function renderLMSEvents(events, searchQuery = '') {
 
   if (filtered.length === 0) {
     container.innerHTML = `<div class="no-class">
-      ${searchQuery ? 'Không tìm thấy event phù hợp' : 'Không có thông báo LMS sắp tới'}
+      ${searchQuery ? 'Khong tim thay event phu hop' : 'Khong co thong bao LMS sap toi'}
     </div>`;
     return;
   }
@@ -181,17 +178,20 @@ function renderLMSEvents(events, searchQuery = '') {
       ? `<span class="lms-badge lms-badge-${escapeHtml(badge.type)}">${escapeHtml(badge.text)}</span>`
       : '';
 
+    // badge.type is always a hardcoded internal value ('urgent', 'soon', etc.)
+    const variantClass = badge ? ` lms-event-card--${badge.type}` : '';
+
     const safeTitle = escapeHtml(event.title);
     const safeCourseName = escapeHtml(event.courseName || 'Course');
     const safeDateText = escapeHtml(event.dateText);
     const safeTimeText = event.timeText ? ', ' + escapeHtml(event.timeText) : '';
-    const safeActionText = escapeHtml(event.actionText || 'Xem chi tiết');
+    const safeActionText = escapeHtml(event.actionText || 'Xem chi tiet');
     // Sanitize URL: only allow http/https
     const safeActionUrl = (event.actionUrl && /^https?:\/\//i.test(event.actionUrl))
       ? encodeURI(event.actionUrl) : '';
 
     return `
-      <div class="lms-event-card" data-event-id="${escapeHtml(event.id)}">
+      <div class="lms-event-card${variantClass}" data-event-id="${escapeHtml(event.id)}">
         <div class="lms-event-header">
           <div class="lms-event-title">${safeTitle}</div>
           ${badgeHtml}
@@ -209,7 +209,7 @@ function renderLMSEvents(events, searchQuery = '') {
         ${safeActionUrl ? `
           <div class="lms-event-actions">
             <a href="${safeActionUrl}" target="_blank" class="lms-action-btn">
-              ${safeActionText}
+              ${safeActionText} &rarr;
             </a>
           </div>
         ` : ''}

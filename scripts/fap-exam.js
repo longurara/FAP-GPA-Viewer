@@ -7,6 +7,25 @@
 (function () {
     "use strict";
 
+    // CSS gate: only inject CSS + run enhancements when styling is enabled
+    chrome.storage.local.get("page_styles", function (data) {
+        var styles = data.page_styles || {};
+        if (styles.exam === false) return;
+
+        // Inject CSS programmatically (removed from manifest to allow toggle control)
+        var link = document.createElement("link");
+        link.rel = "stylesheet";
+        link.href = chrome.runtime.getURL("styles/fap-exam.css");
+        document.head.appendChild(link);
+
+        // Run on DOM ready
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", enhanceExamTable);
+        } else {
+            enhanceExamTable();
+        }
+    });
+
     /**
      * Parse date string in dd/MM/yyyy format
      * @param {string} dateStr - Date string
@@ -120,10 +139,4 @@
         console.log("[FAP Dashboard] Exam schedule enhanced ✓");
     }
 
-    // Run on DOM ready
-    if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", enhanceExamTable);
-    } else {
-        enhanceExamTable();
-    }
 })();

@@ -1,6 +1,7 @@
 /**
  * FAP Student Portal - Weekly Schedule Widget
  * Content script that injects a weekly schedule table into Student.aspx
+ * Fetches schedule data from ScheduleOfWeek.aspx and displays it inline
  */
 
 (function () {
@@ -8,6 +9,36 @@
 
     // Only run on Student.aspx (main portal page)
     if (!window.location.href.includes('Student.aspx')) return;
+
+    // Guard against duplicate injection
+    if (window.__fapScheduleInjected) return;
+    window.__fapScheduleInjected = true;
+
+    // CSS gate: only inject CSS + run enhancements when styling is enabled
+    chrome.storage.local.get("page_styles", function (data) {
+        var styles = data.page_styles || {};
+        if (styles.student === false) return;
+
+        // Inject CSS programmatically (removed from manifest to allow toggle control)
+        var link = document.createElement("link");
+        link.rel = "stylesheet";
+        link.href = chrome.runtime.getURL("styles/fap-schedule.css");
+        document.head.appendChild(link);
+
+        _run();
+    });
+
+    function _run() {
+
+    const SCHEDULE_URL = 'https://fap.fpt.edu.vn/Report/ScheduleOfWeek.aspx';
+    const CACHE_KEY = 'fap_schedule_widget';
+    const CACHE_TTL = 15 * 60 * 1000; // 15 minutes
+
+    // Day names mapped by column index (Mon=0 ... Sun=6)
+    const DAY_NAMES_VI = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+
+    // Loading guard to prevent concurrent fetches [M2]
+    let isLoading = false;
 
     // Wait for DOM to be ready
     if (document.readyState === 'loading') {
@@ -19,30 +50,56 @@
     function init() {
         console.log('[FAP-Schedule] Initializing Weekly Schedule Widget...');
 
-        // Find the chat widget container to insert after
-        const chatContainer = document.getElementById('chat-widget-container');
-        if (!chatContainer) {
-            console.warn('[FAP-Schedule] Chat container not found, trying fallback...');
-        }
-
-        // Create and insert the schedule widget
+        // Create and insert the schedule widget [C4: with fallback chain]
         const widget = createScheduleWidget();
+        const inserted = insertWidget(widget);
 
-        if (chatContainer) {
-            chatContainer.insertAdjacentElement('afterend', widget);
-        } else {
-            // Fallback: insert after breadcrumb
-            const breadcrumb = document.querySelector('.breadcrumb');
-            if (breadcrumb) {
-                breadcrumb.insertAdjacentElement('afterend', widget);
-            }
+        if (!inserted) {
+            console.warn('[FAP-Schedule] Could not insert widget into page');
+            return; // Don't load schedule if widget not visible
         }
 
         // Enhance existing page elements
         enhancePageElements();
 
-        // Load schedule data
-        loadSchedule();
+        // Load schedule data (check cache first)
+        loadSchedule(false);
+    }
+
+    /**
+     * Insert widget into the DOM with multiple fallback insertion points [C4]
+     * Returns true if successfully inserted
+     */
+    function insertWidget(widget) {
+        // Priority 1: After chat widget container
+        const chatContainer = document.getElementById('chat-widget-container');
+        if (chatContainer) {
+            chatContainer.insertAdjacentElement('afterend', widget);
+            return true;
+        }
+
+        // Priority 2: After breadcrumb
+        const breadcrumb = document.querySelector('.breadcrumb');
+        if (breadcrumb) {
+            breadcrumb.insertAdjacentElement('afterend', widget);
+            return true;
+        }
+
+        // Priority 3: Beginning of main content area
+        const mainContent = document.getElementById('ctl00_mainContent_divMain');
+        if (mainContent) {
+            mainContent.insertAdjacentElement('afterbegin', widget);
+            return true;
+        }
+
+        // Priority 4: After the first .container > .row
+        const firstRow = document.querySelector('.container > .row');
+        if (firstRow) {
+            firstRow.insertAdjacentElement('afterend', widget);
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -54,8 +111,14 @@
         widget.className = 'fap-schedule-widget';
         widget.innerHTML = `
             <div class="fap-schedule-header">
-                <span class="fap-schedule-title">📅 Lịch học tuần này</span>
+                <div>
+                    <span class="fap-schedule-title">📅 Lịch học tuần này</span>
+                    <span class="fap-schedule-week-info" id="fapWeekInfo"></span>
+                </div>
                 <div class="fap-schedule-controls">
+                    <a href="${SCHEDULE_URL}" target="_blank" class="btn btn-sm btn-default" title="Xem trang lịch học đầy đủ">
+                        📋 Xem đầy đủ
+                    </a>
                     <button id="fapRefreshSchedule" class="btn btn-sm btn-primary" title="Làm mới lịch học">
                         🔄 Làm mới
                     </button>
@@ -83,12 +146,10 @@
         `;
 
         // Add event listeners
-        setTimeout(() => {
-            const refreshBtn = document.getElementById('fapRefreshSchedule');
-            if (refreshBtn) {
-                refreshBtn.addEventListener('click', () => loadSchedule(true));
-            }
-        }, 100);
+        const refreshBtn = widget.querySelector('#fapRefreshSchedule');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', () => loadSchedule(true));
+        }
 
         return widget;
     }
@@ -97,13 +158,8 @@
      * Enhance existing page elements with better UX
      */
     function enhancePageElements() {
-        // 1) Add toggle button for IMPORTANT NOTICE table
         addNoticeToggle();
-
-        // 2) Add emoji icons to section headers
         addSectionIcons();
-
-        // 3) Enable smooth scrolling
         document.documentElement.style.scrollBehavior = 'smooth';
     }
 
@@ -114,15 +170,12 @@
         const mainDiv = document.getElementById('ctl00_mainContent_divMain');
         if (!mainDiv) return;
 
-        // Find the first .box (News / Important Notice section)
         const newsBox = mainDiv.querySelector('.box');
         if (!newsBox) return;
 
-        // Find the notice table inside
         const noticeTable = newsBox.querySelector('table');
         if (!noticeTable) return;
 
-        // Create toggle button
         const toggle = document.createElement('button');
         toggle.className = 'fap-notice-toggle';
         toggle.innerHTML = '📋 Thu gọn';
@@ -144,7 +197,6 @@
             }
         });
 
-        // Insert toggle before the table
         noticeTable.parentElement.insertBefore(toggle, noticeTable);
     }
 
@@ -153,20 +205,13 @@
      */
     function addSectionIcons() {
         const icons = {
-            'Registration': '📝',
-            'Thủ tục': '📝',
-            'Information': '🔍',
-            'Tra cứu': '🔍',
-            'Feedback': '💬',
-            'Ý kiến': '💬',
-            'Reports': '📊',
-            'Báo cáo': '📊',
-            'Others': '📌',
-            'Khác': '📌',
-            'Regulations': '📜',
-            'Quy định': '📜',
-            'Coursera': '🎓',
-            'FPTU-Coursera': '🎓'
+            'Registration': '📝', 'Thủ tục': '📝',
+            'Information': '🔍', 'Tra cứu': '🔍',
+            'Feedback': '💬', 'Ý kiến': '💬',
+            'Reports': '📊', 'Báo cáo': '📊',
+            'Others': '📌', 'Khác': '📌',
+            'Regulations': '📜', 'Quy định': '📜',
+            'Coursera': '🎓', 'FPTU-Coursera': '🎓'
         };
 
         const h4s = document.querySelectorAll('#ctl00_mainContent_divMain .box h4');
@@ -174,7 +219,6 @@
             const text = h4.textContent.trim();
             for (const [keyword, icon] of Object.entries(icons)) {
                 if (text.includes(keyword)) {
-                    // Only add icon if not already present
                     if (!h4.textContent.includes(icon)) {
                         h4.insertAdjacentHTML('afterbegin', icon + ' ');
                     }
@@ -184,179 +228,436 @@
         });
     }
 
+    // ========== Caching Layer [M1] ==========
+
     /**
-     * Load schedule from ScheduleOfWeek.aspx
+     * Get cached schedule data from chrome.storage.local
+     * Returns null if cache is missing or expired
+     */
+    async function getCachedSchedule() {
+        try {
+            const result = await chrome.storage.local.get(CACHE_KEY);
+            const cached = result[CACHE_KEY];
+            if (!cached || !cached.timestamp || !cached.entries) return null;
+            if (Date.now() - cached.timestamp > CACHE_TTL) return null;
+            return cached;
+        } catch (e) {
+            console.warn('[FAP-Schedule] Cache read failed:', e);
+            return null;
+        }
+    }
+
+    /**
+     * Save schedule data to chrome.storage.local
+     */
+    async function cacheSchedule(data) {
+        try {
+            await chrome.storage.local.set({
+                [CACHE_KEY]: {
+                    ...data,
+                    timestamp: Date.now()
+                }
+            });
+        } catch (e) {
+            console.warn('[FAP-Schedule] Cache write failed:', e);
+        }
+    }
+
+    // ========== UI Helpers ==========
+
+    /**
+     * Set the refresh button to loading/ready state [M2]
+     */
+    function setRefreshButtonLoading(loading) {
+        const btn = document.getElementById('fapRefreshSchedule');
+        if (!btn) return;
+        btn.disabled = loading;
+        btn.innerHTML = loading ? '⏳ Đang tải...' : '🔄 Làm mới';
+    }
+
+    /**
+     * Update week info display
+     */
+    function updateWeekInfoUI(weekInfo) {
+        const el = document.getElementById('fapWeekInfo');
+        if (el && weekInfo) {
+            el.textContent = `(${weekInfo})`;
+        }
+    }
+
+    /**
+     * Render error state with retry button [L2]
+     */
+    function renderError(container, errorCode) {
+        let errorMessage = '❌ Không thể tải lịch học.';
+        if (errorCode === 'NOT_LOGGED_IN') {
+            errorMessage = '🔒 Bạn cần đăng nhập FAP để xem lịch học.';
+        } else if (errorCode === 'SCHEDULE_TABLE_NOT_FOUND') {
+            errorMessage = '📭 Không tìm thấy bảng lịch học.';
+        }
+
+        container.innerHTML = `
+            <div class="fap-schedule-error">
+                <span>${errorMessage}</span>
+                <br><br>
+                <button class="btn btn-sm btn-primary fap-retry-btn" title="Thử lại">
+                    🔄 Thử lại
+                </button>
+                <a href="${SCHEDULE_URL}" target="_blank" class="btn btn-sm btn-default">
+                    Mở trang lịch học
+                </a>
+            </div>
+        `;
+
+        const retryBtn = container.querySelector('.fap-retry-btn');
+        if (retryBtn) {
+            retryBtn.addEventListener('click', () => loadSchedule(true));
+        }
+    }
+
+    // ========== Schedule Loading & Parsing ==========
+
+    /**
+     * Load schedule by fetching ScheduleOfWeek.aspx
+     * Uses chrome.storage.local cache to avoid redundant fetches [M1]
+     * Guarded against concurrent calls [M2]
      */
     async function loadSchedule(forceRefresh = false) {
-        const contentEl = document.getElementById('fapScheduleContent');
-        if (!contentEl) return;
+        if (isLoading) return; // [M2] debounce
+        isLoading = true;
+
+        const container = document.getElementById('fapScheduleContent');
+        if (!container) { isLoading = false; return; }
 
         // Show loading state
-        contentEl.innerHTML = `
+        setRefreshButtonLoading(true);
+        container.innerHTML = `
             <div class="fap-schedule-loading">
                 <span>⏳ Đang tải lịch học...</span>
             </div>
         `;
 
         try {
-            // Fetch schedule page
-            const response = await fetch('https://fap.fpt.edu.vn/Report/ScheduleOfWeek.aspx', {
-                credentials: 'include'
+            // Check cache first (unless force refresh) [M1]
+            if (!forceRefresh) {
+                const cached = await getCachedSchedule();
+                if (cached) {
+                    console.log('[FAP-Schedule] Using cached schedule data');
+                    updateWeekInfoUI(cached.weekInfo);
+                    renderScheduleTable(container, cached.entries);
+                    return;
+                }
+            }
+
+            console.log('[FAP-Schedule] Fetching schedule from', SCHEDULE_URL);
+
+            const response = await fetch(SCHEDULE_URL, {
+                credentials: 'include',
+                cache: forceRefresh ? 'no-cache' : 'default'
             });
 
+            // [C3] Check login via redirect (matches background.js pattern)
+            if (response.redirected) {
+                try {
+                    const redirectUrl = new URL(response.url);
+                    if (/\/Default\.aspx$/i.test(redirectUrl.pathname)) {
+                        throw new Error('NOT_LOGGED_IN');
+                    }
+                } catch (e) {
+                    if (e.message === 'NOT_LOGGED_IN') throw e;
+                }
+            }
+
             if (!response.ok) {
-                throw new Error('Failed to fetch schedule');
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
 
             const html = await response.text();
-            const entries = parseScheduleHtml(html);
 
-            if (entries.length === 0) {
-                contentEl.innerHTML = `
-                    <div class="fap-schedule-empty">
-                        <span>📭 Không có lịch học tuần này</span>
-                    </div>
-                `;
-                return;
+            // [C3] Secondary login check -- limited to first 2000 chars,
+            // exclude false positives from "logout" and "lblLogIn"
+            const head = html.toLowerCase().slice(0, 2000);
+            if ((head.includes('đăng nhập') || (head.includes('login') && !head.includes('logout') && !head.includes('lbllogin')))) {
+                throw new Error('NOT_LOGGED_IN');
             }
 
-            // Render schedule table
-            renderScheduleTable(contentEl, entries);
+            // Parse the schedule HTML
+            const doc = new DOMParser().parseFromString(html, 'text/html');
+            const scheduleTable = findScheduleTable(doc);
 
-        } catch (error) {
-            console.error('[FAP-Schedule] Error loading schedule:', error);
-            contentEl.innerHTML = `
-                <div class="fap-schedule-error">
-                    <span>❌ Không thể tải lịch học. Vui lòng thử lại.</span>
-                </div>
-            `;
+            if (!scheduleTable) {
+                throw new Error('SCHEDULE_TABLE_NOT_FOUND');
+            }
+
+            // Extract week info
+            const weekInfo = extractWeekInfo(doc);
+            updateWeekInfoUI(weekInfo);
+
+            // Parse schedule entries
+            const entries = parseScheduleTable(scheduleTable, doc);
+            console.log('[FAP-Schedule] Parsed entries:', entries.length);
+
+            // Cache the parsed data [M1]
+            await cacheSchedule({ entries, weekInfo });
+
+            // Also populate cache_attendance for popup/dashboard consumption
+            await syncToAttendanceCache(entries);
+
+            // Render
+            renderScheduleTable(container, entries);
+
+        } catch (err) {
+            console.error('[FAP-Schedule] Failed to load schedule:', err);
+            renderError(container, err.message);
+        } finally {
+            isLoading = false;
+            setRefreshButtonLoading(false);
         }
     }
 
     /**
-     * Parse schedule HTML from ScheduleOfWeek.aspx
+     * Find the schedule table in the parsed HTML document [M3]
+     * Prefers the innermost table that has its own <thead> with day names
      */
-    function parseScheduleHtml(html) {
-        const entries = [];
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-
-        // Find the schedule table
+    function findScheduleTable(doc) {
         const tables = doc.querySelectorAll('table');
-        let scheduleTable = null;
+        let bestTable = null;
 
         for (const table of tables) {
-            const thead = table.querySelector('thead');
-            const tbody = table.querySelector('tbody');
-            if (!thead || !tbody) continue;
+            // Only consider tables with their own <thead>
+            const thead = table.querySelector(':scope > thead');
+            if (!thead) continue;
 
-            const firstCell = table.querySelector('tbody td');
-            if (firstCell && firstCell.textContent.includes('Slot')) {
-                scheduleTable = table;
+            const theadText = thead.textContent.toUpperCase();
+            if (theadText.includes('MON') && theadText.includes('TUE') &&
+                theadText.includes('WED') && /SLOT/i.test(table.textContent)) {
+                // Prefer innermost matching table (last match wins over ancestors)
+                bestTable = table;
+            }
+        }
+
+        // Fallback: any table with day names in text
+        if (!bestTable) {
+            for (const table of tables) {
+                const text = table.textContent.toUpperCase();
+                if (text.includes('MON') && text.includes('TUE') &&
+                    text.includes('WED') && text.includes('SLOT')) {
+                    bestTable = table;
+                    break;
+                }
+            }
+        }
+
+        return bestTable;
+    }
+
+    /**
+     * Extract the current week info from the selected dropdown option
+     */
+    function extractWeekInfo(doc) {
+        const weekDropdown = doc.getElementById('ctl00_mainContent_drpSelectWeek');
+        if (!weekDropdown) return null;
+
+        const selected = weekDropdown.querySelector('option[selected]');
+        return selected ? selected.textContent.trim() : null;
+    }
+
+    /**
+     * Parse the schedule table into an array of entry objects
+     * Uses column index for sorting (eliminates year-boundary bugs) [C1][C2]
+     * Extracts links from cells [M7]
+     */
+    function parseScheduleTable(scheduleTable, doc) {
+        const entries = [];
+
+        // --- Find header rows ---
+        // background.js approach: scan first 8 rows for day names
+        const allRows = [...scheduleTable.querySelectorAll('tr')];
+        let headerRowIdx = -1;
+        let dateRowIdx = -1;
+
+        for (let i = 0; i < Math.min(8, allRows.length); i++) {
+            const txt = allRows[i].textContent.toUpperCase();
+            if (/MON/.test(txt) && /TUE/.test(txt) && /WED/.test(txt) &&
+                /THU/.test(txt) && /FRI/.test(txt)) {
+                headerRowIdx = i;
                 break;
             }
         }
 
-        if (!scheduleTable) {
-            console.warn('[FAP-Schedule] Schedule table not found');
+        if (headerRowIdx === -1) {
+            console.warn('[FAP-Schedule] Day-name header row not found');
             return entries;
         }
 
-        // Parse header to get dates
-        const theadRows = scheduleTable.querySelectorAll('thead tr');
-        if (theadRows.length < 2) return entries;
+        // Date row is typically the next row
+        dateRowIdx = headerRowIdx + 1;
+        if (dateRowIdx >= allRows.length) {
+            console.warn('[FAP-Schedule] Date header row not found');
+            return entries;
+        }
 
-        const dayHeaders = [];
-        const dateHeaders = [];
+        // --- Build day column map (column index -> date, day name) ---
+        const headerCells = [...allRows[headerRowIdx].querySelectorAll('td,th')];
+        const dayCols = []; // { name: 'MON', idx: colIndex, date: 'DD/MM' }
 
-        // First row: day names (skip first empty cell)
-        const dayThs = theadRows[0].querySelectorAll('th');
-        console.log('[FAP-Schedule] Day headers count:', dayThs.length);
-        dayThs.forEach((th, i) => {
-            const text = th.textContent.trim();
-            if (text && !text.includes('Slot')) {
-                dayHeaders.push(text);
+        headerCells.forEach((c, i) => {
+            const text = c.textContent.trim();
+            const m = text.match(/(MON|TUE|WED|THU|FRI|SAT|SUN)/i);
+            if (m) {
+                dayCols.push({ name: m[1].toUpperCase(), idx: i, date: null });
             }
         });
-        console.log('[FAP-Schedule] Day headers:', dayHeaders);
 
-        // Second row: dates (skip first empty cell)
-        const dateThs = theadRows[1].querySelectorAll('th');
-        console.log('[FAP-Schedule] Date headers count:', dateThs.length);
-        dateThs.forEach((th, i) => {
-            const text = th.textContent.trim();
-            // Only add if it looks like a date (DD/MM format)
-            if (text && text.match(/\d{2}\/\d{2}/)) {
-                dateHeaders.push(text);
+        // Fill in dates from the date row
+        const dateCells = [...allRows[dateRowIdx].querySelectorAll('td,th')];
+        dayCols.forEach(col => {
+            // Date cells correspond to dayCols but offset by the Year/Week cell
+            // Try matching by position in dateCells array
+            const dateCell = dateCells[dayCols.indexOf(col)];
+            if (dateCell) {
+                const dateMatch = dateCell.textContent.trim().match(/\d{2}\/\d{2}/);
+                if (dateMatch) col.date = dateMatch[0];
             }
         });
-        console.log('[FAP-Schedule] Date headers:', dateHeaders);
 
-        // Parse body rows
-        const slotRows = scheduleTable.querySelectorAll('tbody tr');
+        // If dates weren't found positionally, try scanning all date cells
+        if (dayCols.some(c => !c.date)) {
+            const allDates = [];
+            dateCells.forEach(c => {
+                const m = c.textContent.trim().match(/^(\d{2}\/\d{2})$/);
+                if (m) allDates.push(m[1]);
+            });
+            if (allDates.length >= dayCols.length) {
+                dayCols.forEach((col, i) => { col.date = allDates[i]; });
+            }
+        }
+
+        console.log('[FAP-Schedule] Day columns:', dayCols.map(d => `${d.name}=${d.date}`).join(', '));
+
+        // --- Parse slot rows ---
+        const slotRows = allRows.filter(r => {
+            const c0 = r.querySelector('td,th');
+            return c0 && /^Slot\s*\d+/i.test((c0.textContent || '').trim());
+        });
+
         slotRows.forEach(row => {
-            const cells = row.querySelectorAll('td');
-            if (cells.length < 2) return;
-
-            const slotCell = cells[0];
-            const slotText = slotCell.textContent.trim();
+            const cells = [...row.querySelectorAll('td,th')];
+            const slotText = (cells[0]?.textContent || '').trim();
             const slotMatch = slotText.match(/Slot\s*(\d+)/i);
             if (!slotMatch) return;
 
             const slot = parseInt(slotMatch[1]);
 
-            // Process each day column (cells[1] corresponds to dateHeaders[0], etc.)
-            for (let i = 1; i < cells.length && (i - 1) < dateHeaders.length; i++) {
-                const cell = cells[i];
-                const cellText = cell.textContent.trim();
+            dayCols.forEach((dayCol, dayIndex) => {
+                const cell = cells[dayCol.idx];
+                if (!cell) return;
 
-                // Skip empty cells
-                if (cellText === '-' || cellText === '') continue;
+                const cellText = (cell.textContent || '').trim();
+                if (!cellText || cellText === '-') return;
 
-                // Parse course info
-                const courseMatch = cellText.match(/^([A-Z]{2,4}\d{3}[a-z]?)/);
-                if (!courseMatch) continue;
+                // [M4] Course code regex: 2-4 letters (mixed case) + 2-3 digits + optional suffix
+                const courseMatch = cellText.match(/([A-Za-z]{2,4}\d{2,3}[a-z]?)/);
+                if (!courseMatch) return;
 
-                const course = courseMatch[1];
-                const dateIndex = i - 1;
-                const date = dateHeaders[dateIndex];
+                const course = courseMatch[1].toUpperCase();
+                const date = dayCol.date || dayCol.name;
 
-                console.log(`[FAP-Schedule] Found: Slot ${slot}, Cell ${i}, Date ${date}, Course ${course}`);
+                // Attendance status (unified: 'not yet' with space, matching background.js/attendance.js)
+                let status = 'not yet';
+                if (/attended/i.test(cellText)) status = 'attended';
+                else if (/absent/i.test(cellText)) status = 'absent';
 
-                // Check attendance status
-                let status = 'unknown';
-                if (cellText.includes('attended')) status = 'attended';
-                else if (cellText.includes('absent')) status = 'absent';
-                else if (cellText.includes('Not yet')) status = 'not_yet';
-
-                // Parse room
-                const roomMatch = cellText.match(/at\s+([A-Z0-9.]+)/);
+                // [M5] Room regex: letters, digits, dots, hyphens, underscores, slashes
+                const roomMatch = cellText.match(/at\s+([A-Za-z0-9._\-\/]+)/);
                 const room = roomMatch ? roomMatch[1] : '';
 
-                // Parse time
+                // Time from cell text, fallback to slot time
                 const timeMatch = cellText.match(/\((\d{1,2}:\d{2}-\d{1,2}:\d{2})\)/);
                 const time = timeMatch ? timeMatch[1] : getSlotTime(slot);
+
+                // [M7] Extract links from cell DOM
+                const links = {};
+                const anchors = cell.querySelectorAll('a');
+                anchors.forEach(a => {
+                    const href = a.getAttribute('href');
+                    if (!href) return;
+                    const linkText = (a.textContent || '').toLowerCase();
+                    if (linkText.includes('material')) {
+                        links.material = href;
+                    } else if (linkText.includes('meet')) {
+                        links.meet = href;
+                    } else if (href.includes('ActivityDetail')) {
+                        links.detail = href;
+                    }
+                });
 
                 entries.push({
                     slot,
                     date,
+                    dayIndex, // [C1] column position for sorting
+                    dayName: DAY_NAMES_VI[dayIndex] || dayCol.name, // [C2] from column position
+                    day: dayCol.name, // unified: MON/TUE/etc matching background.js/attendance.js
+                    key: `${date}|Slot ${slot}|${course}`, // unified key for cross-module lookup
                     course,
                     room,
                     time,
-                    status
+                    status,
+                    links
                 });
-            }
+            });
         });
 
-        // Sort by date and slot
+        // [C1] Sort by column index (Mon-Sun order), then slot
         entries.sort((a, b) => {
-            const dateA = parseDate(a.date);
-            const dateB = parseDate(b.date);
-            if (dateA !== dateB) return dateA - dateB;
+            if (a.dayIndex !== b.dayIndex) return a.dayIndex - b.dayIndex;
             return a.slot - b.slot;
         });
 
         return entries;
+    }
+
+    // ========== Helper Functions ==========
+
+    /**
+     * Sync parsed schedule entries to cache_attendance (unified schema)
+     * so the popup/dashboard can consume the same data without refetching.
+     * Normalizes slot from integer to "Slot N" string to match attendance.js format.
+     */
+    async function syncToAttendanceCache(entries) {
+        try {
+            const today = new Date();
+            const todayStr = String(today.getDate()).padStart(2, '0') + '/' +
+                String(today.getMonth() + 1).padStart(2, '0');
+
+            // Normalize entries to match attendance.js / background.js cache format
+            const cacheEntries = entries.map(e => ({
+                key: e.key,
+                course: e.course,
+                day: e.day,
+                date: e.date,
+                slot: `Slot ${e.slot}`,
+                time: e.time,
+                room: e.room,
+                status: e.status,
+            }));
+
+            // Compute todayRows (same structure as attendance.js parseScheduleOfWeek)
+            const todayRows = cacheEntries
+                .filter(e => e.date === todayStr)
+                .map(e => ({ time: e.time, course: e.course, room: e.room, note: e.status }));
+
+            await chrome.storage.local.set({
+                cache_attendance: {
+                    ts: Date.now(),
+                    data: { entries: cacheEntries, todayRows },
+                },
+                cache_attendance_flat: cacheEntries,
+            });
+            console.log('[FAP-Schedule] Synced to cache_attendance:', cacheEntries.length, 'entries');
+        } catch (e) {
+            console.warn('[FAP-Schedule] Failed to sync to cache_attendance:', e);
+        }
     }
 
     /**
@@ -375,44 +676,53 @@
     }
 
     /**
-     * Parse date string DD/MM to comparable number
-     */
-    function parseDate(dateStr) {
-        const parts = dateStr.split('/');
-        if (parts.length !== 2) return 0;
-        return parseInt(parts[1]) * 100 + parseInt(parts[0]);
-    }
-
-    /**
-     * Get day name from DD/MM date string
-     */
-    function getDayName(dateStr) {
-        const parts = dateStr.split('/');
-        if (parts.length !== 2) return '';
-
-        const day = parseInt(parts[0]);
-        const month = parseInt(parts[1]);
-        const year = new Date().getFullYear();
-
-        const date = new Date(year, month - 1, day);
-        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-        const dayNamesVi = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
-
-        return dayNamesVi[date.getDay()];
-    }
-
-    /**
-     * Render schedule table
+     * Render schedule table into the container
+     * Includes attendance stats [M6] and links [M7]
      */
     function renderScheduleTable(container, entries) {
-        // Group by date
-        const byDate = {};
+        if (!entries || entries.length === 0) {
+            container.innerHTML = `
+                <div class="fap-schedule-empty">
+                    <span>📭 Không có lịch học tuần này</span>
+                </div>
+            `;
+            return;
+        }
+
+        // [M6] Compute attendance stats
+        let attended = 0, absent = 0, notYet = 0;
         entries.forEach(e => {
-            if (!byDate[e.date]) byDate[e.date] = [];
-            byDate[e.date].push(e);
+            if (e.status === 'attended') attended++;
+            else if (e.status === 'absent') absent++;
+            else notYet++;
+        });
+        const total = attended + absent;
+        const rate = total > 0 ? Math.round((attended / total) * 100) : 0;
+
+        // Group by date (preserving insertion order from sorted entries)
+        const byDate = new Map();
+        entries.forEach(e => {
+            const key = e.date;
+            if (!byDate.has(key)) byDate.set(key, []);
+            byDate.get(key).push(e);
         });
 
-        let html = '<table class="table table-bordered table-hover fap-schedule-table">';
+        // Get today's date in DD/MM format
+        const today = new Date();
+        const todayStr = String(today.getDate()).padStart(2, '0') + '/' +
+            String(today.getMonth() + 1).padStart(2, '0');
+
+        // [M6] Stats bar
+        let html = `
+            <div class="fap-schedule-stats">
+                <span class="fap-stat"><span class="fap-stat-num attended">${attended}</span> Đã học</span>
+                <span class="fap-stat"><span class="fap-stat-num notyet">${notYet}</span> Chưa học</span>
+                <span class="fap-stat"><span class="fap-stat-num absent">${absent}</span> Vắng</span>
+                <span class="fap-stat"><span class="fap-stat-num rate">${rate}%</span> Tỷ lệ ĐD</span>
+            </div>
+        `;
+
+        html += '<table class="table table-bordered table-hover fap-schedule-table">';
         html += `
             <thead>
                 <tr>
@@ -427,13 +737,7 @@
             <tbody>
         `;
 
-        // Get today's date in DD/MM format
-        const today = new Date();
-        const todayStr = String(today.getDate()).padStart(2, '0') + '/' +
-            String(today.getMonth() + 1).padStart(2, '0');
-
-        Object.keys(byDate).sort((a, b) => parseDate(a) - parseDate(b)).forEach(date => {
-            const dayEntries = byDate[date];
+        byDate.forEach((dayEntries, date) => {
             const isToday = date === todayStr;
 
             dayEntries.forEach((entry, idx) => {
@@ -443,19 +747,36 @@
 
                 html += `<tr class="${rowClass}">`;
 
-                // Only show date on first row of each day
+                // Only show date on first row of each day [M8: today border on date cell]
                 if (idx === 0) {
-                    const dayName = getDayName(date);
-                    html += `<td rowspan="${dayEntries.length}" class="fap-date-cell">
-                        <strong>${dayName}</strong><br>
+                    const todayClass = isToday ? ' fap-today-date' : '';
+                    html += `<td rowspan="${dayEntries.length}" class="fap-date-cell${todayClass}">
+                        <strong>${entry.dayName}</strong><br>
                         <span>${date}</span>
-                        ${isToday ? '<span class="badge badge-primary">Hôm nay</span>' : ''}
+                        ${isToday ? '<span class="fap-badge-today">Hôm nay</span>' : ''}
                     </td>`;
+                }
+
+                // [M7] Course name with optional links
+                let courseHtml = `<strong>${entry.course}</strong>`;
+                if (entry.links && entry.links.detail) {
+                    courseHtml = `<a href="${entry.links.detail}" target="_blank" class="fap-course-link"><strong>${entry.course}</strong></a>`;
+                }
+
+                // Material/Meet link badges
+                let linkBadges = '';
+                if (entry.links) {
+                    if (entry.links.material) {
+                        linkBadges += ` <a href="${entry.links.material}" target="_blank" class="label label-warning fap-link-badge">Material</a>`;
+                    }
+                    if (entry.links.meet) {
+                        linkBadges += ` <a href="${entry.links.meet}" target="_blank" class="label label-info fap-link-badge">Meet</a>`;
+                    }
                 }
 
                 html += `
                     <td>Slot ${entry.slot}</td>
-                    <td><strong>${entry.course}</strong></td>
+                    <td>${courseHtml}${linkBadges}</td>
                     <td>${entry.room}</td>
                     <td>${entry.time}</td>
                     <td><span class="label ${statusClass}">${statusText}</span></td>
@@ -464,14 +785,6 @@
         });
 
         html += '</tbody></table>';
-
-        if (Object.keys(byDate).length === 0) {
-            html = `
-                <div class="fap-schedule-empty">
-                    <span>📭 Không có lịch học tuần này</span>
-                </div>
-            `;
-        }
 
         container.innerHTML = html;
     }
@@ -483,7 +796,7 @@
         switch (status) {
             case 'attended': return 'label-success';
             case 'absent': return 'label-danger';
-            case 'not_yet': return 'label-info';
+            case 'not yet': return 'label-info';
             default: return 'label-default';
         }
     }
@@ -495,10 +808,12 @@
         switch (status) {
             case 'attended': return 'Đã điểm danh';
             case 'absent': return 'Vắng';
-            case 'not_yet': return 'Chưa học';
+            case 'not yet': return 'Chưa học';
             default: return '-';
         }
     }
 
     console.log('[FAP-Schedule] Script loaded');
+
+    } // end _run
 })();

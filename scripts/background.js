@@ -1,8 +1,25 @@
 const STORAGE = {
   get: (k, d) =>
-    new Promise((r) => chrome.storage.local.get({ [k]: d }, (v) => r(v[k]))),
-  set: (obj) => new Promise((r) => chrome.storage.local.set(obj, r)),
-  remove: (k) => new Promise((r) => chrome.storage.local.remove(k, r)),
+    new Promise((r) => chrome.storage.local.get({ [k]: d }, (v) => {
+      if (chrome.runtime.lastError) {
+        console.warn("[BG] Storage get error:", chrome.runtime.lastError.message);
+        r(d);
+        return;
+      }
+      r(v[k]);
+    })),
+  set: (obj) => new Promise((r) => chrome.storage.local.set(obj, () => {
+    if (chrome.runtime.lastError) {
+      console.warn("[BG] Storage set error:", chrome.runtime.lastError.message);
+    }
+    r();
+  })),
+  remove: (k) => new Promise((r) => chrome.storage.local.remove(k, () => {
+    if (chrome.runtime.lastError) {
+      console.warn("[BG] Storage remove error:", chrome.runtime.lastError.message);
+    }
+    r();
+  })),
 };
 
 const SCHEDULE_OF_WEEK = "https://fap.fpt.edu.vn/Report/ScheduleOfWeek.aspx";
@@ -51,9 +68,10 @@ function isValidScheduleData(entries) {
   if (!Array.isArray(entries)) return false;
   if (entries.length === 0) return false;
 
-  // Check if at least one entry has valid course code (e.g., "ABC123")
+  // Check if at least one entry has valid course code
+  // Matches: ABC123, GDQP01, LAB211 (2-4 letters + 2-3 digits + optional letter suffix)
   const hasValidEntry = entries.some(e =>
-    e && e.course && /^[A-Z]{2,4}\d{3}$/.test(e.course)
+    e && e.course && /^[A-Z]{2,4}\d{2,3}[A-Z]?$/.test(e.course)
   );
 
   return hasValidEntry;
@@ -69,18 +87,41 @@ function isValidScheduleData(entries) {
 
 // ========== Content Script Based Fetch (for cookie access) ==========
 async function waitForTabComplete(tabId, timeoutMs = 8000) {
-  const start = Date.now();
-  while (Date.now() - start < timeoutMs) {
-    try {
-      const tab = await chrome.tabs.get(tabId);
-      if (tab.status === "complete") return true;
-    } catch (_) {
-      // Tab was closed/removed during polling
-      return false;
+  return new Promise((resolve) => {
+    let settled = false;
+    const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      chrome.tabs.onUpdated.removeListener(listener);
+      resolve(false);
+    }, timeoutMs);
+
+    function listener(updatedTabId, changeInfo) {
+      if (updatedTabId !== tabId || changeInfo.status !== "complete") return;
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      chrome.tabs.onUpdated.removeListener(listener);
+      resolve(true);
     }
-    await new Promise((r) => setTimeout(r, 150));
-  }
-  return false;
+
+    // Check if already complete before attaching listener
+    chrome.tabs.get(tabId).then((tab) => {
+      if (settled) return;
+      if (tab.status === "complete") {
+        settled = true;
+        clearTimeout(timer);
+        resolve(true);
+      } else {
+        chrome.tabs.onUpdated.addListener(listener);
+      }
+    }).catch(() => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve(false);
+    });
+  });
 }
 
 async function fetchViaContentScript(url) {
@@ -163,8 +204,10 @@ async function fetchAndParseTranscriptViaTab(url) {
             return { error: "LOGIN_REQUIRED", status: res.status };
           }
 
-          const looksLikeLogin = html.toLowerCase().slice(0, 2000).includes("login") ||
-            html.toLowerCase().slice(0, 2000).includes("đăng nhập");
+          // Check for login page — exclude "logout"/"lbllogin" which appear on logged-in pages
+          const _lc = html.toLowerCase().slice(0, 2000);
+          const looksLikeLogin = _lc.includes("đăng nhập") ||
+            (_lc.includes("login") && !_lc.includes("logout") && !_lc.includes("lbllogin"));
           if (looksLikeLogin) {
             return { error: "LOGIN_REQUIRED", status: res.status };
           }
@@ -280,8 +323,9 @@ async function fetchAndParseScheduleViaTab(url) {
             return { error: "LOGIN_REQUIRED" };
           }
 
+          // Check for login page — exclude "logout"/"lbllogin" which appear on logged-in pages
           const lc = html.toLowerCase().slice(0, 2000);
-          if (lc.includes("login") || lc.includes("đăng nhập")) {
+          if (lc.includes("đăng nhập") || (lc.includes("login") && !lc.includes("logout") && !lc.includes("lbllogin"))) {
             return { error: "LOGIN_REQUIRED" };
           }
 
@@ -335,20 +379,25 @@ async function fetchAndParseScheduleViaTab(url) {
               if (!cell) return;
               const raw = (cell.textContent || "").trim();
               if (!raw || raw === "-") return;
-              const codeMatch = raw.match(/\b[A-Z]{2,4}\d{3}\b/);
-              const code = codeMatch ? codeMatch[0] : "";
+              const codeMatch = raw.match(/\b[A-Za-z]{2,4}\d{2,3}[a-z]?\b/);
+              const code = codeMatch ? codeMatch[0].toUpperCase() : "";
               if (!code) return;
-              let status = "";
+              let status = "not yet";
               if (/attended/i.test(raw)) status = "attended";
               else if (/not yet/i.test(raw)) status = "not yet";
               else if (/absent|vắng/i.test(raw)) status = "absent";
+              // Extract room and time for unified schema
+              const roomMatch = raw.match(/at\s+([A-Za-z0-9._\-\/]+)/);
+              const timeMatch = raw.match(/\((\d{1,2}:\d{2}-\d{1,2}:\d{2})\)/);
               entries.push({
                 key: `${d.date || d.name}|${slotName}|${code}`,
                 course: code,
                 day: d.name,
                 date: d.date,
                 slot: slotName,
-                status: status || raw,
+                room: roomMatch ? roomMatch[1] : '',
+                time: timeMatch ? timeMatch[1] : '',
+                status,
               });
             });
           });
@@ -539,9 +588,11 @@ chrome.runtime.onInstalled.addListener(async (details) => {
       // Convert to data URL via FileReader workaround (Service Worker)
       const arrayBuffer = await blob.arrayBuffer();
       const uint8Array = new Uint8Array(arrayBuffer);
+      // Chunk-based conversion: process 8KB at a time instead of byte-by-byte
       let binary = "";
-      for (let i = 0; i < uint8Array.length; i++) {
-        binary += String.fromCharCode(uint8Array[i]);
+      const CHUNK_SIZE = 8192;
+      for (let i = 0; i < uint8Array.length; i += CHUNK_SIZE) {
+        binary += String.fromCharCode.apply(null, uint8Array.subarray(i, i + CHUNK_SIZE));
       }
       const dataUrl = `data:${blob.type || "image/jpeg"};base64,${btoa(binary)}`;
 
@@ -560,11 +611,57 @@ chrome.runtime.onInstalled.addListener(async (details) => {
 
 chrome.runtime.onStartup.addListener(async () => {
   await updateActionPopup();
-  // Reset login cache so next popup open will recheck
   await STORAGE.set({ last_login_check_ts: 0, cached_login_status: null });
-  // NOTE: Do NOT fetch transcript here — it creates visible FAP tabs on Chrome launch.
-  // Data will be fetched when user opens the popup/dashboard.
+
+  // Auto-login on browser startup
+  try {
+    const data = await new Promise((resolve) => {
+      chrome.storage.local.get(
+        ["auto_login_enabled", "auto_login_on_startup", "auto_login_username", "auto_login_password"],
+        (result) => resolve(result)
+      );
+    });
+
+    if (data.auto_login_on_startup && data.auto_login_enabled &&
+      data.auto_login_username && data.auto_login_password) {
+      console.log("Auto-login on startup: opening FAP tab...");
+      const tab = await chrome.tabs.create({
+        url: "https://fap.fpt.edu.vn/",
+        active: false
+      });
+      _monitorForCloudflare(tab.id);
+    }
+  } catch (e) {
+    console.warn("Auto-login on startup error:", e.message);
+  }
 });
+
+function _monitorForCloudflare(tabId) {
+  let checkCount = 0;
+  const MAX_CHECKS = 6;
+  const checkTab = async () => {
+    checkCount++;
+    try {
+      const tab = await chrome.tabs.get(tabId);
+      if (!tab) return;
+      const url = tab.url || "";
+      if (url.includes("Student.aspx") || url.includes("StudentTranscript") || url.includes("ScheduleOfWeek")) {
+        console.log("Auto-login on startup succeeded!");
+        return;
+      }
+      if (tab.title && (tab.title.includes("Just a moment") || tab.title.includes("Attention Required") || tab.title.includes("Cloudflare"))) {
+        console.log("Cloudflare detected! Showing tab to user...");
+        chrome.tabs.update(tabId, { active: true });
+        chrome.windows.update(tab.windowId, { focused: true });
+        return;
+      }
+      if (checkCount < MAX_CHECKS && (url.includes("fap.fpt.edu.vn") || url.includes("feid.fpt.edu.vn"))) {
+        setTimeout(checkTab, 5000);
+      }
+    } catch (e) { /* tab closed */ }
+  };
+  setTimeout(checkTab, 8000);
+}
 
 // ========== View Mode Handler ==========
 async function updateActionPopup() {
@@ -694,6 +791,12 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     updateActionPopup().then(() => {
       sendResponse({ ok: true });
     });
+    return true;
+  }
+
+  // Handle TEST_NOTIFY from settings
+  if (msg.type === "TEST_NOTIFY") {
+    sendResponse({ ok: true, message: "Notification system is working!" });
     return true;
   }
 });

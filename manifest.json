@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "FPT FAP Dashboard",
-  "version": "5.9.0",
+  "version": "6.2.0",
   "description": "Xem GPA, điểm danh, lịch học, lịch thi, thống kê, tính toán GPA, export calendar và nhiều tính năng nâng cao",
   "icons": {
     "128": "assets/icons/icon128.png"
@@ -27,13 +27,21 @@
   "content_scripts": [
     {
       "matches": [
+        "https://fap.fpt.edu.vn/FrontOffice/MoveSubject.aspx*"
+      ],
+      "js": [
+        "scripts/modules/utils.js",
+        "scripts/modules/ui.js",
+        "scripts/fap-moveclass.js"
+      ],
+      "run_at": "document_end"
+    },
+    {
+      "matches": [
         "https://fap.fpt.edu.vn/Grade/StudentTranscript.aspx*"
       ],
       "js": [
         "scripts/fap-transcript.js"
-      ],
-      "css": [
-        "styles/fap-transcript.css"
       ],
       "run_at": "document_end"
     },
@@ -44,9 +52,6 @@
       "js": [
         "scripts/fap-schedule.js"
       ],
-      "css": [
-        "styles/fap-schedule.css"
-      ],
       "run_at": "document_end"
     },
     {
@@ -55,9 +60,6 @@
       ],
       "js": [
         "scripts/fap-schedule-week.js"
-      ],
-      "css": [
-        "styles/fap-schedule-week.css"
       ],
       "run_at": "document_end"
     },
@@ -68,9 +70,6 @@
       "js": [
         "scripts/fap-exam.js"
       ],
-      "css": [
-        "styles/fap-exam.css"
-      ],
       "run_at": "document_end"
     },
     {
@@ -80,9 +79,6 @@
       "js": [
         "scripts/fap-subjectfees.js"
       ],
-      "css": [
-        "styles/fap-subjectfees.css"
-      ],
       "run_at": "document_end"
     },
     {
@@ -91,8 +87,8 @@
         "https://fap.fpt.edu.vn/CmsFAP/PlusNews.aspx*",
         "https://fap.fpt.edu.vn/CmsFAP/NewsDetail.aspx*"
       ],
-      "css": [
-        "styles/fap-news.css"
+      "js": [
+        "scripts/fap-news-gate.js"
       ],
       "run_at": "document_end"
     },
@@ -102,10 +98,8 @@
         "https://fap.fpt.edu.vn/Default.aspx*"
       ],
       "js": [
-        "scripts/fap-login.js"
-      ],
-      "css": [
-        "styles/fap-login.css"
+        "scripts/fap-login.js",
+        "scripts/onboarding.js"
       ],
       "run_at": "document_end"
     },
@@ -114,10 +108,8 @@
         "https://feid.fpt.edu.vn/Account/Login*"
       ],
       "js": [
-        "scripts/feid-login.js"
-      ],
-      "css": [
-        "styles/feid-login.css"
+        "scripts/feid-login.js",
+        "scripts/onboarding.js"
       ],
       "run_at": "document_end"
     }
@@ -131,8 +123,18 @@
         "styles/report.css",
         "styles/dashboard.css",
         "styles/timer-icons.css",
+        "styles/fap-transcript.css",
+        "styles/fap-schedule.css",
+        "styles/fap-schedule-week.css",
+        "styles/fap-exam.css",
+        "styles/fap-subjectfees.css",
+        "styles/fap-news.css",
+        "styles/fap-login.css",
+        "styles/fap-moveclass.css",
+        "styles/components.css",
+        "styles/feid-login.css",
         "assets/icons/icon128.png",
-        "scripts/vendor/chart.min.js",
+        "assets/vendor/chart.min.js",
         "scripts/auto-calendar.js",
         "wallpaper/wallpaper1.jpg",
         "wallpaper/sample.jpg"

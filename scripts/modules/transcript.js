@@ -63,159 +63,8 @@ const TranscriptService = {
 
     // computeGPA is now centralized in utils.js (window.computeGPA)
 
-    /**
-     * Render transcript table with course rows
-     * @param {Array} rows - Course data
-     * @param {Array} excluded - Excluded course codes
-     */
-    async renderTranscript(rows, excluded) {
-        const setValue = window.setValue || ((s, v) => {
-            const el = document.querySelector(s);
-            if (el) el.textContent = v;
-        });
-
-        const g = window.computeGPA(rows, excluded);
-        setValue("#gpa10", Number.isFinite(g.gpa10) ? g.gpa10.toFixed(2) : "--");
-        setValue("#gpa4", Number.isFinite(g.gpa4) ? g.gpa4.toFixed(2) : "--");
-        setValue("#credits", g.credits || "--");
-
-        // Sync to Today tab
-        setValue("#gpa10Quick", Number.isFinite(g.gpa10) ? g.gpa10.toFixed(2) : "--");
-
-        const tbody = document.querySelector("#tblCourses tbody");
-        if (!tbody) return;
-        tbody.innerHTML = "";
-        const q = (document.querySelector("#searchCourse")?.value || "").toLowerCase();
-
-        // Load notes and excluded from storage
-        const allNotes = await window.STORAGE?.get("course_notes", {}) || {};
-        const excludedCourses = await window.STORAGE?.get("excluded_courses", []) || [];
-
-        // Update excluded count display
-        const excludedCount = excludedCourses.length;
-        setValue("#excludedCount", excludedCount);
-
-        if (excludedCount > 0) {
-            const excludedNames = excludedCourses.slice(0, 2).join(", ");
-            const moreText = excludedCount > 2 ? ` và ${excludedCount - 2} môn khác` : "";
-            setValue("#excludedDetail", `${excludedNames}${moreText}`);
-        } else {
-            setValue("#excludedDetail", "Không có môn nào");
-        }
-
-        rows.forEach((r) => {
-            if (q && !(String(r.code).toLowerCase().includes(q) || String(r.name).toLowerCase().includes(q))) {
-                return;
-            }
-
-            const courseCode = r.code || "";
-            const hasNote = allNotes[courseCode] && allNotes[courseCode].trim();
-            const isExcluded = excludedCourses.includes(courseCode);
-
-            const tr = document.createElement("tr");
-            tr.className = isExcluded ? "course-row excluded" : "course-row";
-            tr.innerHTML = `
-        <td style="text-align: center">
-          <input type="checkbox" class="exclude-checkbox" 
-                data-code="${courseCode}" 
-                ${isExcluded ? "checked" : ""}
-                title="Loại trừ khỏi GPA">
-        </td>
-        <td class="course-code">${r.code || ""}</td>
-        <td class="course-name">${r.name || ""}</td>
-        <td class="r">${Number.isFinite(r.credit) ? r.credit : ""}</td>
-        <td class="r">${Number.isFinite(r.grade) ? r.grade : ""}</td>
-        <td>${r.status || ""}</td>
-        <td style="text-align: center">
-          <button class="note-toggle-btn ${hasNote ? "has-note" : ""}" data-code="${courseCode}" title="Ghi chú">
-            📝
-          </button>
-        </td>
-      `;
-
-            // Note row (hidden by default)
-            const noteRow = document.createElement("tr");
-            noteRow.className = "note-row";
-            noteRow.style.display = "none";
-            noteRow.innerHTML = `
-        <td colspan="7" class="note-cell">
-          <textarea 
-            class="course-note-input" 
-            data-code="${courseCode}"
-            placeholder="Ghi chú cho môn ${courseCode}... (Tự động lưu)"
-            rows="3"
-          >${allNotes[courseCode] || ""}</textarea>
-        </td>
-      `;
-
-            tbody.appendChild(tr);
-            tbody.appendChild(noteRow);
-
-            // Toggle note on button click
-            const toggleBtn = tr.querySelector(".note-toggle-btn");
-            toggleBtn.addEventListener("click", (e) => {
-                e.stopPropagation();
-                const isVisible = noteRow.style.display !== "none";
-                noteRow.style.display = isVisible ? "none" : "table-row";
-                if (!isVisible) {
-                    noteRow.querySelector("textarea").focus();
-                }
-            });
-
-            // Handle exclude checkbox
-            const excludeCheckbox = tr.querySelector(".exclude-checkbox");
-            excludeCheckbox.addEventListener("change", async (e) => {
-                const code = e.target.dataset.code;
-                const checked = e.target.checked;
-
-                const currentExcluded = await window.STORAGE?.get("excluded_courses", []) || [];
-
-                if (checked) {
-                    if (!currentExcluded.includes(code)) {
-                        currentExcluded.push(code);
-                    }
-                } else {
-                    const index = currentExcluded.indexOf(code);
-                    if (index > -1) {
-                        currentExcluded.splice(index, 1);
-                    }
-                }
-
-                await window.STORAGE?.set({ excluded_courses: currentExcluded });
-                tr.className = checked ? "course-row excluded" : "course-row";
-
-                // Recalculate and update GPA
-                await this.renderTranscript(rows, currentExcluded);
-
-                // Show toast
-                if (window.Toast) {
-                    window.Toast.success(
-                        checked ? `Đã loại trừ ${code} khỏi GPA` : `Đã thêm ${code} vào GPA`
-                    );
-                }
-            });
-
-            // Auto-save note on input
-            const textarea = noteRow.querySelector("textarea");
-            let saveTimeout;
-            textarea.addEventListener("input", async () => {
-                clearTimeout(saveTimeout);
-                saveTimeout = setTimeout(async () => {
-                    const currentNotes = await window.STORAGE?.get("course_notes", {}) || {};
-                    currentNotes[courseCode] = textarea.value;
-                    await window.STORAGE?.set({ course_notes: currentNotes });
-
-                    // Update button icon
-                    const hasContent = textarea.value.trim();
-                    toggleBtn.classList.toggle("has-note", hasContent);
-
-                    if (window.Toast) {
-                        window.Toast.success("Đã lưu ghi chú");
-                    }
-                }, 1000);
-            });
-        });
-    },
+    // renderTranscript is now handled by popup.js (optimized version with DocumentFragment
+    // and event delegation). The TranscriptService only needs parseTranscriptDoc and loadGPA.
 
     /**
      * Load GPA data - renders from cache and optionally triggers background fetch
@@ -224,17 +73,23 @@ const TranscriptService = {
     async loadGPA(forceFetch = false) {
         try {
             const CACHE_KEY = "cache_transcript";
-            const CACHE_MAX_AGE = 5 * 60 * 1000; // 5 minutes
+            const CACHE_MAX_AGE = window.TIME_CONSTANTS?.CACHE_TTL_TRANSCRIPT || 30 * 60 * 1000; // Standardized 30 min
 
-            const cachedObj = await window.STORAGE?.get(CACHE_KEY, null);
+            // Batch read cache + excluded courses in single IPC call
+            const { cache_transcript: cachedObj, excluded_courses: excludedCourses } =
+                await window.STORAGE?.getMultiple({ cache_transcript: null, excluded_courses: [] }) || {};
             const cachedData = cachedObj ? cachedObj.data : null;
             const cacheTimestamp = cachedObj?.ts || 0;
-            const excludedCourses = await window.STORAGE?.get("excluded_courses", []) || [];
 
             // 1. Render immediately from cache (instant display)
             if (cachedData && Array.isArray(cachedData.rows) && cachedData.rows.length > 0) {
                 console.log("[TranscriptService] Rendering from cache:", cachedData.rows.length, "courses");
-                await this.renderTranscript(cachedData.rows, excludedCourses);
+                // Use the global renderTranscript (defined in popup.js), NOT this.renderTranscript
+                if (typeof window.renderTranscript === "function") {
+                    await window.renderTranscript(cachedData.rows, excludedCourses);
+                } else {
+                    console.warn("[TranscriptService] window.renderTranscript not available yet");
+                }
             } else {
                 // No cache - show loading indicators
                 const setValue = window.setValue || ((s, v) => {
@@ -274,8 +129,8 @@ const TranscriptService = {
 window.TranscriptService = TranscriptService;
 window.parseTranscriptDoc = (doc) => TranscriptService.parseTranscriptDoc(doc);
 // window.computeGPA is now centralized in utils.js (no need to override)
-window.renderTranscript = (rows, excluded) => TranscriptService.renderTranscript(rows, excluded);
-window.loadGPA = () => TranscriptService.loadGPA();
+// window.renderTranscript is now defined in popup.js (optimized version with DocumentFragment)
+// window.loadGPA is defined in popup.js (SWR + background fetch version) — do not override here
 
 // Constants
 window.EXCLUDED_KEY = "__FAP_EXCLUDED_CODES__";

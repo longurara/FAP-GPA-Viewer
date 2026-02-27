@@ -57,11 +57,19 @@ class CalendarService {
   }
 
   formatICSDateTime(date, context) {
-    return this.ensureValidDate(date, context)
-      .toISOString()
-      .replace(/[-:]/g, "")
-      .split(".")[0]
-      .concat("Z");
+    const d = this.ensureValidDate(date, context);
+    // Format in LOCAL time (not UTC) — matches X-WR-TIMEZONE: Asia/Ho_Chi_Minh
+    const pad = (n) => String(n).padStart(2, "0");
+    return (
+      d.getFullYear() +
+      pad(d.getMonth() + 1) +
+      pad(d.getDate()) +
+      "T" +
+      pad(d.getHours()) +
+      pad(d.getMinutes()) +
+      pad(d.getSeconds())
+    );
+    // No "Z" suffix — time is local, TZID is set via DTSTART;TZID=...
   }
 
   createUID(prefix, index) {
@@ -100,8 +108,8 @@ class CalendarService {
     const eventLines = [
       "BEGIN:VEVENT",
       `UID:${uid}`,
-      `DTSTART:${start}`,
-      `DTEND:${end}`,
+      `DTSTART;TZID=${this.timezone}:${start}`,
+      `DTEND;TZID=${this.timezone}:${end}`,
       `SUMMARY:${summary}`,
       `DESCRIPTION:${description}`,
       `LOCATION:${location}`,
@@ -283,7 +291,7 @@ class CalendarService {
     emptyMessage,
     invalidMessage,
   }) {
-    const rawData = await STORAGE.get(storageKey, []);
+    const rawData = await window.STORAGE?.get(storageKey, []) ?? [];
 
     if (!rawData || rawData.length === 0) {
       throw new Error(emptyMessage);
@@ -296,9 +304,8 @@ class CalendarService {
     }
 
     const icsContent = builder(validItems);
-    const filename = `${filenamePrefix}-${
-      new Date().toISOString().split("T")[0]
-    }.ics`;
+    const filename = `${filenamePrefix}-${new Date().toISOString().split("T")[0]
+      }.ics`;
 
     this.downloadICS(icsContent, filename);
     return { success: true, count: validItems.length };
@@ -344,7 +351,8 @@ class CalendarService {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    // Delay revocation to prevent download failure on slower machines
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
   // ===== MODAL FUNCTIONS =====
@@ -353,7 +361,17 @@ class CalendarService {
       const modal = document.getElementById("calendarModal");
       const modalTitle = document.getElementById("calendarModalTitle");
       const modalMessage = document.getElementById("calendarModalMessage");
+      if (!modal || !modalTitle || !modalMessage) {
+        console.warn("[Calendar] Modal elements not found in DOM");
+        resolve(false);
+        return;
+      }
       const modalActions = modal.querySelector(".modal-actions");
+      if (!modalActions) {
+        console.warn("[Calendar] Modal .modal-actions not found");
+        resolve(false);
+        return;
+      }
 
       modalTitle.textContent = title;
       modalMessage.innerHTML = message;

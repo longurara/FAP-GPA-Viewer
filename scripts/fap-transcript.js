@@ -9,12 +9,24 @@
     // Check if we're on the right page
     if (!window.location.href.includes('StudentTranscript.aspx')) return;
 
-    // Wait for DOM to be ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-    } else {
-        init();
-    }
+    // CSS gate: only inject CSS + run enhancements when styling is enabled
+    chrome.storage.local.get("page_styles", function (data) {
+        var styles = data.page_styles || {};
+        if (styles.transcript === false) return;
+
+        // Inject CSS programmatically (removed from manifest to allow toggle control)
+        var link = document.createElement("link");
+        link.rel = "stylesheet";
+        link.href = chrome.runtime.getURL("styles/fap-transcript.css");
+        document.head.appendChild(link);
+
+        // Wait for DOM to be ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+    });
 
     function init() {
         console.log('[FAP-GPA] Initializing GPA Calculator...');

@@ -30,10 +30,10 @@ const ThemeService = {
     // ========== Accent Color ==========
 
     /**
-     * Initialize theme customization
+     * Initialize theme customization with pre-loaded value
+     * @param {string} savedColor - Pre-loaded accent color value
      */
-    async initThemeCustomization() {
-        const savedColor = await window.STORAGE?.get("accent_color", this.THEME_COLORS.blue) || this.THEME_COLORS.blue;
+    _initThemeWithValue(savedColor) {
         this.applyAccentColor(savedColor);
 
         const colorPicker = document.getElementById("customAccentColor");
@@ -92,10 +92,10 @@ const ThemeService = {
     // ========== Dark Mode ==========
 
     /**
-     * Initialize dark mode toggle
+     * Initialize dark mode with pre-loaded value
+     * @param {string} theme - Pre-loaded theme value ("dark" or "light")
      */
-    async initDarkMode() {
-        const theme = await window.STORAGE?.get("theme", "dark") || "dark";
+    _initDarkModeWithValue(theme) {
         document.documentElement.setAttribute("data-theme", theme);
 
         const toggle = document.getElementById("themeToggle");
@@ -117,17 +117,19 @@ const ThemeService = {
     // ========== Background System ==========
 
     /**
-     * Initialize background system
+     * Initialize background system with pre-loaded values
+     * @param {string} savedBg - Pre-loaded background image/gradient
+     * @param {number} savedOpacity - Pre-loaded opacity value
      */
-    async initBackgroundSystem() {
-        this.savedBg = await window.STORAGE?.get("background_image", "") || "";
-        this.savedOpacity = await window.STORAGE?.get("background_opacity", 20) || 20;
+    _initBackgroundWithValues(savedBg, savedOpacity) {
+        this.savedBg = savedBg;
+        this.savedOpacity = savedOpacity;
 
         if (this.savedBg) {
             this.applyBackground(this.savedBg, this.savedOpacity);
         }
 
-        this.applyFrameOpacity(this.savedOpacity);
+        this.applyFrameOpacity(this.savedOpacity, true); // skipSave=true during init
         this.updateBackgroundPreview(this.savedBg);
 
         const opacityEl = document.getElementById("bgOpacity");
@@ -170,13 +172,24 @@ const ThemeService = {
 
         presetBtn?.addEventListener("click", () => this.showPresetBackgrounds());
 
-        opacitySlider?.addEventListener("input", async (e) => {
+        // Debounced storage write for opacity slider (visual update immediate)
+        const debouncedSaveOpacity = window.debounce
+            ? window.debounce((opacity) => { window.STORAGE?.set({ background_opacity: opacity, frame_opacity: opacity }); }, 300)
+            : ((opacity) => { window.STORAGE?.set({ background_opacity: opacity, frame_opacity: opacity }); });
+
+        opacitySlider?.addEventListener("input", (e) => {
             const opacity = parseInt(e.target.value);
             if (opacityValueEl) opacityValueEl.textContent = opacity + "%";
-            await window.STORAGE?.set({ background_opacity: opacity });
             this.savedOpacity = opacity;
             this.applyBackground(this.savedBg, opacity);
-            this.applyFrameOpacity(opacity);
+            this.applyFrameOpacity(opacity, true); // skipSave, debounced below
+            debouncedSaveOpacity(opacity);
+        });
+
+        // Immediate save on slider release to prevent data loss when popup closes quickly
+        opacitySlider?.addEventListener("change", (e) => {
+            const opacity = parseInt(e.target.value);
+            window.STORAGE?.set({ background_opacity: opacity, frame_opacity: opacity });
         });
     },
 
@@ -243,13 +256,14 @@ const ThemeService = {
           <p class="bg-preset-modal-subtitle">Chọn một trong các preset có sẵn</p>
         </div>
         <div class="bg-preset-modal-content">
-        <div class="preset-grid">
-          ${this.PRESET_BACKGROUNDS.map((preset, i) => `
-            <button class="preset-bg-btn" data-index="${i}" title="${preset.name}">
-              <div class="preset-bg-preview" style="background: ${preset.url};"></div>
-              <div class="preset-bg-name">${preset.name}</div>
-            </button>
-          `).join("")}
+          <div class="preset-grid">
+            ${this.PRESET_BACKGROUNDS.map((preset, i) => `
+              <button class="preset-bg-btn" data-index="${i}" title="${preset.name}">
+                <div class="preset-bg-preview" style="background: ${preset.url};"></div>
+                <div class="preset-bg-name">${preset.name}</div>
+              </button>
+            `).join("")}
+          </div>
         </div>
       </div>
     `;
@@ -288,29 +302,44 @@ const ThemeService = {
     /**
      * Apply frame opacity
      * @param {number} opacityPercent - Opacity 0-100
+     * @param {boolean} skipSave - Skip storage write (used during init to avoid redundant write)
      */
-    applyFrameOpacity(opacityPercent) {
+    applyFrameOpacity(opacityPercent, skipSave = false) {
         const opacity = opacityPercent / 100;
         document.documentElement.style.setProperty("--frame-opacity", opacity);
-        window.STORAGE?.set({ frame_opacity: opacityPercent });
+        if (!skipSave) {
+            window.STORAGE?.set({ frame_opacity: opacityPercent });
+        }
     },
 
     /**
-     * Initialize frame opacity
+     * Initialize frame opacity with pre-loaded value
+     * @param {number} savedOpacity - Pre-loaded opacity value
      */
-    async initFrameOpacity() {
-        const savedOpacity = await window.STORAGE?.get("frame_opacity", 100) || 100;
-        this.applyFrameOpacity(savedOpacity);
+    _initFrameOpacityWithValue(savedOpacity) {
+        this.applyFrameOpacity(savedOpacity, true); // skipSave=true, value was just read
     },
 
     /**
-     * Initialize all theme features
+     * Initialize all theme features (single batch storage read)
      */
     async init() {
-        await this.initDarkMode();
-        await this.initThemeCustomization();
-        await this.initBackgroundSystem();
-        await this.initFrameOpacity();
+        // Single batch read instead of 5 sequential reads
+        const settings = await window.STORAGE?.getMultiple({
+            theme: "dark",
+            accent_color: this.THEME_COLORS.blue,
+            background_image: "",
+            background_opacity: 20,
+            frame_opacity: 100,
+        }) || {};
+
+        this._initDarkModeWithValue(settings.theme ?? "dark");
+        this._initThemeWithValue(settings.accent_color ?? this.THEME_COLORS.blue);
+        this._initBackgroundWithValues(
+            settings.background_image ?? "",
+            settings.background_opacity ?? 20
+        );
+        this._initFrameOpacityWithValue(settings.frame_opacity ?? 100);
     },
 };
 
@@ -318,13 +347,13 @@ const ThemeService = {
 window.ThemeService = ThemeService;
 window.THEME_COLORS = ThemeService.THEME_COLORS;
 window.PRESET_BACKGROUNDS = ThemeService.PRESET_BACKGROUNDS;
-window.initThemeCustomization = () => ThemeService.initThemeCustomization();
+window.initThemeCustomization = () => ThemeService._initThemeWithValue(ThemeService.THEME_COLORS.blue);
 window.applyAccentColor = (color) => ThemeService.applyAccentColor(color);
 window.updateActivePreset = (color) => ThemeService.updateActivePreset(color);
-window.initBackgroundSystem = () => ThemeService.initBackgroundSystem();
+window.initBackgroundSystem = () => ThemeService._initBackgroundWithValues("", 20);
 window.applyBackground = (bgUrl, opacity) => ThemeService.applyBackground(bgUrl, opacity);
 window.updateBackgroundPreview = (bgUrl) => ThemeService.updateBackgroundPreview(bgUrl);
 window.showPresetBackgrounds = () => ThemeService.showPresetBackgrounds();
 window.updateOverlayOpacity = (opacity) => ThemeService.updateOverlayOpacity(opacity);
 window.applyFrameOpacity = (opacity) => ThemeService.applyFrameOpacity(opacity);
-window.initFrameOpacity = () => ThemeService.initFrameOpacity();
+window.initFrameOpacity = () => ThemeService._initFrameOpacityWithValue(100);

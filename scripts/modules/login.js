@@ -62,7 +62,10 @@ const LoginService = {
 
             const htmlText = csResult?.text || "";
             const lc = htmlText.toLowerCase().slice(0, 2000);
-            const isLoginPage = !htmlText || lc.includes("login") || lc.includes("đăng nhập") || lc.includes("dang nhap");
+            // Exclude "logout"/"lbllogin" which appear on logged-in pages (aligned with background.js logic)
+            const hasLoginKeyword = lc.includes("đăng nhập") ||
+                (lc.includes("login") && !lc.includes("logout") && !lc.includes("lbllogin"));
+            const isLoginPage = !htmlText || hasLoginKeyword;
 
             if (isLoginPage) {
                 await window.STORAGE?.set({

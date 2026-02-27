@@ -129,13 +129,13 @@ function initCalendarUI() {
     });
 
     // Add help button to schedule and exam tabs
-    const scheduleActions = document.querySelector("#tab-schedule .actions");
-    const examActions = document.querySelector("#tab-exam .actions");
+    const scheduleActions = document.querySelector("#tab-schedule .sched-actions") || document.querySelector("#tab-schedule .actions");
+    const examActions = document.querySelector("#tab-exam .exam-actions") || document.querySelector("#tab-exam .actions");
 
     if (scheduleActions && !scheduleActions.querySelector("#btnCalendarHelp")) {
         const helpBtn = document.createElement("button");
         helpBtn.id = "btnCalendarHelp";
-        helpBtn.className = "secondary";
+        helpBtn.className = scheduleActions.classList.contains("sched-actions") ? "sched-btn" : "secondary";
         helpBtn.textContent = "Hướng dẫn";
         helpBtn.addEventListener("click", showCalendarHelp);
         scheduleActions.appendChild(helpBtn);
@@ -144,7 +144,7 @@ function initCalendarUI() {
     if (examActions && !examActions.querySelector("#btnCalendarHelp2")) {
         const helpBtn = document.createElement("button");
         helpBtn.id = "btnCalendarHelp2";
-        helpBtn.className = "secondary";
+        helpBtn.className = examActions.classList.contains("exam-actions") ? "exam-btn" : "secondary";
         helpBtn.textContent = "Hướng dẫn";
         helpBtn.addEventListener("click", showCalendarHelp);
         examActions.appendChild(helpBtn);

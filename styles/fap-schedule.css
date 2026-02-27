@@ -19,8 +19,18 @@ body {
 }
 
 /* ========== Hide Original FAP App Banner ========== */
-.container>.row:first-child>.col-md-6:last-child {
+.container>.row:first-child>.col-md-6:last-child,
+.container>.row>.col-md-6:has(img[alt="apple store"]),
+.container>.row>.col-md-6:has(img[alt="google store"]) {
     display: none !important;
+}
+
+/* ========== Header Title ========== */
+h1 {
+    font-size: 24px !important;
+    font-weight: 800 !important;
+    color: #1e293b !important;
+    letter-spacing: -0.5px !important;
 }
 
 /* ========== User Info Bar ========== */
@@ -33,6 +43,9 @@ body {
     float: right !important;
     max-width: 70% !important;
     margin: 8px 0 !important;
+    position: relative !important;
+    z-index: 20 !important;
+    font-size: 0 !important;
 }
 
 #ctl00_divUser .label.label-success {
@@ -116,12 +129,64 @@ h3.blueTitle,
     display: flex !important;
     align-items: center !important;
     gap: 8px !important;
+    float: none !important;
+    width: 100% !important;
 }
 
 /* ========== News Section ========== */
 .listBoxWrapper {
     max-height: none !important;
     overflow: visible !important;
+}
+
+/* --- "Tin tức xem tại đây" bar --- */
+.box > .listBoxWrapper:first-of-type {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    padding: 12px 16px !important;
+    background: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%) !important;
+    border: 1px solid #dbeafe !important;
+    border-radius: 10px !important;
+    margin-bottom: 16px !important;
+}
+
+/* Hide <br> inside the news bar */
+.box > .listBoxWrapper:first-of-type br {
+    display: none !important;
+}
+
+/* "Tin tức" label */
+.box > .listBoxWrapper:first-of-type > b {
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    color: #1e293b !important;
+    white-space: nowrap !important;
+}
+
+/* "xem tại đây" button - override Bootstrap btn-warning */
+.box > .listBoxWrapper:first-of-type .btn.btn-warning,
+.listBoxWrapper .btn.btn-warning {
+    background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%) !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 8px 20px !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    color: white !important;
+    letter-spacing: 0.3px !important;
+    transition: all 0.2s ease !important;
+    box-shadow: 0 2px 8px rgba(13, 110, 253, 0.25) !important;
+    cursor: pointer !important;
+    text-decoration: none !important;
+}
+
+.box > .listBoxWrapper:first-of-type .btn.btn-warning:hover,
+.listBoxWrapper .btn.btn-warning:hover {
+    background: linear-gradient(135deg, #0b5ed7 0%, #0a4fc4 100%) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 14px rgba(13, 110, 253, 0.35) !important;
+    text-decoration: none !important;
 }
 
 /* ========== IMPORTANT NOTICE Table ========== */
@@ -442,6 +507,13 @@ h3.blueTitle,
     color: #1e293b;
 }
 
+.fap-schedule-week-info {
+    font-size: 13px;
+    font-weight: 500;
+    color: #64748b;
+    margin-left: 8px;
+}
+
 .fap-schedule-controls {
     display: flex;
     gap: 8px;
@@ -512,21 +584,60 @@ h3.blueTitle,
     min-width: 80px;
 }
 
-.fap-date-cell .badge {
-    display: block;
+/* [L1] "Hom nay" badge -- Bootstrap 3 doesn't have badge-primary */
+.fap-badge-today {
+    display: inline-block;
     margin-top: 4px;
     font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: #0d6efd;
+    color: #fff;
+    font-weight: 600;
 }
 
-/* Today's row highlighting */
+/* [M8] Today highlighting -- border on date cell (spans all rows via rowspan) */
 .fap-today-row {
     background: rgba(13, 110, 253, 0.08) !important;
-    border-left: 4px solid #0d6efd !important;
 }
 
 .fap-today-row:hover {
     background: rgba(13, 110, 253, 0.12) !important;
 }
+
+.fap-today-date {
+    border-left: 4px solid #0d6efd !important;
+}
+
+/* ========== Attendance Stats Bar [M6] ========== */
+.fap-schedule-stats {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding: 10px 14px;
+    margin-bottom: 12px;
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    font-size: 13px;
+    color: #475569;
+}
+
+.fap-stat {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.fap-stat-num {
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.fap-stat-num.attended { color: #16a34a; }
+.fap-stat-num.notyet { color: #2563eb; }
+.fap-stat-num.absent { color: #dc2626; }
+.fap-stat-num.rate { color: #0d6efd; }
 
 /* ========== Status Labels ========== */
 .fap-schedule-table .label {
@@ -535,17 +646,37 @@ h3.blueTitle,
     border-radius: 4px;
 }
 
-/* ========== Schedule Footer ========== */
-.fap-schedule-footer {
-    margin-top: 12px;
-    padding-top: 8px;
-    border-top: 1px solid #eee;
-    text-align: center;
-    color: #999;
+/* ========== Course & Link Styles [M7] ========== */
+.fap-course-link {
+    color: #1e293b !important;
+    text-decoration: none !important;
 }
 
-.fap-schedule-footer small {
-    font-size: 11px;
+.fap-course-link:hover {
+    color: #0d6efd !important;
+    text-decoration: underline !important;
+}
+
+.fap-link-badge {
+    font-size: 10px !important;
+    padding: 2px 6px !important;
+    margin-left: 4px;
+    text-decoration: none !important;
+    cursor: pointer;
+    vertical-align: middle;
+}
+
+.fap-link-badge:hover {
+    opacity: 0.85;
+}
+
+/* ========== Error & Retry ========== */
+.fap-schedule-error .btn {
+    margin: 0 4px;
+}
+
+.fap-retry-btn {
+    margin-right: 8px !important;
 }
 
 /* ========== Notice Table Collapse Toggle ========== */
@@ -570,6 +701,23 @@ h3.blueTitle,
     background: #eef2ff;
     border-color: #c7d2fe;
     color: #0d6efd;
+}
+
+/* [L3] Focus accessibility styles */
+.fap-notice-toggle:focus-visible,
+.fap-schedule-controls .btn:focus-visible,
+.fap-retry-btn:focus-visible,
+.fap-course-link:focus-visible,
+.fap-link-badge:focus-visible {
+    outline: 2px solid #0d6efd;
+    outline-offset: 2px;
+}
+
+/* [M2] Disabled refresh button during loading */
+.fap-schedule-controls .btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    pointer-events: none;
 }
 
 .fap-notice-collapsed {

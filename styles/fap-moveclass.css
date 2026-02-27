@@ -1,0 +1,397 @@
+/* ============================================
+   FAP Move Class Enhancement — Styles
+   Injected on MoveSubject.aspx
+   ============================================ */
+
+/* ─── Container ─────────────────────────── */
+.mc-container {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: #1e293b;
+    padding: 12px 0;
+}
+
+/* ─── Action Bar ────────────────────────── */
+.mc-action-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+
+.mc-action-bar .mc-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 18px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    border: none;
+    color: #fff;
+    transition: background 0.2s, transform 0.15s;
+    text-decoration: none;
+}
+
+.mc-btn:hover {
+    transform: translateY(-1px);
+}
+
+.mc-btn-green {
+    background: #22c55e;
+}
+
+.mc-btn-green:hover {
+    background: #16a34a;
+}
+
+.mc-btn-blue {
+    background: #3b82f6;
+}
+
+.mc-btn-blue:hover {
+    background: #2563eb;
+}
+
+.mc-btn-slate {
+    background: #64748b;
+}
+
+.mc-btn-slate:hover {
+    background: #475569;
+}
+
+.mc-subject-label {
+    font-weight: 700;
+    font-size: 20px;
+    color: #1e293b;
+}
+
+.mc-loading-msg {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #475569;
+}
+
+/* ─── Filter Bar ────────────────────────── */
+.mc-filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+    padding: 8px 0;
+}
+
+.mc-filter-bar select,
+.mc-filter-bar input[type="text"] {
+    padding: 7px 12px;
+    border: 2px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 14px;
+    background: #fff;
+    transition: border-color 0.2s;
+    outline: none;
+}
+
+.mc-filter-bar select:focus,
+.mc-filter-bar input[type="text"]:focus {
+    border-color: #3b82f6;
+}
+
+.mc-filter-bar select {
+    max-width: 260px;
+}
+
+.mc-filter-bar input[type="text"] {
+    width: 140px;
+}
+
+.mc-filter-range {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 13px;
+    color: #475569;
+}
+
+.mc-filter-range input[type="range"] {
+    width: 130px;
+    accent-color: #3b82f6;
+}
+
+.mc-filter-reset {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #94a3b8;
+    color: #fff;
+    font-size: 14px;
+    cursor: pointer;
+    border: none;
+    line-height: 1;
+    transition: background 0.2s;
+}
+
+.mc-filter-reset:hover {
+    background: #64748b;
+}
+
+/* ─── Progress Bar ──────────────────────── */
+.mc-progress-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 12px 0;
+}
+
+.mc-progress-wrapper progress {
+    flex: 1;
+    height: 18px;
+    border-radius: 9px;
+    border: 1.5px solid #94a3b8;
+    overflow: hidden;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.mc-progress-wrapper progress::-webkit-progress-bar {
+    background: #f1f5f9;
+    border-radius: 8px;
+}
+
+.mc-progress-wrapper progress::-webkit-progress-value {
+    background: linear-gradient(90deg, #22c55e, #16a34a);
+    border-radius: 8px;
+    transition: width 0.3s;
+}
+
+/* ─── Timetable Grid ────────────────────── */
+.mc-timetable {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin: 12px 0;
+    font-size: 13px;
+}
+
+.mc-timetable thead td {
+    background: #3b82f6;
+    color: #fff;
+    font-weight: 700;
+    text-align: center;
+    padding: 10px 6px;
+    border: 1px solid #2563eb;
+}
+
+.mc-timetable thead td:first-child {
+    border-top-left-radius: 12px;
+}
+
+.mc-timetable thead td:last-child {
+    border-top-right-radius: 12px;
+}
+
+.mc-timetable tbody td {
+    border: 1px solid #e2e8f0;
+    padding: 6px;
+    vertical-align: top;
+    min-width: 130px;
+    width: 13%;
+}
+
+.mc-timetable tbody td:first-child {
+    background: #3b82f6;
+    color: #fff;
+    font-weight: 700;
+    text-align: center;
+    min-width: 80px;
+    width: auto;
+}
+
+.mc-timetable tbody tr:last-child td:first-child {
+    border-bottom-left-radius: 12px;
+}
+
+/* Header checkbox labels */
+.mc-day-label,
+.mc-slot-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    cursor: pointer;
+    margin: 0;
+    font-weight: 700;
+}
+
+.mc-day-label input,
+.mc-slot-label input {
+    margin: 0;
+    accent-color: #fff;
+}
+
+/* ─── Class Cell ────────────────────────── */
+.mc-class-cell {
+    padding: 6px 8px;
+    border-radius: 6px;
+    margin-bottom: 5px;
+    font-weight: 600;
+    font-size: 12px;
+    cursor: pointer;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    transition: transform 0.15s, box-shadow 0.15s;
+    line-height: 1.4;
+}
+
+.mc-class-cell:hover {
+    transform: scale(1.03);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.mc-class-cell:last-child {
+    margin-bottom: 0;
+}
+
+.mc-class-cell .mc-student-count {
+    display: block;
+    font-size: 11px;
+    font-weight: 400;
+    color: #475569;
+    margin-top: 3px;
+}
+
+.mc-class-hidden {
+    display: none;
+}
+
+/* ─── Accordion Sections ────────────────── */
+.mc-accordion {
+    margin-top: 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.mc-accordion summary {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    background: #f8fafc;
+    list-style: none;
+    user-select: none;
+    transition: background 0.2s;
+}
+
+.mc-accordion summary::-webkit-details-marker {
+    display: none;
+}
+
+.mc-accordion summary:hover {
+    background: #f1f5f9;
+}
+
+.mc-accordion .mc-chevron {
+    transition: transform 0.3s;
+    font-size: 12px;
+    color: #3b82f6;
+}
+
+.mc-accordion[open] .mc-chevron {
+    transform: rotate(180deg);
+}
+
+.mc-accordion-body {
+    padding: 12px 16px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.mc-student-list-container {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.mc-schedule-iframe {
+    width: 100%;
+    height: 400px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+}
+
+/* ─── Version / Links Bar ───────────────── */
+.mc-links-bar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 16px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.mc-links-bar a {
+    color: #3b82f6;
+    text-decoration: none;
+    border-bottom: 2px solid #3b82f6;
+    padding-bottom: 1px;
+    transition: border-color 0.2s;
+}
+
+.mc-links-bar a:hover {
+    border-color: transparent;
+}
+
+/* ─── Toggle old FAP features ───────────── */
+.mc-toggle-old {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 12px;
+    font-size: 14px;
+}
+
+.mc-toggle-old label {
+    cursor: pointer;
+    margin: 0;
+}
+
+/* ─── Spinner ───────────────────────────── */
+@keyframes mc-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.mc-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2.5px solid #cbd5e1;
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: mc-spin 0.7s linear infinite;
+}
+
+/* ─── Responsive ────────────────────────── */
+@media (max-width: 900px) {
+    .mc-timetable {
+        font-size: 11px;
+    }
+
+    .mc-timetable tbody td {
+        min-width: 90px;
+    }
+
+    .mc-filter-bar {
+        gap: 8px;
+    }
+}

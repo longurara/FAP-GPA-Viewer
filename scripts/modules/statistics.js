@@ -4,18 +4,35 @@
 
 const StatisticsService = {
     gpaChartInstance: null,
+    _chartLoading: null,
+
+    /**
+     * Lazy-load Chart.js only when statistics tab is actually used
+     * Saves ~70KB parse time at popup startup
+     */
+    async _ensureChartJS() {
+        if (window.Chart) return;
+        if (this._chartLoading) return this._chartLoading;
+        this._chartLoading = new Promise((resolve, reject) => {
+            const s = document.createElement("script");
+            s.src = chrome.runtime.getURL("assets/vendor/chart.min.js");
+            s.onload = () => { this._chartLoading = null; resolve(); };
+            s.onerror = () => { this._chartLoading = null; reject(new Error("Failed to load Chart.js")); };
+            document.head.appendChild(s);
+        });
+        return this._chartLoading;
+    },
 
     /**
      * Load and display statistics
      */
     async loadStatistics() {
         try {
-            const cachedObj = await window.STORAGE?.get("cache_transcript", null);
+            // Batch read: transcript + excluded courses in single IPC call
+            const { cache_transcript: cachedObj, excluded_courses: excludedCourses } =
+                await window.STORAGE?.getMultiple({ cache_transcript: null, excluded_courses: [] }) || {};
             const cache = cachedObj?.data || cachedObj;
             if (!cache || !cache.rows) return;
-
-            // Get excluded courses first
-            const excludedCourses = await window.STORAGE?.get("excluded_courses", []) || [];
 
             // Filter: only courses with valid grades AND not excluded
             const rows = cache.rows.filter((r) => {
@@ -68,6 +85,8 @@ const StatisticsService = {
                 return Number.isFinite(gpa.gpa10) ? gpa.gpa10 : 0;
             });
 
+            // Lazy-load Chart.js before rendering
+            await this._ensureChartJS();
             this.renderGPAChart(semesters, gpaData);
         } catch (error) {
             console.error("[Statistics] Error loading statistics:", error);
@@ -188,4 +207,3 @@ const StatisticsService = {
 window.StatisticsService = StatisticsService;
 window.loadStatistics = () => StatisticsService.loadStatistics();
 window.renderGPAChart = (labels, data) => StatisticsService.renderGPAChart(labels, data);
-window.gpaChartInstance = null; // For backward compatibility

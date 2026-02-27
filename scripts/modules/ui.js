@@ -21,7 +21,6 @@ const Modal = {
       this.overlay = document.createElement("div");
       this.overlay.id = "modalOverlay";
       this.overlay.className = "modal-overlay";
-      this.overlay.className = "modal-overlay";
       this.overlay.innerHTML = `
         <div class="modal-box">
           <div class="modal-icon"></div>
@@ -49,12 +48,18 @@ const Modal = {
       if (e.target === this.overlay) this.close();
     });
 
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && this.overlay?.classList.contains("active")) {
-        this.close();
-      }
-    });
+    // Escape key handler — only attach once
+    if (!Modal._escListenerAdded) {
+      Modal._escListenerAdded = true;
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && Modal.overlay?.classList.contains("active")) {
+          Modal.close();
+        }
+      });
+    }
   },
+
+  _abortCtrl: null,
 
   show({
     icon = "ℹ️",
@@ -100,30 +105,27 @@ const Modal = {
         }
       }
 
-      this.message.innerHTML = message || ""; // Allow HTML for bold text
+      this.message.textContent = message || "";
       this.confirmBtn.textContent = confirmText;
       this.cancelBtn.textContent = cancelText;
       this.cancelBtn.style.display = showCancel ? "block" : "none";
 
-      // Remove old listeners
-      const newConfirmBtn = this.confirmBtn.cloneNode(true);
-      const newCancelBtn = this.cancelBtn.cloneNode(true);
-      this.confirmBtn.parentNode.replaceChild(newConfirmBtn, this.confirmBtn);
-      this.cancelBtn.parentNode.replaceChild(newCancelBtn, this.cancelBtn);
-      this.confirmBtn = newConfirmBtn;
-      this.cancelBtn = newCancelBtn;
+      // Abort previous listeners (replaces clone+replace pattern)
+      if (this._abortCtrl) this._abortCtrl.abort();
+      this._abortCtrl = new AbortController();
+      const signal = this._abortCtrl.signal;
 
       this.confirmBtn.addEventListener("click", () => {
         this.close();
         if (onConfirm) onConfirm();
         resolve(true);
-      });
+      }, { signal });
 
       this.cancelBtn.addEventListener("click", () => {
         this.close();
         if (onCancel) onCancel();
         resolve(false);
-      });
+      }, { signal });
 
       this.overlay.classList.add("active");
       this.box.classList.remove("success");
@@ -191,8 +193,8 @@ const Toast = {
   show({ icon = "ℹ️", title = "", message = "", type = "info", duration = 3000 }) {
     if (!this.container) this.init();
 
-    // Escape helper to prevent XSS from server-derived data
-    const esc = (s) => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+    // Use centralized escapeHtml from utils.js (no DOM element creation per call)
+    const esc = window.escapeHtml || ((s) => String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"));
 
     const toast = document.createElement("div");
     toast.className = `toast ${type}`;

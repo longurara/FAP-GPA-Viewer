@@ -13,24 +13,47 @@ const ApiService = {
     },
 
     /**
-     * Wait for tab to complete loading
+     * Wait for tab to complete loading (event-based, no polling)
      * @param {number} tabId - Chrome tab ID
      * @param {number} timeoutMs - Timeout in milliseconds
      * @returns {Promise<boolean>} - True if completed, false if timeout
      */
     async waitForTabComplete(tabId, timeoutMs = 8000) {
-        const start = Date.now();
-        while (Date.now() - start < timeoutMs) {
-            try {
-                const tab = await chrome.tabs.get(tabId);
-                if (tab.status === "complete") return true;
-            } catch (_) {
-                // Tab was closed/removed during polling
-                return false;
+        return new Promise((resolve) => {
+            let settled = false;
+            const timer = setTimeout(() => {
+                if (settled) return;
+                settled = true;
+                chrome.tabs.onUpdated.removeListener(listener);
+                resolve(false);
+            }, timeoutMs);
+
+            function listener(updatedTabId, changeInfo) {
+                if (updatedTabId !== tabId || changeInfo.status !== "complete") return;
+                if (settled) return;
+                settled = true;
+                clearTimeout(timer);
+                chrome.tabs.onUpdated.removeListener(listener);
+                resolve(true);
             }
-            await new Promise((r) => setTimeout(r, 150));
-        }
-        return false;
+
+            // Check if already complete before attaching listener
+            chrome.tabs.get(tabId).then((tab) => {
+                if (settled) return;
+                if (tab.status === "complete") {
+                    settled = true;
+                    clearTimeout(timer);
+                    resolve(true);
+                } else {
+                    chrome.tabs.onUpdated.addListener(listener);
+                }
+            }).catch(() => {
+                if (settled) return;
+                settled = true;
+                clearTimeout(timer);
+                resolve(false);
+            });
+        });
     },
 
     /**
@@ -93,9 +116,12 @@ const ApiService = {
     looksLikeLoginPage(doc) {
         if (!doc) return true;
         const title = (doc.querySelector("title")?.textContent || "").toLowerCase();
-        if (title.includes("login") || title.includes("đăng nhập") || title.includes("dang nhap")) return true;
-        const bodyText = (doc.body?.textContent || "").slice(0, 500).toLowerCase();
-        if (bodyText.includes("login") || bodyText.includes("đăng nhập") || bodyText.includes("dang nhap")) return true;
+        if (title.includes("đăng nhập") || title.includes("dang nhap")) return true;
+        // Exclude "logout"/"lbllogin" which appear on logged-in pages (aligned with background.js)
+        if (title.includes("login") && !title.includes("logout") && !title.includes("lbllogin")) return true;
+        const bodyText = (doc.body?.textContent || "").slice(0, 2000).toLowerCase();
+        if (bodyText.includes("đăng nhập") || bodyText.includes("dang nhap")) return true;
+        if (bodyText.includes("login") && !bodyText.includes("logout") && !bodyText.includes("lbllogin")) return true;
         return false;
     },
 

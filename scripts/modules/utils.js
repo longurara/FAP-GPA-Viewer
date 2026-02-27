@@ -2,6 +2,9 @@
 // Utils Module - DOM & String Helpers
 // ===============================
 
+// Module-level constant (avoids recreating per call)
+const DAY_VI_MAP = { MON: "Thứ 2", TUE: "Thứ 3", WED: "Thứ 4", THU: "Thứ 5", FRI: "Thứ 6", SAT: "Thứ 7", SUN: "Chủ nhật" };
+
 const Utils = {
     /**
      * Query selector shorthand
@@ -65,16 +68,22 @@ const Utils = {
      * @returns {string} - Vietnamese day name
      */
     dayToVietnamese(day) {
-        const map = {
-            MON: "Thứ 2",
-            TUE: "Thứ 3",
-            WED: "Thứ 4",
-            THU: "Thứ 5",
-            FRI: "Thứ 6",
-            SAT: "Thứ 7",
-            SUN: "Chủ nhật",
-        };
-        return map[day] || day;
+        return DAY_VI_MAP[day] || day;
+    },
+
+    /**
+     * Escape HTML to prevent XSS (regex-based, no DOM element creation)
+     * @param {string} str - Input string
+     * @returns {string} - Escaped string
+     */
+    escapeHtml(str) {
+        if (!str) return "";
+        return String(str)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
     },
 
     // ========== Validation Functions ==========
@@ -89,9 +98,10 @@ const Utils = {
         if (!Array.isArray(entries)) return false;
         if (entries.length === 0) return false;
 
-        // Check if at least one entry has valid course code (e.g., "ABC123")
+        // Check if at least one entry has valid course code
+        // Matches: ABC123, GDQP01, LAB211, SS2 (2-4 letters + 2-3 digits + optional letter suffix)
         const hasValidEntry = entries.some(e =>
-            e && e.course && /^[A-Z]{2,4}\d{3}$/.test(e.course)
+            e && e.course && /^[A-Z]{2,4}\d{2,3}[A-Z]?$/.test(e.course)
         );
 
         return hasValidEntry;
@@ -111,7 +121,7 @@ const Utils = {
             const c = it.credit;
             const g = it.grade;
             const code = (it.code || "").toUpperCase();
-            if (!Number.isFinite(c) || !Number.isFinite(g) || c <= 0 || g <= 0) continue;
+            if (!Number.isFinite(c) || !Number.isFinite(g) || c <= 0 || g < 0) continue;
             if (excluded.includes(code)) continue;
             sumC += c;
             sumP += c * g;
@@ -136,4 +146,5 @@ window.dayToVietnamese = window.dayToVietnamese || Utils.dayToVietnamese;
 // New centralized functions
 window.isValidScheduleData = Utils.isValidScheduleData;
 window.computeGPA = Utils.computeGPA;
+window.escapeHtml = Utils.escapeHtml;
 

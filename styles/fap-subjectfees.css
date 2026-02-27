@@ -4,6 +4,18 @@
  * Beautifies the subject fees table with modern styling
  */
 
+/* ========== Hide Chat Widget Loading ========== */
+#chat-widget-container>div:first-child {
+    display: none !important;
+}
+
+/* ========== Hide Original FAP App Banner ========== */
+.container>.row:first-child>.col-md-6:last-child,
+.container>.row>.col-md-6:has(img[alt="apple store"]),
+.container>.row>.col-md-6:has(img[alt="google store"]) {
+    display: none !important;
+}
+
 /* ========== Page Background ========== */
 body {
     background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 50%, #f0f9ff 100%) !important;
@@ -30,7 +42,7 @@ h1 {
     background: rgba(255, 255, 255, 0.7) !important;
     border: 1px solid rgba(226, 232, 240, 0.8) !important;
     border-radius: 10px !important;
-    padding: 10px 280px 10px 20px !important;
+    padding: 12px 20px !important;
     backdrop-filter: blur(8px) !important;
     font-size: 14px !important;
     clear: both !important;
@@ -347,6 +359,7 @@ h2 {
     margin: 8px 0 !important;
     position: relative !important;
     z-index: 20 !important;
+    font-size: 0 !important;
 }
 
 #ctl00_divUser .label.label-success {
@@ -368,14 +381,17 @@ h2 {
     border: 1px solid rgba(13, 110, 253, 0.2) !important;
 }
 
-/* Campus badge - position inside the breadcrumb bar */
-#ctl00_lblCampusName {
-    position: absolute !important;
-    right: 12px !important;
-    top: 50% !important;
-    transform: translateY(-50%) !important;
-    z-index: 25 !important;
-    margin: 0 !important;
+/* ========== User Info Bar - Hover ========== */
+#ctl00_divUser .label.label-success:hover {
+    background: linear-gradient(135deg, #2d4a6f 0%, #1a3050 100%) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(13, 33, 55, 0.3) !important;
+}
+
+#ctl00_divUser a.label.label-success:hover {
+    background: rgba(13, 110, 253, 0.2) !important;
+    text-decoration: none !important;
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.15) !important;
 }
 
 /* ========== Responsive ========== */

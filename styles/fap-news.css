@@ -19,7 +19,9 @@ body {
 }
 
 /* ========== Hide Original FAP App Banner ========== */
-.container>.row:first-child>.col-md-6:last-child {
+.container>.row:first-child>.col-md-6:last-child,
+.container>.row>.col-md-6:has(img[alt="apple store"]),
+.container>.row>.col-md-6:has(img[alt="google store"]) {
     display: none !important;
 }
 
@@ -43,6 +45,7 @@ h1 {
     margin: 8px 0 !important;
     position: relative !important;
     z-index: 20 !important;
+    font-size: 0 !important;
 }
 
 #ctl00_divUser .label.label-success {
@@ -188,26 +191,32 @@ h1 {
 }
 
 /* ========== "More" Button ========== */
-.btn.btn-success {
+#ctl00_mainContent_divContent a.btn.btn-success,
+a.btn.btn-success {
     background: linear-gradient(135deg, #0d6efd 0%, #6366f1 100%) !important;
     border: none !important;
     border-radius: 10px !important;
     padding: 10px 28px !important;
     font-size: 14px !important;
     font-weight: 600 !important;
-    color: white !important;
+    color: #ffffff !important;
     letter-spacing: 0.3px !important;
     transition: all 0.3s ease !important;
     box-shadow: 0 4px 12px rgba(13, 110, 253, 0.25) !important;
     cursor: pointer !important;
+    text-decoration: none !important;
+    display: inline-block !important;
 }
 
-.btn.btn-success:hover {
+#ctl00_mainContent_divContent a.btn.btn-success:hover,
+a.btn.btn-success:hover {
     transform: translateY(-2px) !important;
     box-shadow: 0 6px 20px rgba(13, 110, 253, 0.35) !important;
+    color: #ffffff !important;
+    text-decoration: none !important;
 }
 
-.btn.btn-success:active {
+a.btn.btn-success:active {
     transform: translateY(0) !important;
 }
 

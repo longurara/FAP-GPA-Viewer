@@ -1,19 +1,452 @@
 /**
  * FAP Schedule of Week - Clean Enhancement Styles
+ * Injected into https://fap.fpt.edu.vn/Report/ScheduleOfWeek.aspx
  */
 
-/* ========== BODY ========== */
-body.fap-enhanced {
-    background: #f5f5f5 !important;
+/* ========== Hide Chat Widget Loading ========== */
+#chat-widget-container>div:first-child {
+    display: none !important;
 }
+
+/* ========== General Page ========== */
+body {
+    background: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 100%) !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif !important;
+}
+
+.container {
+    max-width: 1200px !important;
+}
+
+/* ========== Hide Original FAP App Banner ========== */
+.container>.row:first-child>.col-md-6:last-child,
+.container>.row>.col-md-6:has(img[alt="apple store"]),
+.container>.row>.col-md-6:has(img[alt="google store"]) {
+    display: none !important;
+}
+
+/* ========== Header Title ========== */
+h1 {
+    font-size: 24px !important;
+    font-weight: 800 !important;
+    color: #1e293b !important;
+    letter-spacing: -0.5px !important;
+}
+
+/* ========== User Info Bar ========== */
+#ctl00_divUser {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    float: right !important;
+    max-width: 70% !important;
+    margin: 8px 0 !important;
+    position: relative !important;
+    z-index: 20 !important;
+    font-size: 0 !important;
+}
+
+#ctl00_divUser .label.label-success {
+    background: linear-gradient(135deg, #1e3a5f 0%, #0d2137 100%) !important;
+    border: none !important;
+    border-radius: 20px !important;
+    padding: 6px 14px !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    letter-spacing: 0.3px !important;
+    color: white !important;
+    transition: all 0.2s ease !important;
+    display: inline-block !important;
+}
+
+#ctl00_divUser .label.label-success:hover {
+    background: linear-gradient(135deg, #2d4a6f 0%, #1a3050 100%) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(13, 33, 55, 0.3) !important;
+}
+
+#ctl00_divUser a.label.label-success {
+    background: rgba(13, 110, 253, 0.1) !important;
+    color: #0d6efd !important;
+    font-weight: 600 !important;
+    border: 1px solid rgba(13, 110, 253, 0.2) !important;
+}
+
+#ctl00_divUser a.label.label-success:hover {
+    background: rgba(13, 110, 253, 0.2) !important;
+    text-decoration: none !important;
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.15) !important;
+}
+
+/* ========== Breadcrumb ========== */
+.breadcrumb {
+    background: white !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 10px !important;
+    padding: 12px 20px !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+    margin-bottom: 16px !important;
+}
+
+.breadcrumb a {
+    color: #0d6efd !important;
+    text-decoration: none !important;
+}
+
+.breadcrumb a:hover {
+    color: #0b5ed7 !important;
+    text-decoration: underline !important;
+}
+
+/* ========== Footer ========== */
+#ctl00_divSupporthcm,
+#ctl00_divSupportdn,
+#ctl00_divSupporthn,
+#ctl00_divSupportct {
+    background: #f8fafc !important;
+    padding: 16px 20px !important;
+    border-radius: 10px !important;
+    border: none !important;
+    font-size: 13px !important;
+    color: #475569 !important;
+    line-height: 1.6 !important;
+}
+
+#ctl00_divSupporthcm strong,
+#ctl00_divSupportdn strong,
+#ctl00_divSupporthn strong,
+#ctl00_divSupportct strong {
+    color: #0d6efd !important;
+}
+
+#cssTable {
+    margin-top: 24px !important;
+    border: none !important;
+}
+
+#cssTable td {
+    padding: 16px !important;
+    font-size: 13px !important;
+    color: #94a3b8 !important;
+    text-align: center !important;
+}
+
+#cssTable a {
+    color: #0d6efd !important;
+    text-decoration: none !important;
+}
+
+#cssTable a:hover {
+    text-decoration: underline !important;
+}
+
+/* ===========================================================
+   Page Content Styles (original server-rendered elements)
+   =========================================================== */
+
+/* ========== Page Title (h2) ========== */
+h2 {
+    font-size: 22px !important;
+    font-weight: 700 !important;
+    color: #1e293b !important;
+    margin: 0 0 16px 0 !important;
+    padding-bottom: 12px !important;
+    border-bottom: 3px solid #0d6efd !important;
+    display: block !important;
+    line-height: 1.4 !important;
+}
+
+h2 #ctl00_mainContent_lblStudent {
+    color: #0d6efd !important;
+    font-weight: 700 !important;
+}
+
+/* ========== Note Paragraphs ========== */
+h2 + p,
+h2 + p + p {
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 8px !important;
+    padding: 10px 16px !important;
+    margin: 0 0 8px 0 !important;
+    font-size: 13px !important;
+    color: #475569 !important;
+    line-height: 1.6 !important;
+}
+
+h2 + p b,
+h2 + p + p b {
+    color: #1e293b !important;
+    font-weight: 700 !important;
+}
+
+/* ========== NVH Warning (HCM campus note) ========== */
+#ctl00_mainContent_ghichuHCM {
+    margin: 0 0 16px 0 !important;
+}
+
+#ctl00_mainContent_ghichuHCM .auto-style2,
+.auto-style2 {
+    color: #dc2626 !important;
+    font-size: 13px !important;
+    background: rgba(220, 38, 38, 0.06) !important;
+    border: 1px solid rgba(220, 38, 38, 0.15) !important;
+    border-left: 4px solid #dc2626 !important;
+    border-radius: 8px !important;
+    padding: 10px 16px !important;
+    display: block !important;
+    line-height: 1.6 !important;
+    margin: 0 !important;
+}
+
+/* ========== Schedule Table - Override fu.css ========== */
+.fap-schedule-wrapper .fap-schedule-grid,
+table:has(th .auto-style1) {
+    width: 100% !important;
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+    border-radius: 12px !important;
+    overflow: hidden !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+    border: 1px solid #e2e8f0 !important;
+    background: white !important;
+    font-size: 13px !important;
+}
+
+/* --- Table Header Row 1: Year/Week selector + Day names --- */
+.fap-schedule-grid thead th,
+table:has(th .auto-style1) thead th {
+    background: linear-gradient(135deg, #1e3a5f 0%, #0d2137 100%) !important;
+    color: white !important;
+    font-weight: 600 !important;
+    font-size: 12px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    padding: 12px 14px !important;
+    border: none !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    text-align: center !important;
+    white-space: nowrap !important;
+}
+
+/* Year/Week selector cell */
+.fap-schedule-grid thead th[rowspan],
+table:has(th .auto-style1) thead th[rowspan] {
+    background: linear-gradient(180deg, #0f172a 0%, #1a2744 100%) !important;
+    text-align: left !important;
+    padding: 16px 20px !important;
+    vertical-align: middle !important;
+    min-width: 220px !important;
+    font-size: 10px !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1.5px !important;
+    color: #94a3b8 !important;
+    line-height: 2 !important;
+}
+
+/* <br> between YEAR and WEEK → spacing */
+.fap-schedule-grid thead th[rowspan] br,
+table:has(th .auto-style1) thead th[rowspan] br {
+    display: block !important;
+    content: "" !important;
+    margin: 6px 0 !important;
+}
+
+/* YEAR / WEEK labels */
+.fap-schedule-grid thead th[rowspan] .auto-style1,
+table:has(th .auto-style1) thead th[rowspan] .auto-style1 {
+    color: #94a3b8 !important;
+    font-size: 10px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1.5px !important;
+    font-weight: 600 !important;
+}
+
+.fap-schedule-grid thead th[rowspan] .auto-style1 strong,
+table:has(th .auto-style1) thead th[rowspan] .auto-style1 strong {
+    color: #94a3b8 !important;
+    font-weight: 600 !important;
+}
+
+/* Date row (2nd header row) */
+.fap-schedule-grid thead tr:nth-child(2) th,
+table:has(th .auto-style1) thead tr:nth-child(2) th {
+    background: #f1f5f9 !important;
+    color: #475569 !important;
+    font-weight: 700 !important;
+    font-size: 13px !important;
+    padding: 8px 14px !important;
+    border-bottom: 2px solid #e2e8f0 !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+}
+
+/* ========== Select Dropdowns ========== */
+#ctl00_mainContent_drpYear,
+#ctl00_mainContent_drpSelectWeek {
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    background-color: rgba(255, 255, 255, 0.07) !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 12px center !important;
+    color: #f1f5f9 !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-radius: 8px !important;
+    padding: 8px 34px 8px 14px !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    font-family: inherit !important;
+    cursor: pointer !important;
+    outline: none !important;
+    transition: all 0.2s ease !important;
+    width: auto !important;
+    letter-spacing: 0 !important;
+    text-transform: none !important;
+}
+
+#ctl00_mainContent_drpYear {
+    min-width: 85px !important;
+}
+
+#ctl00_mainContent_drpSelectWeek {
+    min-width: 175px !important;
+}
+
+#ctl00_mainContent_drpYear:hover,
+#ctl00_mainContent_drpSelectWeek:hover {
+    background-color: rgba(255, 255, 255, 0.12) !important;
+    border-color: rgba(255, 255, 255, 0.25) !important;
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1) !important;
+}
+
+#ctl00_mainContent_drpYear:focus,
+#ctl00_mainContent_drpSelectWeek:focus {
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2) !important;
+    background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Option elements (Chrome supports limited styling) */
+#ctl00_mainContent_drpYear option,
+#ctl00_mainContent_drpSelectWeek option {
+    background: #1e293b !important;
+    color: #e2e8f0 !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    padding: 6px 12px !important;
+}
+
+/* Selected option uses linear-gradient trick for Chrome */
+#ctl00_mainContent_drpYear option:checked,
+#ctl00_mainContent_drpSelectWeek option:checked {
+    background: linear-gradient(0deg, #2563eb 0%, #3b82f6 100%) !important;
+    color: #ffffff !important;
+    font-weight: 600 !important;
+}
+
+/* Custom scrollbar for the dropdown list (Chrome) */
+#ctl00_mainContent_drpYear::-webkit-scrollbar,
+#ctl00_mainContent_drpSelectWeek::-webkit-scrollbar {
+    width: 6px !important;
+}
+
+#ctl00_mainContent_drpYear::-webkit-scrollbar-track,
+#ctl00_mainContent_drpSelectWeek::-webkit-scrollbar-track {
+    background: #0f172a !important;
+}
+
+#ctl00_mainContent_drpYear::-webkit-scrollbar-thumb,
+#ctl00_mainContent_drpSelectWeek::-webkit-scrollbar-thumb {
+    background: #475569 !important;
+    border-radius: 3px !important;
+}
+
+#ctl00_mainContent_drpYear::-webkit-scrollbar-thumb:hover,
+#ctl00_mainContent_drpSelectWeek::-webkit-scrollbar-thumb:hover {
+    background: #64748b !important;
+}
+
+/* ========== Table Body ========== */
+.fap-schedule-grid tbody td,
+table:has(th .auto-style1) tbody td {
+    padding: 10px 14px !important;
+    border: none !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+    border-right: 1px solid #f1f5f9 !important;
+    vertical-align: top !important;
+    color: #334155 !important;
+    transition: background 0.15s ease !important;
+    font-size: 13px !important;
+}
+
+.fap-schedule-grid tbody tr:hover td,
+table:has(th .auto-style1) tbody tr:hover td {
+    background: rgba(13, 110, 253, 0.03) !important;
+}
+
+/* ========== "More note / Chu thich them" Footer ========== */
+#ctl00_mainContent_divfoot {
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 10px !important;
+    padding: 16px 20px !important;
+    margin-top: 8px !important;
+}
+
+#ctl00_mainContent_divfoot ul {
+    list-style: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+#ctl00_mainContent_divfoot ul li {
+    padding: 8px 0 !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    font-size: 13px !important;
+    color: #475569 !important;
+    line-height: 1.6 !important;
+}
+
+#ctl00_mainContent_divfoot ul li:last-child {
+    border-bottom: none !important;
+}
+
+#ctl00_mainContent_divfoot font[color="green"] {
+    color: #16a34a !important;
+    font-weight: 700 !important;
+}
+
+#ctl00_mainContent_divfoot font[color="red"] {
+    color: #dc2626 !important;
+    font-weight: 700 !important;
+}
+
+/* "More note" label paragraph */
+#ctl00_mainContent_divfoot ~ p,
+p:has(+ #ctl00_mainContent_divfoot),
+table:has(th .auto-style1) + p {
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    color: #1e293b !important;
+    margin: 20px 0 4px 0 !important;
+}
+
+/* ===========================================================
+   Schedule Widget Styles (applied by JS via class names)
+   =========================================================== */
 
 /* ========== HEADER WIDGET ========== */
 .fap-header-widget {
-    background: #fff;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    padding: 12px 16px;
-    margin-bottom: 12px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 14px 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .fap-header-row {
@@ -25,9 +458,9 @@ body.fap-enhanced {
 }
 
 .fap-header-title {
-    font-size: 15px;
-    font-weight: 600;
-    color: #333;
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
 }
 
 .fap-header-stats {
@@ -38,7 +471,7 @@ body.fap-enhanced {
 
 .fap-stat {
     font-size: 12px;
-    color: #666;
+    color: #64748b;
 }
 
 .fap-stat-num {
@@ -64,10 +497,12 @@ body.fap-enhanced {
 
 /* ========== TABLE WRAPPER ========== */
 .fap-schedule-wrapper {
-    background: #fff;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    padding: 12px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 0;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 /* ========== TABLE ========== */
@@ -85,84 +520,94 @@ body.fap-enhanced {
 
 /* ========== HEADERS ========== */
 .fap-day-header {
-    background: #f9f9f9 !important;
+    background: linear-gradient(135deg, #1e3a5f 0%, #0d2137 100%) !important;
     font-weight: 600 !important;
-    color: #444 !important;
+    color: white !important;
+    text-align: center !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    font-size: 12px !important;
 }
 
 /* ========== SLOT CELLS ========== */
 .fap-slot-cell {
-    background: #f9f9f9 !important;
-    font-weight: 600 !important;
-    color: #555 !important;
+    background: #f8fafc !important;
+    font-weight: 700 !important;
+    color: #475569 !important;
     text-align: center;
+    font-size: 12px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.3px !important;
 }
 
 /* ========== COURSE CELLS ========== */
 .fap-has-course {
-    background: #fff !important;
+    background: #ffffff !important;
 }
 
 .fap-has-course:hover {
-    background: #fafafa !important;
+    background: rgba(13, 110, 253, 0.03) !important;
 }
 
 /* ========== STATUS BACKGROUNDS ========== */
 .fap-status-attended {
     background: rgba(230, 126, 34, 0.06) !important;
-    border-left: 3px solid #e67e22 !important;
+    border-left: 4px solid #e67e22 !important;
 }
 
 .fap-status-notyet {
     background: rgba(39, 174, 96, 0.06) !important;
-    border-left: 3px solid #27ae60 !important;
+    border-left: 4px solid #27ae60 !important;
 }
 
 .fap-status-absent {
     background: rgba(231, 76, 60, 0.06) !important;
-    border-left: 3px solid #e74c3c !important;
+    border-left: 4px solid #e74c3c !important;
 }
 
 /* ========== EMPTY CELLS ========== */
 .fap-empty-cell {
-    background: #fafafa !important;
-    color: #ccc !important;
+    background: #fafbfc !important;
+    color: #cbd5e1 !important;
 }
 
 /* ========== TODAY ========== */
 .fap-today {
-    background: #e8f4fc !important;
-    font-weight: 600 !important;
+    background: rgba(13, 110, 253, 0.08) !important;
+    font-weight: 700 !important;
+    color: #0d6efd !important;
 }
 
 /* ========== LINKS ========== */
 .fap-link {
     display: inline-block !important;
     font-size: 11px !important;
-    padding: 2px 6px !important;
-    border-radius: 3px !important;
+    padding: 2px 8px !important;
+    border-radius: 4px !important;
     text-decoration: none !important;
-    margin: 1px !important;
+    margin: 2px 1px !important;
+    font-weight: 600 !important;
+    transition: all 0.15s ease !important;
 }
 
 .fap-link-materials {
     background: #fef5e7 !important;
-    color: #b7791f !important;
-    border: 1px solid #f6e05e !important;
+    color: #92400e !important;
+    border: 1px solid #fbbf24 !important;
 }
 
 .fap-link-materials:hover {
-    background: #fef3c7 !important;
+    background: #fde68a !important;
 }
 
 .fap-link-meet {
-    background: #ebf8ff !important;
-    color: #2b6cb0 !important;
-    border: 1px solid #90cdf4 !important;
+    background: #eff6ff !important;
+    color: #1d4ed8 !important;
+    border: 1px solid #93c5fd !important;
 }
 
 .fap-link-meet:hover {
-    background: #bee3f8 !important;
+    background: #bfdbfe !important;
 }
 
 /* ========== RESPONSIVE ========== */
@@ -183,7 +628,7 @@ body.fap-enhanced {
 
 /* ========== PRINT ========== */
 @media print {
-    body.fap-enhanced {
+    body {
         background: #fff !important;
     }
 
@@ -191,5 +636,9 @@ body.fap-enhanced {
     .fap-schedule-wrapper {
         border: 1px solid #999;
         box-shadow: none;
+    }
+
+    #chat-widget-container {
+        display: none !important;
     }
 }

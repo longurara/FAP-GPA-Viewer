@@ -2,6 +2,21 @@
    COMPONENTS.CSS - Buttons, Cards, Forms, Tables
    =============================== */
 
+/* ========== Utility Classes ========== */
+.btn-copied {
+    background: #10b981 !important;
+    border-color: #10b981 !important;
+    color: #fff !important;
+}
+
+.status-attended {
+    color: #10b981;
+}
+
+.status-absent {
+    color: #ef4444;
+}
+
 /* ========== Cards ========== */
 .card {
     background: linear-gradient(160deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0)) padding-box,
@@ -339,7 +354,7 @@ td.r {
     animation: statusPulse 1.5s infinite;
 }
 
-/* ========== Statistics Grid ========== */
+/* ========== Statistics Grid (Redesigned) ========== */
 .stats-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -348,16 +363,57 @@ td.r {
 }
 
 .stat-card {
-    background: var(--card-bg);
-    border: 1px solid var(--border);
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0)) padding-box,
+        var(--card-bg);
+    border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
     border-radius: 14px;
     padding: 16px;
-    transition: all 0.2s ease;
+    transition: all 0.25s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    opacity: 0;
+    transition: opacity 0.3s ease;
 }
 
 .stat-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+    border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+}
+
+.stat-card:hover::before {
+    opacity: 1;
+}
+
+.stat-icon-badge {
+    font-size: 20px;
+    margin-bottom: 8px;
+    line-height: 1;
+}
+
+.stat-card--best .stat-value {
+    color: #10b981;
+    text-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
+}
+
+.stat-card--worst .stat-value {
+    color: #f59e0b;
+    text-shadow: 0 2px 8px rgba(245, 158, 11, 0.2);
+}
+
+.stat-card--pass .stat-value {
+    color: var(--accent-2);
+    text-shadow: 0 2px 8px rgba(96, 165, 250, 0.2);
 }
 
 .stat-label {
@@ -456,44 +512,6 @@ td.r {
     border: none;
 }
 
-/* ========== Settings Sections ========== */
-.settings-section {
-    background: var(--card-bg);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 20px;
-    margin-bottom: 16px;
-}
-
-/* ========== Theme Presets ========== */
-.theme-presets {
-    display: flex;
-    gap: 10px;
-}
-
-.theme-preset {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    border: 3px solid transparent;
-    background: var(--preset-color);
-    cursor: pointer;
-    transition: all 0.2s ease;
-    padding: 0;
-    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.15), inset 0 0 0 1px rgba(0, 0, 0, 0.1);
-}
-
-.theme-preset:hover {
-    transform: scale(1.2);
-    box-shadow: 0 0 12px var(--preset-color), 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-.theme-preset.active {
-    border-color: var(--text);
-    box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--preset-color), 0 0 12px var(--preset-color);
-    transform: scale(1.1);
-}
-
 /* ========== Exclude Info Card ========== */
 .exclude-info .value {
     font-size: 24px;
@@ -508,33 +526,317 @@ td.r {
     white-space: nowrap;
 }
 
-/* ========== Background Controls ========== */
+/* ========== Settings Sections ========== */
+.settings-section {
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0)) padding-box,
+        var(--card-bg);
+    border: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+    border-radius: 16px;
+    padding: 22px;
+    margin-bottom: 16px;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.settings-section:hover {
+    border-color: color-mix(in srgb, var(--accent) 25%, var(--border));
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+/* Section title */
+.settings-section .section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    margin: 0 0 18px 0;
+    padding-bottom: 12px;
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
+}
+
+.section-icon {
+    font-size: 18px;
+    line-height: 1;
+}
+
+/* Setting groups */
+.setting-group {
+    margin-bottom: 18px;
+}
+
+.setting-group:last-child {
+    margin-bottom: 0;
+}
+
+.setting-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+}
+
+.setting-row-between {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.setting-row-inline {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.setting-separator {
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* ========== Theme Presets (Redesigned) ========== */
+.theme-presets {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.theme-preset {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 2.5px solid transparent;
+    background: var(--preset-color);
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 0;
+    position: relative;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.theme-preset .preset-ring {
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    transition: border-color 0.25s ease;
+    pointer-events: none;
+}
+
+.theme-preset:hover {
+    transform: scale(1.18);
+    box-shadow: 0 0 16px color-mix(in srgb, var(--preset-color) 60%, transparent),
+        0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.theme-preset.active {
+    transform: scale(1.1);
+    border-color: var(--bg);
+}
+
+.theme-preset.active .preset-ring {
+    border-color: var(--preset-color);
+}
+
+/* Color picker inline */
+.color-picker-wrapper {
+    position: relative;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    overflow: hidden;
+    cursor: pointer;
+    border: 2px dashed color-mix(in srgb, var(--border) 80%, transparent);
+    transition: all 0.25s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.color-picker-wrapper:hover {
+    border-color: var(--accent);
+    transform: scale(1.1);
+}
+
+.color-picker-wrapper input[type="color"] {
+    position: absolute;
+    inset: -4px;
+    width: calc(100% + 8px);
+    height: calc(100% + 8px);
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    opacity: 0;
+}
+
+.color-picker-label {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--muted);
+    pointer-events: none;
+    transition: color 0.2s ease;
+}
+
+.color-picker-wrapper:hover .color-picker-label {
+    color: var(--accent);
+}
+
+/* ========== Background Controls (Redesigned) ========== */
 .bg-controls {
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
 }
 
-.bg-controls button {
-    padding: 8px 12px;
+.setting-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
     font-size: 12px;
+    font-weight: 600;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: color-mix(in srgb, var(--card) 80%, transparent);
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex: 1;
+    justify-content: center;
+    min-width: 0;
 }
 
+.setting-btn:hover {
+    background: var(--border);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.setting-btn-danger {
+    border-color: color-mix(in srgb, var(--error) 30%, var(--border));
+}
+
+.setting-btn-danger:hover {
+    background: color-mix(in srgb, var(--error) 15%, transparent);
+    border-color: color-mix(in srgb, var(--error) 50%, var(--border));
+    color: var(--error);
+}
+
+.btn-icon {
+    font-size: 13px;
+    line-height: 1;
+}
+
+/* Primary action button */
+.setting-btn-primary {
+    width: 100%;
+    padding: 12px 20px;
+    font-size: 14px;
+    font-weight: 700;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.setting-actions-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.setting-actions-row .setting-btn-primary {
+    flex: 1;
+}
+
+.setting-actions-row .setting-btn {
+    flex: 0 0 auto;
+}
+
+/* Background preview */
 .bg-preview {
-    margin-top: 12px;
-    height: 80px;
-    border-radius: 8px;
+    margin-bottom: 10px;
+    height: 100px;
+    border-radius: 12px;
     background-size: cover;
     background-position: center;
-    border: 1px dashed var(--border);
+    border: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
     display: none;
+    position: relative;
+    overflow: hidden;
+}
+
+.bg-preview::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 12px;
+    background: linear-gradient(180deg, transparent 50%, rgba(0, 0, 0, 0.3) 100%);
+    pointer-events: none;
 }
 
 .bg-preview.has-image {
     display: block;
 }
 
-/* ========== Input Range Slider ========== */
+/* ========== Opacity Slider (Redesigned) ========== */
+.opacity-badge {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    padding: 3px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.3px;
+    min-width: 42px;
+    text-align: center;
+}
+
+.slider-container {
+    position: relative;
+    padding: 4px 0;
+}
+
+.slider-container input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    background: linear-gradient(90deg,
+            color-mix(in srgb, var(--border) 60%, transparent),
+            var(--border));
+    border-radius: 6px;
+    outline: none;
+    cursor: pointer;
+    position: relative;
+    z-index: 1;
+}
+
+.slider-container input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px var(--glow), 0 0 0 2px rgba(255, 255, 255, 0.1);
+}
+
+.slider-container input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.25);
+    box-shadow: 0 4px 16px var(--glow), 0 0 0 3px rgba(255, 255, 255, 0.15);
+}
+
+.slider-container input[type="range"]:active::-webkit-slider-thumb {
+    transform: scale(1.15);
+}
+
+/* ========== Input Range Slider (Global fallback) ========== */
 input[type="range"] {
     -webkit-appearance: none;
     appearance: none;
@@ -562,7 +864,305 @@ input[type="range"]::-webkit-slider-thumb:hover {
     box-shadow: 0 2px 8px var(--glow);
 }
 
-/* ========== Color Input ========== */
+/* ========== Setting Select ========== */
+.setting-select {
+    width: 100%;
+    padding: 10px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: color-mix(in srgb, var(--card) 80%, transparent);
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    outline: none;
+    font-family: inherit;
+}
+
+.setting-select:hover {
+    border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+}
+
+.setting-select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent);
+}
+
+/* ========== Setting Input ========== */
+.setting-input {
+    flex: 1;
+    padding: 10px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: color-mix(in srgb, var(--card) 80%, transparent);
+    color: var(--text);
+    transition: all 0.2s ease;
+    outline: none;
+    font-family: inherit;
+    min-width: 0;
+}
+
+.setting-input:hover {
+    border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+}
+
+.setting-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent);
+}
+
+/* ========== GPA Hero Card ========== */
+.gpa-hero {
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0)) padding-box,
+        radial-gradient(ellipse at 20% 0%, rgba(61, 245, 194, 0.2), transparent 55%),
+        radial-gradient(ellipse at 85% 10%, rgba(111, 178, 255, 0.22), transparent 55%),
+        var(--card-bg);
+    border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+    border-radius: 18px;
+    padding: 22px 24px;
+    margin-bottom: 14px;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.26), 0 0 0 1px rgba(255, 255, 255, 0.04);
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.gpa-hero:hover {
+    border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
+    box-shadow: 0 20px 48px rgba(0, 0, 0, 0.32), 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+/* Score layout */
+.gpa-scores {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    margin-bottom: 16px;
+}
+
+.gpa-score-block {
+    flex: 1;
+    text-align: center;
+    padding: 4px 0;
+}
+
+.gpa-score-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 6px;
+}
+
+.gpa-score-value {
+    font-size: 38px;
+    font-weight: 800;
+    color: var(--accent);
+    letter-spacing: -1px;
+    line-height: 1.1;
+    text-shadow: 0 2px 12px var(--glow);
+}
+
+.gpa-score-secondary {
+    color: var(--accent-2);
+    text-shadow: 0 2px 12px rgba(111, 178, 255, 0.25);
+}
+
+.gpa-score-divider {
+    width: 1px;
+    height: 52px;
+    background: linear-gradient(180deg, transparent, var(--border), transparent);
+    margin: 0 20px;
+    flex-shrink: 0;
+}
+
+/* Meta info row */
+.gpa-meta {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding-top: 14px;
+    border-top: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
+    flex-wrap: wrap;
+}
+
+.gpa-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--muted);
+}
+
+.gpa-meta-item strong {
+    color: var(--text);
+    font-weight: 700;
+}
+
+.gpa-meta-icon {
+    font-size: 14px;
+    line-height: 1;
+}
+
+.gpa-meta-detail {
+    font-size: 11px;
+    color: var(--muted);
+    opacity: 0.7;
+    margin-left: auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 160px;
+}
+
+/* ========== Unified Action Bar & Buttons ========== */
+.gpa-actions,
+.att-actions,
+.exam-actions,
+.lms-actions,
+.sched-actions {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+}
+
+.gpa-btn,
+.att-btn,
+.exam-btn,
+.lms-btn,
+.sched-btn {
+    flex: 1;
+    min-width: 0;
+    padding: 9px 14px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    color: var(--text);
+    white-space: nowrap;
+    font-family: inherit;
+    text-align: center;
+}
+
+.gpa-btn:hover,
+.att-btn:hover,
+.exam-btn:hover,
+.lms-btn:hover,
+.sched-btn:hover {
+    background: var(--border);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+}
+
+/* ========== Grade & Status Badges (Table) ========== */
+.grade-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    min-width: 32px;
+    text-align: center;
+}
+
+.grade-high {
+    color: #10b981;
+    background: rgba(16, 185, 129, 0.12);
+}
+
+.grade-mid {
+    color: #60a5fa;
+    background: rgba(96, 165, 250, 0.12);
+}
+
+.grade-low {
+    color: #f59e0b;
+    background: rgba(245, 158, 11, 0.12);
+}
+
+.grade-fail {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.12);
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.status-passed {
+    color: #10b981;
+    background: rgba(16, 185, 129, 0.12);
+}
+
+.status-failed {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.12);
+}
+
+.status-learning {
+    color: #60a5fa;
+    background: rgba(96, 165, 250, 0.12);
+}
+
+.status-exempt {
+    color: #a78bfa;
+    background: rgba(167, 139, 250, 0.12);
+}
+
+/* ========== Export Cards (Redesigned) ========== */
+.export-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.export-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 18px 14px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: color-mix(in srgb, var(--card) 80%, transparent);
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.25s ease;
+    font-family: inherit;
+}
+
+.export-card:hover {
+    background: color-mix(in srgb, var(--accent) 8%, var(--card));
+    border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.export-icon {
+    font-size: 26px;
+    line-height: 1;
+}
+
+.export-label {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* ========== Color Input (Global) ========== */
 input[type="color"] {
     -webkit-appearance: none;
     appearance: none;
@@ -582,4 +1182,734 @@ input[type="color"]::-webkit-color-swatch-wrapper {
 input[type="color"]::-webkit-color-swatch {
     border: none;
     border-radius: 4px;
+}
+
+/* ========== Background Preset Modal ========== */
+.bg-preset-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    animation: fadeIn 0.2s ease;
+}
+
+.bg-preset-modal-box {
+    background: var(--modal-bg);
+    backdrop-filter: blur(30px);
+    -webkit-backdrop-filter: blur(30px);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 28px;
+    max-width: 420px;
+    width: 90%;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4);
+    animation: modalIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.bg-preset-modal-header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.bg-preset-modal-icon {
+    font-size: 40px;
+    margin-bottom: 10px;
+}
+
+.bg-preset-modal-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text);
+    margin: 0 0 6px;
+}
+
+.bg-preset-modal-subtitle {
+    font-size: 13px;
+    color: var(--muted);
+    margin: 0;
+}
+
+.bg-preset-modal-content {
+    margin-bottom: 4px;
+}
+
+.preset-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.preset-bg-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 10px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: color-mix(in srgb, var(--card) 80%, transparent);
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.25s ease;
+    font-family: inherit;
+}
+
+.preset-bg-btn:hover {
+    background: color-mix(in srgb, var(--accent) 10%, var(--card));
+    border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.preset-bg-preview {
+    width: 100%;
+    height: 60px;
+    border-radius: 10px;
+    background-size: cover;
+    background-position: center;
+}
+
+.preset-bg-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    text-align: center;
+}
+
+/* ========== Today Tab: Quick Stats Strip ========== */
+.today-stats {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0)) padding-box,
+        radial-gradient(ellipse at 15% 0%, rgba(61, 245, 194, 0.18), transparent 55%),
+        radial-gradient(ellipse at 90% 10%, rgba(111, 178, 255, 0.2), transparent 55%),
+        var(--card-bg);
+    border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+    border-radius: 16px;
+    padding: 14px 20px;
+    margin-bottom: 14px;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22), 0 0 0 1px rgba(255, 255, 255, 0.03);
+    transition: border-color 0.3s ease;
+}
+
+.today-stats:hover {
+    border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+}
+
+.today-stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    gap: 2px;
+}
+
+.today-stat-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+}
+
+.today-stat-value {
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--accent);
+    letter-spacing: -0.8px;
+    line-height: 1.2;
+    text-shadow: 0 2px 10px var(--glow);
+}
+
+.today-stat-sep {
+    width: 1px;
+    height: 36px;
+    background: linear-gradient(180deg, transparent, var(--border), transparent);
+    flex-shrink: 0;
+    margin: 0 8px;
+}
+
+.today-refresh-btn {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    color: var(--text);
+    font-size: 20px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 12px;
+    flex-shrink: 0;
+    padding: 0;
+    line-height: 1;
+}
+
+.today-refresh-btn:hover {
+    background: var(--border);
+    transform: rotate(90deg);
+    border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.today-refresh-btn:active {
+    transform: rotate(180deg);
+}
+
+.today-refresh-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.today-refresh-btn.btn-loading {
+    animation: refreshSpin 1s linear infinite;
+}
+
+.today-refresh-btn.btn-success {
+    border-color: #10b981;
+    color: #10b981;
+    background: rgba(16, 185, 129, 0.1);
+}
+
+.today-refresh-btn.btn-error {
+    border-color: #ef4444;
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+}
+
+@keyframes refreshSpin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ========== Today Tab: Schedule Panel ========== */
+.today-panel {
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0)) padding-box,
+        var(--card-bg);
+    border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.24), 0 0 0 1px rgba(255, 255, 255, 0.03);
+    transition: border-color 0.3s ease;
+}
+
+.today-panel:hover {
+    border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+}
+
+.today-panel-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 18px;
+    border-bottom: 1px dashed color-mix(in srgb, var(--border) 60%, transparent);
+    background: color-mix(in srgb, var(--card-bg) 90%, transparent);
+}
+
+.today-panel-icon {
+    font-size: 16px;
+    line-height: 1;
+}
+
+.today-panel-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.2px;
+}
+
+/* Panel content area — re-style .class-item inside panel */
+.today-panel .widget-content {
+    padding: 12px;
+}
+
+.today-panel .no-class {
+    text-align: center;
+    padding: 24px 12px;
+    color: var(--muted);
+    font-size: 14px;
+}
+
+/* ========== Chart Panel (Statistics Tab) ========== */
+.chart-panel {
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0)) padding-box,
+        var(--card-bg);
+    border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.24), 0 0 0 1px rgba(255, 255, 255, 0.03);
+    transition: border-color 0.3s ease;
+    margin-top: 16px;
+}
+
+.chart-panel:hover {
+    border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+}
+
+.chart-panel-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 18px;
+    border-bottom: 1px dashed color-mix(in srgb, var(--border) 60%, transparent);
+    background: color-mix(in srgb, var(--card-bg) 90%, transparent);
+}
+
+.chart-panel-icon {
+    font-size: 16px;
+    line-height: 1;
+}
+
+.chart-panel-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.2px;
+}
+
+.chart-panel-body {
+    padding: 20px;
+    max-height: 280px;
+}
+
+/* ========== Calculator Hero Card ========== */
+.calc-hero {
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0)) padding-box,
+        radial-gradient(ellipse at 20% 0%, rgba(61, 245, 194, 0.2), transparent 55%),
+        radial-gradient(ellipse at 85% 10%, rgba(111, 178, 255, 0.22), transparent 55%),
+        var(--card-bg);
+    border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+    border-radius: 18px;
+    padding: 22px 24px;
+    margin-bottom: 14px;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.26), 0 0 0 1px rgba(255, 255, 255, 0.04);
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.calc-hero:hover {
+    border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
+    box-shadow: 0 20px 48px rgba(0, 0, 0, 0.32), 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+.calc-scores {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    margin-bottom: 16px;
+}
+
+.calc-score-block {
+    flex: 1;
+    text-align: center;
+    padding: 4px 0;
+}
+
+.calc-score-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 6px;
+}
+
+.calc-score-value {
+    font-size: 38px;
+    font-weight: 800;
+    color: var(--accent);
+    letter-spacing: -1px;
+    line-height: 1.1;
+    text-shadow: 0 2px 12px var(--glow);
+}
+
+.calc-score-secondary {
+    color: var(--accent-2);
+    text-shadow: 0 2px 12px rgba(111, 178, 255, 0.25);
+}
+
+.calc-score-divider {
+    width: 1px;
+    height: 52px;
+    background: linear-gradient(180deg, transparent, var(--border), transparent);
+    margin: 0 20px;
+    flex-shrink: 0;
+}
+
+.calc-target-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding-top: 14px;
+    border-top: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
+}
+
+.calc-target-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+}
+
+.calc-target-input {
+    width: 90px;
+    background: var(--card-bg);
+    border: 2px solid var(--border);
+    color: var(--accent);
+    font-size: 20px;
+    font-weight: 700;
+    text-align: center;
+    padding: 8px 10px;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    outline: none;
+    font-family: inherit;
+}
+
+.calc-target-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px var(--glow);
+}
+
+.calc-target-input::placeholder {
+    color: var(--muted);
+    opacity: 0.5;
+}
+
+/* Calculator Action Buttons */
+.calc-action-btn {
+    flex: 1;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    color: var(--text);
+    font-family: inherit;
+    text-align: center;
+}
+
+.calc-action-btn:hover {
+    background: var(--border);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+}
+
+.calc-action-primary {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 90%);
+    color: #04121a;
+    border-color: color-mix(in srgb, var(--accent) 70%, var(--accent-2));
+    box-shadow: 0 10px 20px var(--glow), 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.calc-action-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.28), 0 12px 28px var(--glow);
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 90%);
+}
+
+/* ========== Bookmark Panel & Cards ========== */
+.bookmark-panel {
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0)) padding-box,
+        var(--card-bg);
+    border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.24), 0 0 0 1px rgba(255, 255, 255, 0.03);
+    transition: border-color 0.3s ease;
+}
+
+.bookmark-panel:hover {
+    border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+}
+
+.bookmark-panel-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 18px;
+    border-bottom: 1px dashed color-mix(in srgb, var(--border) 60%, transparent);
+    background: color-mix(in srgb, var(--card-bg) 90%, transparent);
+}
+
+.bookmark-panel-icon {
+    font-size: 16px;
+    line-height: 1;
+}
+
+.bookmark-panel-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.2px;
+}
+
+.bookmark-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    padding: 16px;
+}
+
+.bookmark-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 20px 14px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    background: color-mix(in srgb, var(--card-bg) 90%, transparent);
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.25s ease;
+    font-family: inherit;
+    text-align: center;
+}
+
+.bookmark-card:hover {
+    background: color-mix(in srgb, var(--accent) 8%, var(--card-bg));
+    border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+
+.bookmark-card-icon {
+    font-size: 28px;
+    line-height: 1;
+}
+
+.bookmark-card-label {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.bookmark-card-desc {
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 500;
+}
+
+.bookmark-card:hover .bookmark-card-icon {
+    transform: translateY(-3px) scale(1.15);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.bookmark-card-icon {
+    transition: transform 0.2s ease;
+}
+
+/* ========== Page Style Toggle Switches ========== */
+.page-style-toggles {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.page-style-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    transition: background 0.2s ease;
+}
+
+.page-style-row:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.page-style-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    user-select: none;
+    cursor: pointer;
+}
+
+.page-style-desc {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 2px;
+}
+
+/* iOS-style toggle switch */
+.toggle-switch {
+    position: relative;
+    width: 42px;
+    height: 24px;
+    flex-shrink: 0;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    position: absolute;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 24px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.toggle-slider::before {
+    content: "";
+    position: absolute;
+    height: 18px;
+    width: 18px;
+    left: 2px;
+    bottom: 2px;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 50%;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.toggle-switch input:checked+.toggle-slider {
+    background: var(--accent);
+    border-color: color-mix(in srgb, var(--accent) 80%, transparent);
+}
+
+.toggle-switch input:checked+.toggle-slider::before {
+    transform: translateX(18px);
+    background: #fff;
+}
+
+.toggle-switch input:focus-visible+.toggle-slider {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* Light mode fixes for toggles & page style rows */
+:root[data-theme="light"] .page-style-row {
+    background: rgba(0, 0, 0, 0.03);
+    border-color: rgba(0, 0, 0, 0.06);
+}
+
+:root[data-theme="light"] .page-style-row:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+:root[data-theme="light"] .toggle-slider {
+    background: rgba(0, 0, 0, 0.12);
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+:root[data-theme="light"] .toggle-slider::before {
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* ========== Auto-Login Form ========== */
+.auto-login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.password-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-input-wrapper .setting-input {
+    width: 100%;
+    padding-right: 44px;
+}
+
+.password-toggle-btn {
+    position: absolute;
+    right: 4px;
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 16px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.5;
+    padding: 0;
+    line-height: 1;
+}
+
+.password-toggle-btn:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.06);
+}
+
+:root[data-theme="light"] .password-toggle-btn:hover {
+    background: rgba(0, 0, 0, 0.06);
+}
+
+.auto-login-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.auto-login-status {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 8px 12px;
+    border-radius: 8px;
+    margin-top: 8px;
+    display: none;
+}
+
+.auto-login-status.show {
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+
+.auto-login-status.status-saved {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.auto-login-status.status-cleared {
+    background: rgba(245, 158, 11, 0.1);
+    color: #f59e0b;
+    border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.auto-login-status.status-error {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.2);
 }

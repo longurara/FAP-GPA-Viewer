@@ -38,28 +38,35 @@ const TodayScheduleService = {
     /**
      * Get time until class starts
      * @param {string} timeStr - Time string like "07:30 - 09:00"
-     * @returns {string} - Human readable countdown
+     * @returns {{text: string, status: string}} - Countdown text and status
      */
     getTimeUntilClass(timeStr) {
-        if (!timeStr || !timeStr.includes("-")) return "?";
+        if (!timeStr || !timeStr.includes("-")) return { text: "?", status: "" };
 
-        const startTime = timeStr.split("-")[0].trim();
-        const [hour, minute] = startTime.split(":").map(Number);
+        const parts = timeStr.split("-");
+        const startTime = parts[0].trim();
+        const endTime = parts[1].trim();
+        const [startH, startM] = startTime.split(":").map(Number);
+        const [endH, endM] = endTime.split(":").map(Number);
 
         const now = new Date();
-        const classTime = new Date();
-        classTime.setHours(hour, minute, 0, 0);
+        const classStart = new Date();
+        classStart.setHours(startH, startM, 0, 0);
+        const classEnd = new Date();
+        classEnd.setHours(endH, endM, 0, 0);
 
-        const diff = classTime - now;
+        const diffStart = classStart - now;
 
-        if (diff < 0) {
-            return "⏰ đã qua";
-        } else if (diff < 60 * 60 * 1000) {
-            const minutes = Math.floor(diff / 60000);
-            return `⏰ ${minutes} phút nữa`;
+        if (now >= classStart && now <= classEnd) {
+            return { text: "Dang hoc", status: "now" };
+        } else if (diffStart < 0) {
+            return { text: "Da qua", status: "past" };
+        } else if (diffStart < 60 * 60 * 1000) {
+            const minutes = Math.floor(diffStart / 60000);
+            return { text: `${minutes} phut nua`, status: "soon" };
         } else {
-            const hours = Math.floor(diff / 3600000);
-            return `⏰ ${hours}h nữa`;
+            const hours = Math.floor(diffStart / 3600000);
+            return { text: `${hours}h nua`, status: "" };
         }
     },
 
@@ -83,16 +90,18 @@ const TodayScheduleService = {
         });
 
         container.innerHTML = "";
+        const esc = window.escapeHtml || ((s) => String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"));
         sortedClasses.forEach((cls) => {
             const item = document.createElement("div");
             item.className = "class-item";
             const countdown = this.getTimeUntilClass(cls.time);
+            const statusAttr = countdown.status ? ` data-status="${esc(countdown.status)}"` : "";
             item.innerHTML = `
         <div class="class-info">
-          <div class="class-time">${cls.time || cls.slot}</div>
-          <div class="class-course">${cls.course} - ${cls.room || "N/A"}</div>
+          <div class="class-time">${esc(cls.time || cls.slot)}</div>
+          <div class="class-course">${esc(cls.course)} - ${esc(cls.room || "N/A")}</div>
         </div>
-        <div class="class-countdown">${countdown}</div>
+        <div class="class-countdown"${statusAttr}>${esc(countdown.text)}</div>
       `;
             container.appendChild(item);
         });
@@ -130,7 +139,7 @@ const TodayScheduleService = {
             }
 
             // 2. Refresh if stale (4 hours TTL)
-            const isStale = !cachedObj || Date.now() - cachedTs > 4 * 60 * 60 * 1000;
+            const isStale = !cachedObj || Date.now() - cachedTs > (window.TIME_CONSTANTS?.CACHE_TTL_TODAY || 4 * 60 * 60 * 1000);
 
             if (isStale && window.refreshAttendance) {
                 console.log("[SWR] Today's schedule stale/missing, checking refresh...");
@@ -156,22 +165,12 @@ const TodayScheduleService = {
         }
     },
 
-    /**
-     * Start countdown update interval
-     */
-    startCountdownInterval() {
-        setInterval(() => {
-            const activeTab = document.querySelector(".tab.active");
-            if (activeTab && activeTab.id === "tab-today") {
-                this.loadTodaySchedule();
-            }
-        }, 60000); // Update every minute
-    },
+    // startCountdownInterval removed — popup.js already creates its own setInterval for this.
 };
 
 // Expose globally for backward compatibility
 window.TodayScheduleService = TodayScheduleService;
 window.findTodayClasses = (entries) => TodayScheduleService.findTodayClasses(entries);
-window.getTimeUntilClass = (timeStr) => TodayScheduleService.getTimeUntilClass(timeStr);
+window.getTimeUntilClass = (timeStr) => TodayScheduleService.getTimeUntilClass(timeStr).text;
 window.renderTodayWidget = (entries, container) => TodayScheduleService.renderTodayWidget(entries, container);
 window.loadTodaySchedule = () => TodayScheduleService.loadTodaySchedule();

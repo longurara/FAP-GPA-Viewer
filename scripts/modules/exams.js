@@ -2,11 +2,7 @@
 // Exams Module - Exam Schedule Management
 // ===============================
 
-function escapeHtml(str) {
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-}
+// escapeHtml is accessed as a bare global — resolves to window.escapeHtml set by utils.js
 
 const ExamService = {
     /**
@@ -181,13 +177,6 @@ const ExamService = {
     },
 
     /**
-     * Add countdown badges to exam dates (no-op — built into renderExamSchedule cards)
-     */
-    addExamCountdown() {
-        // Countdown is now computed inline during renderExamSchedule
-    },
-
-    /**
      * Filter exams by time and search query
      */
     filterExams() {
@@ -280,9 +269,7 @@ const ExamService = {
                 console.error("[SWR] Error fetching Exams:", e);
             }
         }
-
-        // Add countdown after rendering
-        setTimeout(() => this.addExamCountdown(), 100);
+        // addExamCountdown removed — countdown is computed inline in renderExamSchedule
     },
 
     /**
@@ -301,9 +288,4 @@ const ExamService = {
 
 // Expose globally for backward compatibility
 window.ExamService = ExamService;
-window.parseExamScheduleDoc = (doc) => ExamService.parseExamScheduleDoc(doc);
-window.parseExamDate = (dateStr) => ExamService.parseExamDate(dateStr);
-window.renderExamSchedule = (exams) => ExamService.renderExamSchedule(exams);
-window.addExamCountdown = () => ExamService.addExamCountdown();
-window.filterExams = () => ExamService.filterExams();
 window.loadExams = () => ExamService.loadExams();

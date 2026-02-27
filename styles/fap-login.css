@@ -4,6 +4,28 @@
  * Centered glassmorphic card over wallpaper background
  */
 
+/* ========== Card Entrance Animation ========== */
+@keyframes fapCardIn {
+    from {
+        opacity: 0;
+        transform: translateY(32px) scale(0.97);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes fapGlow {
+    0%, 100% { border-color: rgba(59, 130, 246, 0.12); }
+    50% { border-color: rgba(59, 130, 246, 0.25); }
+}
+
+@keyframes fapPulse {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+}
+
 /* ========== Hide Chat Widget ========== */
 #chat-widget-container>div:first-child {
     display: none !important;
@@ -69,7 +91,7 @@ body {
 
 #ctl00_mainContent_divcontent {
     width: 100% !important;
-    max-width: 520px !important;
+    max-width: 480px !important;
     margin: 0 auto !important;
     padding: 0 20px !important;
 }
@@ -87,16 +109,19 @@ body {
 
 /* ========== The Login Card — Glassmorphic ========== */
 #ctl00_mainContent_divcontent .col-md-6:last-child>div {
-    background: rgba(20, 30, 50, 0.65) !important;
-    backdrop-filter: blur(20px) saturate(1.2) !important;
-    -webkit-backdrop-filter: blur(20px) saturate(1.2) !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    border-radius: 24px !important;
-    padding: 48px 40px 40px !important;
+    background: rgba(12, 20, 40, 0.72) !important;
+    backdrop-filter: blur(24px) saturate(1.3) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(1.3) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border-radius: 28px !important;
+    padding: 44px 40px 36px !important;
     height: auto !important;
     box-shadow:
-        0 0 80px rgba(0, 0, 0, 0.4),
-        inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+        0 0 100px rgba(0, 0, 0, 0.5),
+        0 0 40px rgba(59, 130, 246, 0.06),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+    animation: fapCardIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) both !important;
+    animation: fapCardIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) both, fapGlow 4s ease-in-out infinite 1s !important;
 }
 
 /* ========== Fieldset Reset ========== */
@@ -106,19 +131,51 @@ body {
     padding: 0 !important;
 }
 
+/* ========== FPT Branding (injected by JS) ========== */
+.fap-login-brand {
+    text-align: center;
+    margin-bottom: 8px;
+}
+
+.fap-login-brand-icon {
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 14px;
+    background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 24px rgba(59, 130, 246, 0.3);
+}
+
+.fap-login-brand-icon svg {
+    width: 28px;
+    height: 28px;
+    color: white;
+}
+
+.fap-login-brand-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.45);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+}
+
 /* ========== Legend — "Đăng nhập" heading ========== */
 #ctl00_mainContent_divcontent .col-md-6:last-child legend {
     text-align: center !important;
     border: none !important;
-    margin-bottom: 32px !important;
+    margin-bottom: 28px !important;
     width: 100% !important;
 }
 
 #ctl00_mainContent_divcontent .col-md-6:last-child legend .label {
     background: none !important;
     border: none !important;
-    color: rgba(255, 255, 255, 0.55) !important;
-    font-size: 15px !important;
+    color: rgba(255, 255, 255, 0.45) !important;
+    font-size: 14px !important;
     font-weight: 400 !important;
     padding: 0 !important;
     display: block !important;
@@ -128,11 +185,22 @@ body {
 #ctl00_mainContent_divcontent .col-md-6:last-child legend::before {
     content: "Đăng nhập";
     display: block !important;
-    font-size: 36px !important;
+    font-size: 32px !important;
     font-weight: 800 !important;
     color: white !important;
-    margin-bottom: 8px !important;
+    margin-bottom: 6px !important;
     letter-spacing: -0.5px !important;
+}
+
+/* ========== Campus Label (injected by JS) ========== */
+.fap-campus-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 8px;
+    padding-left: 2px;
 }
 
 /* ========== Login Form Layout ========== */
@@ -187,54 +255,96 @@ body {
 /* ========== Google Login Button — filled red/coral ========== */
 #ctl00_mainContent_btnLogin {
     width: 100% !important;
-    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%) !important;
+    background: linear-gradient(135deg, #ea4335 0%, #c5221f 100%) !important;
     border: none !important;
     border-radius: 14px !important;
-    padding: 16px 24px !important;
-    font-size: 18px !important;
+    padding: 15px 24px !important;
+    font-size: 16px !important;
     font-weight: 700 !important;
     color: white !important;
-    transition: all 0.25s ease !important;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
     text-decoration: none !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    gap: 12px !important;
+    gap: 10px !important;
     box-sizing: border-box !important;
     cursor: pointer !important;
-    box-shadow: 0 6px 20px rgba(231, 76, 60, 0.35) !important;
-    letter-spacing: 0.3px !important;
+    box-shadow: 0 4px 16px rgba(234, 67, 53, 0.3) !important;
+    letter-spacing: 0.2px !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+#ctl00_mainContent_btnLogin::before {
+    content: "";
+    position: absolute;
+    top: 0; left: -100%; right: 0; bottom: 0;
+    width: 200%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+    transition: transform 0.5s ease;
+}
+
+#ctl00_mainContent_btnLogin:hover::before {
+    transform: translateX(100%);
 }
 
 #ctl00_mainContent_btnLogin:hover {
     transform: translateY(-2px) !important;
-    box-shadow: 0 10px 30px rgba(231, 76, 60, 0.45) !important;
+    box-shadow: 0 8px 28px rgba(234, 67, 53, 0.4) !important;
     text-decoration: none !important;
     background: linear-gradient(135deg, #ef5350 0%, #d32f2f 100%) !important;
 }
 
 #ctl00_mainContent_btnLogin:active {
-    transform: translateY(0) !important;
+    transform: translateY(0) scale(0.98) !important;
+    box-shadow: 0 2px 8px rgba(234, 67, 53, 0.3) !important;
 }
 
 #ctl00_mainContent_btnLogin .fa {
-    font-size: 22px !important;
+    font-size: 20px !important;
     color: white !important;
 }
 
 #ctl00_mainContent_btnLogin span[style] {
     margin-left: 0 !important;
     color: white !important;
-    font-size: 18px !important;
+    font-size: 16px !important;
 }
 
-/* ========== K19 Notice — divider style ========== */
+/* ========== K19 Notice — "hoặc" divider ========== */
 #loginform>.row:nth-child(2) {
-    margin: 24px 0 24px 0 !important;
+    margin: 20px 0 20px 0 !important;
     text-align: center !important;
     position: relative !important;
 }
 
+/* The divider lines (via JS wrapper .fap-or-divider) */
+.fap-or-divider {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 0;
+}
+
+.fap-or-divider::before,
+.fap-or-divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+}
+
+.fap-or-divider-text {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.45);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    white-space: nowrap;
+}
+
+/* Hide original K19 text if we replace it */
 #loginform>.row:nth-child(2) span {
     margin: 0 !important;
     position: relative !important;
@@ -244,9 +354,9 @@ body {
 }
 
 #loginform>.row:nth-child(2) b {
-    font-size: 13px !important;
-    color: rgba(255, 255, 255, 0.6) !important;
-    font-weight: 700 !important;
+    font-size: 12px !important;
+    color: rgba(255, 255, 255, 0.45) !important;
+    font-weight: 600 !important;
     text-transform: uppercase !important;
     letter-spacing: 2px !important;
     display: inline-block !important;
@@ -266,42 +376,58 @@ body {
     background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
     border: none !important;
     border-radius: 14px !important;
-    padding: 16px 24px !important;
-    font-size: 18px !important;
+    padding: 15px 24px !important;
+    font-size: 16px !important;
     font-weight: 700 !important;
     color: white !important;
-    transition: all 0.25s ease !important;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
     text-decoration: none !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    gap: 12px !important;
+    gap: 10px !important;
     box-sizing: border-box !important;
     cursor: pointer !important;
-    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.35) !important;
-    letter-spacing: 0.3px !important;
+    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3) !important;
+    letter-spacing: 0.2px !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+#ctl00_mainContent_btnloginFeId::before {
+    content: "";
+    position: absolute;
+    top: 0; left: -100%; right: 0; bottom: 0;
+    width: 200%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+    transition: transform 0.5s ease;
+}
+
+#ctl00_mainContent_btnloginFeId:hover::before {
+    transform: translateX(100%);
 }
 
 #ctl00_mainContent_btnloginFeId:hover {
     transform: translateY(-2px) !important;
-    box-shadow: 0 10px 30px rgba(59, 130, 246, 0.45) !important;
+    box-shadow: 0 8px 28px rgba(59, 130, 246, 0.4) !important;
     text-decoration: none !important;
     background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%) !important;
 }
 
 #ctl00_mainContent_btnloginFeId:active {
-    transform: translateY(0) !important;
+    transform: translateY(0) scale(0.98) !important;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3) !important;
 }
 
 #ctl00_mainContent_btnloginFeId .fa {
-    font-size: 22px !important;
+    font-size: 20px !important;
     color: white !important;
 }
 
 #ctl00_mainContent_btnloginFeId span[style] {
     margin-left: 0 !important;
     color: white !important;
-    font-size: 18px !important;
+    font-size: 16px !important;
 }
 
 /* ========== Hide empty row ========== */
@@ -316,6 +442,34 @@ body {
     text-align: center !important;
     display: block !important;
     margin-top: 16px !important;
+    background: rgba(251, 191, 36, 0.08) !important;
+    border: 1px solid rgba(251, 191, 36, 0.2) !important;
+    border-radius: 10px !important;
+    padding: 10px 16px !important;
+}
+
+/* ========== Footer (injected by JS) ========== */
+.fap-login-footer {
+    text-align: center;
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.fap-login-footer-text {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.25);
+    letter-spacing: 0.5px;
+}
+
+.fap-login-footer-text a {
+    color: rgba(59, 130, 246, 0.6) !important;
+    text-decoration: none !important;
+    transition: color 0.2s ease;
+}
+
+.fap-login-footer-text a:hover {
+    color: rgba(59, 130, 246, 0.9) !important;
 }
 
 /* ========== Notification Modals ========== */
@@ -387,23 +541,29 @@ body {
     }
 
     #ctl00_mainContent_divcontent .col-md-6:last-child>div {
-        padding: 36px 24px 32px !important;
+        padding: 32px 24px 28px !important;
         border-radius: 20px !important;
     }
 
     #ctl00_mainContent_divcontent .col-md-6:last-child legend::before {
-        font-size: 28px !important;
+        font-size: 26px !important;
     }
 
     #ctl00_mainContent_btnLogin,
     #ctl00_mainContent_btnloginFeId {
-        padding: 14px 20px !important;
-        font-size: 16px !important;
+        padding: 13px 20px !important;
+        font-size: 15px !important;
     }
 
-    #ctl00_mainContent_ddlCampus {
-        padding: 14px 16px !important;
-        font-size: 15px !important;
+    .fap-login-brand-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+    }
+
+    .fap-login-brand-icon svg {
+        width: 24px;
+        height: 24px;
     }
 }
 
@@ -417,10 +577,10 @@ body {
 
 .fap-dropdown-selected {
     background: rgba(15, 30, 60, 0.7);
-    border: 2px solid rgba(59, 130, 246, 0.5);
+    border: 1.5px solid rgba(255, 255, 255, 0.1);
     border-radius: 14px;
-    padding: 16px 20px;
-    font-size: 17px;
+    padding: 14px 18px;
+    font-size: 15px;
     font-weight: 600;
     color: white;
     cursor: pointer;
@@ -432,24 +592,26 @@ body {
 }
 
 .fap-dropdown-selected:hover {
-    border-color: rgba(59, 130, 246, 0.7);
+    border-color: rgba(59, 130, 246, 0.5);
+    background: rgba(15, 30, 60, 0.85);
 }
 
 .fap-dropdown.open .fap-dropdown-selected {
     border-color: #3b82f6;
-    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2), 0 0 20px rgba(59, 130, 246, 0.15);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15), 0 0 20px rgba(59, 130, 246, 0.1);
     border-radius: 14px 14px 0 0;
 }
 
 .fap-dropdown-selected svg {
     flex-shrink: 0;
-    opacity: 0.6;
-    transition: transform 0.25s ease;
+    opacity: 0.5;
+    transition: transform 0.25s ease, opacity 0.25s ease;
 }
 
 .fap-dropdown.open .fap-dropdown-selected svg {
     transform: rotate(180deg);
     opacity: 1;
+    color: #3b82f6;
 }
 
 .fap-dropdown-list {
@@ -457,11 +619,11 @@ body {
     top: 100%;
     left: 0;
     right: 0;
-    background: rgba(12, 22, 45, 0.95);
+    background: rgba(10, 18, 38, 0.97);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border: 2px solid rgba(59, 130, 246, 0.5);
-    border-top: 1px solid rgba(59, 130, 246, 0.25);
+    border: 1.5px solid rgba(59, 130, 246, 0.4);
+    border-top: 1px solid rgba(59, 130, 246, 0.2);
     border-radius: 0 0 14px 14px;
     overflow: hidden;
     z-index: 100;
@@ -480,13 +642,13 @@ body {
 }
 
 .fap-dropdown-item {
-    padding: 14px 20px;
-    font-size: 15px;
+    padding: 13px 18px;
+    font-size: 14px;
     font-weight: 500;
-    color: rgba(255, 255, 255, 0.8);
+    color: rgba(255, 255, 255, 0.7);
     cursor: pointer;
     transition: all 0.15s ease;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
     position: relative;
 }
 
@@ -495,13 +657,13 @@ body {
 }
 
 .fap-dropdown-item:hover {
-    background: rgba(59, 130, 246, 0.2);
+    background: rgba(59, 130, 246, 0.15);
     color: white;
-    padding-left: 26px;
+    padding-left: 24px;
 }
 
 .fap-dropdown-item.active {
-    background: rgba(59, 130, 246, 0.25);
+    background: rgba(59, 130, 246, 0.2);
     color: white;
     font-weight: 700;
 }
@@ -519,7 +681,7 @@ body {
 
 /* Scrollbar for dropdown list */
 .fap-dropdown-list::-webkit-scrollbar {
-    width: 6px;
+    width: 5px;
 }
 
 .fap-dropdown-list::-webkit-scrollbar-track {
@@ -527,10 +689,10 @@ body {
 }
 
 .fap-dropdown-list::-webkit-scrollbar-thumb {
-    background: rgba(59, 130, 246, 0.3);
+    background: rgba(59, 130, 246, 0.25);
     border-radius: 3px;
 }
 
 .fap-dropdown-list::-webkit-scrollbar-thumb:hover {
-    background: rgba(59, 130, 246, 0.5);
+    background: rgba(59, 130, 246, 0.4);
 }

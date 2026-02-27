@@ -3,9 +3,21 @@
   const STORAGE = {
     get: (key, def) =>
       new Promise((res) =>
-        chrome.storage.local.get({ [key]: def }, (out) => res(out[key]))
+        chrome.storage.local.get({ [key]: def }, (out) => {
+          if (chrome.runtime.lastError) {
+            console.warn("[Report] Storage get error:", chrome.runtime.lastError.message);
+            res(def);
+            return;
+          }
+          res(out[key]);
+        })
       ),
-    set: (obj) => new Promise((res) => chrome.storage.local.set(obj, res)),
+    set: (obj) => new Promise((res) => chrome.storage.local.set(obj, () => {
+      if (chrome.runtime.lastError) {
+        console.warn("[Report] Storage set error:", chrome.runtime.lastError.message);
+      }
+      res();
+    })),
   };
 
   const $ = (sel) => document.querySelector(sel);
