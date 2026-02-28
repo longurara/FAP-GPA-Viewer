@@ -32,7 +32,7 @@ const SettingsService = {
         // Load feature toggles
         this.loadFeatureToggles();
 
-        // Load auto-login settings
+        // Load auto-login settings (FeID + LMS)
         this.loadAutoLoginUI();
     },
 
@@ -154,7 +154,7 @@ const SettingsService = {
         }
     },
 
-    // ========== Auto-Login Credential Management ==========
+    // ========== Credential Encoding ==========
 
     /**
      * Encode credentials for storage (Base64 obfuscation)
@@ -172,8 +172,10 @@ const SettingsService = {
         catch { return ""; }
     },
 
+    // ========== FeID Auto-Login ==========
+
     /**
-     * Save auto-login credentials
+     * Save FeID auto-login credentials
      */
     async saveAutoLoginCredentials() {
         const username = document.getElementById("autoLoginUsername")?.value?.trim();
@@ -192,18 +194,19 @@ const SettingsService = {
                     auto_login_password: this._encodeCredential(password),
                 }, resolve);
             });
-            this._showAutoLoginStatus("✓ Đã lưu thông tin đăng nhập", "saved");
-            console.log("[Settings] Auto-login credentials saved for:", username);
+            this._showAutoLoginStatus("✓ Đã lưu thông tin đăng nhập FeID", "saved");
+            console.log("[Settings] FeID auto-login credentials saved for:", username);
         } catch (e) {
-            console.error("[Settings] Failed to save auto-login:", e);
+            console.error("[Settings] Failed to save FeID auto-login:", e);
             this._showAutoLoginStatus("Lỗi khi lưu thông tin", "error");
         }
     },
 
     /**
-     * Load auto-login UI state from storage
+     * Load FeID + LMS auto-login UI state from storage
      */
     async loadAutoLoginUI() {
+        // Load FeID
         try {
             const data = await new Promise((resolve) => {
                 chrome.storage.local.get(
@@ -219,22 +222,23 @@ const SettingsService = {
             if (toggle) toggle.checked = data.auto_login_enabled === true;
             if (startupToggle) startupToggle.checked = data.auto_login_on_startup === true;
 
-            // Show username if saved (but never show password)
             if (usernameInput && data.auto_login_username) {
                 usernameInput.value = this._decodeCredential(data.auto_login_username);
             }
 
-            // Show status if credentials exist
             if (data.auto_login_username && data.auto_login_password) {
-                this._showAutoLoginStatus("✓ Đã lưu thông tin đăng nhập", "saved");
+                this._showAutoLoginStatus("✓ Đã lưu thông tin đăng nhập FeID", "saved");
             }
         } catch (e) {
-            console.warn("[Settings] Failed to load auto-login settings:", e);
+            console.warn("[Settings] Failed to load FeID auto-login settings:", e);
         }
+
+        // Load LMS
+        this.loadAutoLoginLmsUI();
     },
 
     /**
-     * Clear auto-login credentials
+     * Clear FeID auto-login credentials
      */
     async clearAutoLoginCredentials() {
         try {
@@ -255,27 +259,126 @@ const SettingsService = {
             if (usernameInput) usernameInput.value = "";
             if (passwordInput) passwordInput.value = "";
 
-            this._showAutoLoginStatus("Đã xoá thông tin đăng nhập", "cleared");
-            console.log("[Settings] Auto-login credentials cleared");
+            this._showAutoLoginStatus("Đã xoá thông tin đăng nhập FeID", "cleared");
+            console.log("[Settings] FeID auto-login credentials cleared");
         } catch (e) {
-            console.error("[Settings] Failed to clear auto-login:", e);
+            console.error("[Settings] Failed to clear FeID auto-login:", e);
         }
     },
 
     /**
-     * Show auto-login status message
+     * Show FeID auto-login status message
      */
     _showAutoLoginStatus(message, type) {
         const el = document.getElementById("autoLoginStatus");
         if (!el) return;
         el.textContent = message;
         el.className = "auto-login-status show status-" + type;
-
-        // Auto-hide after 5s for non-saved statuses
         if (type !== "saved") {
-            setTimeout(() => {
-                el.classList.remove("show");
-            }, 5000);
+            setTimeout(() => { el.classList.remove("show"); }, 5000);
+        }
+    },
+
+    // ========== LMS Auto-Login ==========
+
+    /**
+     * Save LMS auto-login credentials
+     */
+    async saveAutoLoginLmsCredentials() {
+        const username = document.getElementById("autoLoginLmsUsername")?.value?.trim();
+        const password = document.getElementById("autoLoginLmsPassword")?.value;
+
+        if (!username || !password) {
+            this._showAutoLoginLmsStatus("Vui lòng nhập đầy đủ username và mật khẩu", "error");
+            return;
+        }
+
+        try {
+            await new Promise((resolve) => {
+                chrome.storage.local.set({
+                    auto_login_lms_enabled: document.getElementById("toggle-auto-login-lms")?.checked ?? true,
+                    auto_login_lms_username: this._encodeCredential(username),
+                    auto_login_lms_password: this._encodeCredential(password),
+                }, resolve);
+            });
+            this._showAutoLoginLmsStatus("✓ Đã lưu thông tin đăng nhập LMS", "saved");
+            console.log("[Settings] LMS auto-login credentials saved for:", username);
+        } catch (e) {
+            console.error("[Settings] Failed to save LMS auto-login:", e);
+            this._showAutoLoginLmsStatus("Lỗi khi lưu thông tin", "error");
+        }
+    },
+
+    /**
+     * Load LMS auto-login UI state from storage
+     */
+    async loadAutoLoginLmsUI() {
+        try {
+            const data = await new Promise((resolve) => {
+                chrome.storage.local.get(
+                    ["auto_login_lms_enabled", "auto_login_lms_startup", "auto_login_lms_username", "auto_login_lms_password"],
+                    (result) => resolve(result)
+                );
+            });
+
+            const toggle = document.getElementById("toggle-auto-login-lms");
+            const startupToggle = document.getElementById("toggle-auto-login-lms-startup");
+            const usernameInput = document.getElementById("autoLoginLmsUsername");
+
+            if (toggle) toggle.checked = data.auto_login_lms_enabled === true;
+            if (startupToggle) startupToggle.checked = data.auto_login_lms_startup === true;
+
+            if (usernameInput && data.auto_login_lms_username) {
+                usernameInput.value = this._decodeCredential(data.auto_login_lms_username);
+            }
+
+            if (data.auto_login_lms_username && data.auto_login_lms_password) {
+                this._showAutoLoginLmsStatus("✓ Đã lưu thông tin đăng nhập LMS", "saved");
+            }
+        } catch (e) {
+            console.warn("[Settings] Failed to load LMS auto-login settings:", e);
+        }
+    },
+
+    /**
+     * Clear LMS auto-login credentials
+     */
+    async clearAutoLoginLmsCredentials() {
+        try {
+            await new Promise((resolve) => {
+                chrome.storage.local.remove(
+                    ["auto_login_lms_enabled", "auto_login_lms_startup", "auto_login_lms_username", "auto_login_lms_password"],
+                    resolve
+                );
+            });
+
+            const toggle = document.getElementById("toggle-auto-login-lms");
+            const startupToggle = document.getElementById("toggle-auto-login-lms-startup");
+            const usernameInput = document.getElementById("autoLoginLmsUsername");
+            const passwordInput = document.getElementById("autoLoginLmsPassword");
+
+            if (toggle) toggle.checked = false;
+            if (startupToggle) startupToggle.checked = false;
+            if (usernameInput) usernameInput.value = "";
+            if (passwordInput) passwordInput.value = "";
+
+            this._showAutoLoginLmsStatus("Đã xoá thông tin đăng nhập LMS", "cleared");
+            console.log("[Settings] LMS auto-login credentials cleared");
+        } catch (e) {
+            console.error("[Settings] Failed to clear LMS auto-login:", e);
+        }
+    },
+
+    /**
+     * Show LMS auto-login status message
+     */
+    _showAutoLoginLmsStatus(message, type) {
+        const el = document.getElementById("autoLoginLmsStatus");
+        if (!el) return;
+        el.textContent = message;
+        el.className = "auto-login-status show status-" + type;
+        if (type !== "saved") {
+            setTimeout(() => { el.classList.remove("show"); }, 5000);
         }
     },
 
@@ -312,24 +415,39 @@ const SettingsService = {
             });
         });
 
-        // Auto-login event listeners
+        // ===== FeID auto-login event listeners =====
         document.getElementById("btnSaveAutoLogin")?.addEventListener("click", () => this.saveAutoLoginCredentials());
         document.getElementById("btnClearAutoLogin")?.addEventListener("click", () => this.clearAutoLoginCredentials());
 
-        // Auto-login toggle — save state immediately on change
         document.getElementById("toggle-auto-login")?.addEventListener("change", (e) => {
             chrome.storage.local.set({ auto_login_enabled: e.target.checked });
         });
-
-        // Auto-login on startup toggle
         document.getElementById("toggle-auto-login-startup")?.addEventListener("change", (e) => {
             chrome.storage.local.set({ auto_login_on_startup: e.target.checked });
         });
-
-        // Password visibility toggle
         document.getElementById("btnTogglePassword")?.addEventListener("click", () => {
             const input = document.getElementById("autoLoginPassword");
             const btn = document.getElementById("btnTogglePassword");
+            if (input) {
+                const isPassword = input.type === "password";
+                input.type = isPassword ? "text" : "password";
+                if (btn) btn.textContent = isPassword ? "🙈" : "👁️";
+            }
+        });
+
+        // ===== LMS auto-login event listeners =====
+        document.getElementById("btnSaveAutoLoginLms")?.addEventListener("click", () => this.saveAutoLoginLmsCredentials());
+        document.getElementById("btnClearAutoLoginLms")?.addEventListener("click", () => this.clearAutoLoginLmsCredentials());
+
+        document.getElementById("toggle-auto-login-lms")?.addEventListener("change", (e) => {
+            chrome.storage.local.set({ auto_login_lms_enabled: e.target.checked });
+        });
+        document.getElementById("toggle-auto-login-lms-startup")?.addEventListener("change", (e) => {
+            chrome.storage.local.set({ auto_login_lms_startup: e.target.checked });
+        });
+        document.getElementById("btnToggleLmsPassword")?.addEventListener("click", () => {
+            const input = document.getElementById("autoLoginLmsPassword");
+            const btn = document.getElementById("btnToggleLmsPassword");
             if (input) {
                 const isPassword = input.type === "password";
                 input.type = isPassword ? "text" : "password";
@@ -344,4 +462,3 @@ window.SettingsService = SettingsService;
 window.DEFAULT_CFG = SettingsService.DEFAULT_CFG;
 window.loadSettingsUI = () => SettingsService.loadSettingsUI();
 window.saveSettingsUI = () => SettingsService.saveSettingsUI();
-

@@ -617,7 +617,8 @@ chrome.runtime.onStartup.addListener(async () => {
   try {
     const data = await new Promise((resolve) => {
       chrome.storage.local.get(
-        ["auto_login_enabled", "auto_login_on_startup", "auto_login_username", "auto_login_password"],
+        ["auto_login_enabled", "auto_login_on_startup", "auto_login_username", "auto_login_password",
+          "auto_login_lms_enabled", "auto_login_lms_startup", "auto_login_lms_username", "auto_login_lms_password"],
         (result) => resolve(result)
       );
     });
@@ -630,6 +631,16 @@ chrome.runtime.onStartup.addListener(async () => {
         active: false
       });
       _monitorForCloudflare(tab.id);
+    }
+
+    // Also auto-login LMS on startup if enabled (uses separate credentials)
+    if (data.auto_login_lms_startup && data.auto_login_lms_enabled &&
+      data.auto_login_lms_username && data.auto_login_lms_password) {
+      console.log("Auto-login on startup: opening LMS tab...");
+      chrome.tabs.create({
+        url: "https://lms-hcm.fpt.edu.vn/login/index.php",
+        active: false
+      });
     }
   } catch (e) {
     console.warn("Auto-login on startup error:", e.message);

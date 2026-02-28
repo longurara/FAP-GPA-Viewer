@@ -539,7 +539,7 @@
         </div>
       </div>
 
-      <!-- Auto-Login Section -->
+      <!-- Auto-Login FeID Section -->
       <div class="settings-section">
         <h3 class="section-title"><span class="section-icon">🔐</span> Tự động đăng nhập FeID</h3>
 
@@ -582,6 +582,50 @@
 
         <p class="hint">Thông tin đăng nhập được lưu cục bộ trong trình duyệt (chrome.storage). Chỉ extension này mới
           đọc được.</p>
+      </div>
+
+      <!-- Auto-Login LMS Section -->
+      <div class="settings-section">
+        <h3 class="section-title"><span class="section-icon">📚</span> Tự động đăng nhập LMS</h3>
+
+        <div class="setting-group">
+          <div class="page-style-row">
+            <label class="page-style-label" for="toggle-auto-login-lms">Bật tự động đăng nhập LMS
+              <div class="page-style-desc">Tự điền và submit khi mở trang LMS Login</div>
+            </label>
+            <label class="toggle-switch"><input type="checkbox" id="toggle-auto-login-lms" /><span
+                class="toggle-slider"></span></label>
+          </div>
+          <div class="page-style-row" style="margin-top: 6px;">
+            <label class="page-style-label" for="toggle-auto-login-lms-startup">Login LMS khi mở trình duyệt
+              <div class="page-style-desc">Tự mở LMS và đăng nhập khi khởi động Chrome</div>
+            </label>
+            <label class="toggle-switch"><input type="checkbox" id="toggle-auto-login-lms-startup" /><span
+                class="toggle-slider"></span></label>
+          </div>
+        </div>
+
+        <div class="setting-group" id="autoLoginLmsFields">
+          <div class="setting-label">Tài khoản LMS (Wifi Username)</div>
+          <div class="auto-login-form">
+            <input type="text" id="autoLoginLmsUsername" class="setting-input" placeholder="Wifi Username"
+              autocomplete="off" />
+            <div class="password-input-wrapper">
+              <input type="password" id="autoLoginLmsPassword" class="setting-input" placeholder="Mật khẩu"
+                autocomplete="off" />
+              <button type="button" id="btnToggleLmsPassword" class="password-toggle-btn"
+                title="Hiện/ẩn mật khẩu">👁️</button>
+            </div>
+          </div>
+          <div class="auto-login-actions">
+            <button id="btnSaveAutoLoginLms" class="setting-btn"><span class="btn-icon">💾</span> Lưu</button>
+            <button id="btnClearAutoLoginLms" class="setting-btn setting-btn-danger"><span class="btn-icon">🗑️</span>
+              Xoá</button>
+          </div>
+          <div class="auto-login-status" id="autoLoginLmsStatus"></div>
+        </div>
+
+        <p class="hint">Tài khoản LMS là tài khoản Wifi FPT, khác với tài khoản FeID.</p>
       </div>
 
       <!-- Export Section -->

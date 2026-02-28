@@ -112,6 +112,15 @@
         "scripts/onboarding.js"
       ],
       "run_at": "document_end"
+    },
+    {
+      "matches": [
+        "https://lms-hcm.fpt.edu.vn/login/index.php*"
+      ],
+      "js": [
+        "scripts/lms-login.js"
+      ],
+      "run_at": "document_end"
     }
   ],
   "web_accessible_resources": [

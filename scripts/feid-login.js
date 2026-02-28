@@ -106,9 +106,30 @@
   }
 
   /**
-   * Fill username/password fields and submit the form
+   * Type text into a field character by character
    */
-  function _fillAndSubmit(username, password) {
+  function _typeSlowly(field, text, delayMs) {
+    return new Promise((resolve) => {
+      field.focus();
+      field.value = "";
+      let i = 0;
+      const timer = setInterval(() => {
+        field.value += text[i];
+        field.dispatchEvent(new Event("input", { bubbles: true }));
+        i++;
+        if (i >= text.length) {
+          clearInterval(timer);
+          field.dispatchEvent(new Event("change", { bubbles: true }));
+          resolve();
+        }
+      }, delayMs);
+    });
+  }
+
+  /**
+   * Fill username/password fields slowly and submit the form
+   */
+  async function _fillAndSubmit(username, password) {
     // FeID login form field selectors
     const usernameField = document.querySelector('input[name="Username"], input[id*="Username"], input[type="text"]');
     const passwordField = document.querySelector('input[name="Password"], input[id*="Password"], input[type="password"]');
@@ -121,30 +142,24 @@
 
     console.log("[FeID Auto-Login] Filling credentials for:", username);
 
-    // Fill username
-    usernameField.value = username;
-    usernameField.dispatchEvent(new Event("input", { bubbles: true }));
-    usernameField.dispatchEvent(new Event("change", { bubbles: true }));
+    const CHAR_DELAY = 50; // ms per character
 
-    // Fill password
-    passwordField.value = password;
-    passwordField.dispatchEvent(new Event("input", { bubbles: true }));
-    passwordField.dispatchEvent(new Event("change", { bubbles: true }));
+    await _typeSlowly(usernameField, username, CHAR_DELAY);
+    await _typeSlowly(passwordField, password, CHAR_DELAY);
 
-    // Submit after a short delay (allow page JS to process input events)
+    // Submit after a short delay
     if (loginButton) {
       setTimeout(() => {
         console.log("[FeID Auto-Login] Submitting form...");
         loginButton.click();
-      }, 600);
+      }, 400);
     } else {
-      // Fallback: try submitting the form directly
       const form = usernameField.closest("form");
       if (form) {
         setTimeout(() => {
           console.log("[FeID Auto-Login] Submitting form via form.submit()...");
           form.submit();
-        }, 600);
+        }, 400);
       } else {
         console.warn("[FeID Auto-Login] Could not find submit button or form");
       }
