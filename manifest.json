@@ -121,6 +121,15 @@
         "scripts/lms-login.js"
       ],
       "run_at": "document_end"
+    },
+    {
+      "matches": [
+        "https://fap.fpt.edu.vn/Thongbao.aspx*"
+      ],
+      "js": [
+        "scripts/fap-thongbao-skip.js"
+      ],
+      "run_at": "document_start"
     }
   ],
   "web_accessible_resources": [

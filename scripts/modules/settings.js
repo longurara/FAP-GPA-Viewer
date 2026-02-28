@@ -15,7 +15,7 @@ const SettingsService = {
     ],
 
     // Feature toggle keys (separate from page styles, default OFF)
-    FEATURE_KEYS: ["moveclass"],
+    FEATURE_KEYS: ["moveclass", "thongbao_skip"],
 
     /**
      * Load settings into UI
