@@ -222,7 +222,7 @@ function renderLMSEvents(events, searchQuery = '') {
         </div>
         ${safeActionUrl ? `
           <div class="lms-event-actions">
-            <a href="${safeActionUrl}" target="_blank" class="lms-action-btn">
+            <a href="${esc(safeActionUrl)}" target="_blank" class="lms-action-btn">
               ${safeActionText} &rarr;
             </a>
           </div>

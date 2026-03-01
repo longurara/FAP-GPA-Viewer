@@ -291,10 +291,12 @@
             const manifest = chrome.runtime.getManifest();
             const footer = document.createElement("div");
             footer.className = "fap-login-footer";
-            footer.innerHTML =
-                '<div class="fap-login-footer-text">' +
-                "Enhanced by " + manifest.name + " v" + manifest.version +
-                "</div>";
+            // BUG-11 FIX: Use textContent instead of innerHTML to avoid any injection risk
+            // from manifest.name / manifest.version values.
+            const footerText = document.createElement("div");
+            footerText.className = "fap-login-footer-text";
+            footerText.textContent = `Enhanced by ${manifest.name} v${manifest.version}`;
+            footer.appendChild(footerText);
             loginCard.appendChild(footer);
         }
 

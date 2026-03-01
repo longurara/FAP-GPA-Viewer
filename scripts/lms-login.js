@@ -29,8 +29,9 @@
                         username = await window.CredentialCrypto.decrypt(data.auto_login_lms_username);
                         password = await window.CredentialCrypto.decrypt(data.auto_login_lms_password);
                     } else {
-                        username = decodeURIComponent(escape(atob(data.auto_login_lms_username)));
-                        password = decodeURIComponent(escape(atob(data.auto_login_lms_password)));
+                        // BUG-10 FIX: Replaced deprecated escape()/unescape() with TextDecoder.
+                        username = new TextDecoder().decode(Uint8Array.from(atob(data.auto_login_lms_username), c => c.charCodeAt(0)));
+                        password = new TextDecoder().decode(Uint8Array.from(atob(data.auto_login_lms_password), c => c.charCodeAt(0)));
                     }
                 } catch (e) { return; }
                 if (!username || !password) return;

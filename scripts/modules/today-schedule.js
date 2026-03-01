@@ -17,12 +17,10 @@ const TodayScheduleService = {
         const dd = String(today.getDate()).padStart(2, "0");
         const mm = String(today.getMonth() + 1).padStart(2, "0");
 
-        // Try different date formats
+        // BUG-09 FIX: Removed redundant non-zero-padded variants (2/3, 02/3, 2/03).
+        // attendance.js always stores dates as zero-padded "DD/MM", so only this format matches.
         const formats = [
             `${dd}/${mm}`,
-            `${today.getDate()}/${mm}`,
-            `${dd}/${today.getMonth() + 1}`,
-            `${today.getDate()}/${today.getMonth() + 1}`,
         ];
 
         _todayLog("Searching for today's classes with formats:", formats);

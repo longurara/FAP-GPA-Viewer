@@ -67,10 +67,13 @@ const CredentialCrypto = {
     async decrypt(stored) {
         if (!stored) return "";
 
-        // Legacy Base64 format (no "aes:" prefix)
+        // Legacy Base64 format (no "aes:" prefix) — auto-migration path
+        // BUG-10 FIX: Replaced deprecated escape()/unescape() with TextDecoder.
         if (!stored.startsWith("aes:")) {
-            try { return decodeURIComponent(escape(atob(stored))); }
-            catch { return ""; }
+            try {
+                const bytes = Uint8Array.from(atob(stored), c => c.charCodeAt(0));
+                return new TextDecoder().decode(bytes);
+            } catch { return ""; }
         }
 
         const key = await this._getKey();

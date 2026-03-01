@@ -72,16 +72,19 @@ const ApiService = {
         const parsedUrl = new URL(url);
         const targetOrigin = parsedUrl.origin;
 
-        // NEW #2 FIX: Reuse in-flight fetch for same origin (dedup pattern)
-        if (this._pendingFetches.has(targetOrigin)) {
-            console.log("[API dedup] Reusing in-flight fetch for", targetOrigin);
-            return this._pendingFetches.get(targetOrigin);
+        // BUG-02 FIX: Key dedup map on full URL, not just origin.
+        // Keying on origin caused two concurrent requests to different FAP pages
+        // (e.g. transcript vs exam) to share the same in-flight promise, returning
+        // wrong HTML to the second caller.
+        if (this._pendingFetches.has(url)) {
+            console.log("[API dedup] Reusing in-flight fetch for", url);
+            return this._pendingFetches.get(url);
         }
 
         const promise = this._doFetchViaContentScript(url).finally(() => {
-            this._pendingFetches.delete(targetOrigin);
+            this._pendingFetches.delete(url);
         });
-        this._pendingFetches.set(targetOrigin, promise);
+        this._pendingFetches.set(url, promise);
         return promise;
     },
 
@@ -118,8 +121,11 @@ const ApiService = {
                 },
             });
 
+            // BUG-01 FIX: Wrap tabs.remove on success path in try/catch.
+            // If the tab was closed by the user between executeScript resolving and here,
+            // the remove call would throw an unhandled rejection without this guard.
             if (createdTab) {
-                await chrome.tabs.remove(tabId);
+                try { await chrome.tabs.remove(tabId); } catch (_) { }
             }
 
             if (!result || !result.result) return null;

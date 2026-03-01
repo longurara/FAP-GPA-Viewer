@@ -270,8 +270,10 @@ const TabsService = {
             }
         });
 
+        // BUG-06 FIX: Use tabId directly (matching the convention in initLiquidGlassTabs
+        // click handler which also uses dataset.tab/id directly without a "tab-" prefix).
         document.querySelectorAll(".tab").forEach((s) => s.classList.remove("active"));
-        document.getElementById("tab-" + tabId)?.classList.add("active");
+        document.getElementById(tabId)?.classList.add("active");
     },
 
     /**

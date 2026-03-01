@@ -148,9 +148,13 @@ const SettingsService = {
      */
     async _encodeCredential(str) {
         if (window.CredentialCrypto) return await window.CredentialCrypto.encrypt(str);
-        // Fallback if crypto module not loaded
-        try { return btoa(unescape(encodeURIComponent(str))); }
-        catch { return ""; }
+        // BUG-10 FIX: Replaced deprecated unescape(encodeURIComponent()) with TextEncoder.
+        try {
+            const bytes = new TextEncoder().encode(str);
+            let binary = "";
+            bytes.forEach(b => binary += String.fromCharCode(b));
+            return btoa(binary);
+        } catch { return ""; }
     },
 
     /**
@@ -158,9 +162,11 @@ const SettingsService = {
      */
     async _decodeCredential(str) {
         if (window.CredentialCrypto) return await window.CredentialCrypto.decrypt(str);
-        // Fallback
-        try { return decodeURIComponent(escape(atob(str))); }
-        catch { return ""; }
+        // BUG-10 FIX: Replaced deprecated escape(atob()) with TextDecoder.
+        try {
+            const bytes = Uint8Array.from(atob(str), c => c.charCodeAt(0));
+            return new TextDecoder().decode(bytes);
+        } catch { return ""; }
     },
 
     // ========== FeID Auto-Login ==========
@@ -182,12 +188,12 @@ const SettingsService = {
                 this._encodeCredential(username),
                 this._encodeCredential(password),
             ]);
-            await new Promise((resolve) => {
-                chrome.storage.local.set({
-                    auto_login_enabled: document.getElementById("toggle-auto-login")?.checked ?? true,
-                    auto_login_username: encUser,
-                    auto_login_password: encPass,
-                }, resolve);
+            // BUG-07 FIX: Use window.STORAGE.set() instead of chrome.storage.local.set()
+            // so the in-memory cache stays consistent with what was just saved.
+            await window.STORAGE?.set({
+                auto_login_enabled: document.getElementById("toggle-auto-login")?.checked ?? true,
+                auto_login_username: encUser,
+                auto_login_password: encPass,
             });
             this._showAutoLoginStatus("✓ Đã lưu thông tin đăng nhập FeID", "saved");
             console.log("[Settings] FeID auto-login credentials saved for:", username);
@@ -293,12 +299,11 @@ const SettingsService = {
                 this._encodeCredential(username),
                 this._encodeCredential(password),
             ]);
-            await new Promise((resolve) => {
-                chrome.storage.local.set({
-                    auto_login_lms_enabled: document.getElementById("toggle-auto-login-lms")?.checked ?? true,
-                    auto_login_lms_username: encUser,
-                    auto_login_lms_password: encPass,
-                }, resolve);
+            // BUG-07 FIX: Use window.STORAGE.set() for cache consistency.
+            await window.STORAGE?.set({
+                auto_login_lms_enabled: document.getElementById("toggle-auto-login-lms")?.checked ?? true,
+                auto_login_lms_username: encUser,
+                auto_login_lms_password: encPass,
             });
             this._showAutoLoginLmsStatus("✓ Đã lưu thông tin đăng nhập LMS", "saved");
             console.log("[Settings] LMS auto-login credentials saved for:", username);
@@ -419,10 +424,11 @@ const SettingsService = {
         document.getElementById("btnClearAutoLogin")?.addEventListener("click", () => this.clearAutoLoginCredentials());
 
         document.getElementById("toggle-auto-login")?.addEventListener("change", (e) => {
-            chrome.storage.local.set({ auto_login_enabled: e.target.checked });
+            // BUG-07 FIX: Use window.STORAGE for cache consistency
+            window.STORAGE?.set({ auto_login_enabled: e.target.checked });
         });
         document.getElementById("toggle-auto-login-startup")?.addEventListener("change", (e) => {
-            chrome.storage.local.set({ auto_login_on_startup: e.target.checked });
+            window.STORAGE?.set({ auto_login_on_startup: e.target.checked });
         });
         document.getElementById("btnTogglePassword")?.addEventListener("click", () => {
             const input = document.getElementById("autoLoginPassword");
@@ -439,10 +445,10 @@ const SettingsService = {
         document.getElementById("btnClearAutoLoginLms")?.addEventListener("click", () => this.clearAutoLoginLmsCredentials());
 
         document.getElementById("toggle-auto-login-lms")?.addEventListener("change", (e) => {
-            chrome.storage.local.set({ auto_login_lms_enabled: e.target.checked });
+            window.STORAGE?.set({ auto_login_lms_enabled: e.target.checked });
         });
         document.getElementById("toggle-auto-login-lms-startup")?.addEventListener("change", (e) => {
-            chrome.storage.local.set({ auto_login_lms_startup: e.target.checked });
+            window.STORAGE?.set({ auto_login_lms_startup: e.target.checked });
         });
         document.getElementById("btnToggleLmsPassword")?.addEventListener("click", () => {
             const input = document.getElementById("autoLoginLmsPassword");

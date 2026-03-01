@@ -298,12 +298,15 @@
         }
       }
 
+      // BUG-04 FIX: Compute stats on the FULL dataset (sorted), not on filtered.
+      // Previously, if a day filter was active, #attRate showed only that day's rate,
+      // misleading the user. Stats are now always computed on all valid entries.
       let attended = 0,
         absent = 0,
         late = 0,
         notYet = 0;
 
-      filtered.forEach((e) => {
+      sorted.forEach((e) => {
         const s = (e.status || "").toLowerCase();
         if (s.includes("attended")) attended++;
         else if (s.includes("absent")) absent++;
@@ -336,10 +339,11 @@
       }
 
       // Use DocumentFragment for batch DOM insertion (single reflow)
+      // BUG-03 FIX: Hoist esc() outside the loop — call once per render, not once per row.
+      const esc = _esc();
       const fragment = document.createDocumentFragment();
       filtered.forEach((entry) => {
         const tr = document.createElement("tr");
-        const esc = _esc();
         const dayDisplay = esc(entry.date || entry.day || "");
         const slotDisplay = esc(entry.slot || "");
         const courseDisplay = esc(entry.course || "");
@@ -419,11 +423,12 @@
     });
 
     // Use DocumentFragment for batch DOM insertion (single reflow)
+    // BUG-03 FIX: Hoist esc() outside the loop — call once per render, not once per row.
+    const esc = _esc();
     const fragment = document.createDocumentFragment();
     sorted.forEach((entry) => {
       const tr = document.createElement("tr");
       if (entry.room === "Online") tr.classList.add("online-class");
-      const esc = _esc();
 
       tr.innerHTML = `
         <td>${esc(typeof dayToVietnamese === "function" ? dayToVietnamese(entry.day) || "" : entry.day || "")}</td>
