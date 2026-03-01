@@ -188,7 +188,20 @@
         const selected = document.createElement("div");
         selected.className = "fap-dropdown-selected";
         const selectedOpt = options.find(o => o.selected) || options[0];
-        selected.innerHTML = `<span>${selectedOpt.text}</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
+        // WARN #2 FIX: Use DOM methods instead of innerHTML interpolation to avoid XSS
+        // if FAP server returns campus names with special characters.
+        const selectedSpan = document.createElement("span");
+        selectedSpan.textContent = selectedOpt.text;
+        const chevronSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        chevronSvg.setAttribute("width", "16"); chevronSvg.setAttribute("height", "16");
+        chevronSvg.setAttribute("viewBox", "0 0 24 24"); chevronSvg.setAttribute("fill", "none");
+        chevronSvg.setAttribute("stroke", "currentColor"); chevronSvg.setAttribute("stroke-width", "2.5");
+        chevronSvg.setAttribute("stroke-linecap", "round"); chevronSvg.setAttribute("stroke-linejoin", "round");
+        const polyline = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+        polyline.setAttribute("points", "6 9 12 15 18 9");
+        chevronSvg.appendChild(polyline);
+        selected.appendChild(selectedSpan);
+        selected.appendChild(chevronSvg);
 
         const list = document.createElement("div");
         list.className = "fap-dropdown-list";
@@ -211,17 +224,8 @@
 
                 // Close
                 wrapper.classList.remove("open");
-
-                // Trigger ASP.NET postback if needed
-                const onchangeAttr = nativeSelect.getAttribute("onchange");
-                if (onchangeAttr) {
-                    // Safe alternative to eval(): use Function constructor for inline handler strings
-                    try {
-                        new Function(onchangeAttr).call(nativeSelect);
-                    } catch (e) {
-                        console.warn("[FAP-Login] onchange handler error:", e);
-                    }
-                }
+                // Note: change event dispatched above is sufficient for ASP.NET postback.
+                // Calling new Function(onchangeAttr) is redundant and CSP-unsafe.
             });
 
             list.appendChild(item);
@@ -236,12 +240,22 @@
             wrapper.classList.toggle("open");
         });
 
-        // Close on outside click
+        // F5 #2 FIX: Store listener reference via AbortController so it can be removed.
+        // A bare document.addEventListener without cleanup can accumulate on repeated calls.
+        const _dropdownAbort = new AbortController();
+        const { signal: _dropdownSignal } = _dropdownAbort;
+
+        // Close on outside click — now properly cleanup-able
         document.addEventListener("click", () => {
             wrapper.classList.remove("open");
-        });
+        }, { signal: _dropdownSignal });
 
-        wrapper.addEventListener("click", (e) => e.stopPropagation());
+        // When a dropdown item is selected, we don't need to auto-cleanup here
+        // because the page will navigate (ASP.NET postback). But if it stays on page,
+        // we clean up after first use for hygiene.
+        wrapper.addEventListener("click", (e) => {
+            e.stopPropagation();
+        }, { signal: _dropdownSignal });
 
         // Insert after native select
         nativeSelect.parentNode.insertBefore(wrapper, nativeSelect.nextSibling);

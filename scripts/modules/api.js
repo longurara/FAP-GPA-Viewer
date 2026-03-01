@@ -12,6 +12,10 @@ const ApiService = {
         home: "https://fap.fpt.edu.vn/",
     },
 
+    // NEW #2 FIX: Dedup map to prevent concurrent tab creation for the same origin
+    // (mirrors the _pendingTabFetches pattern in background.js)
+    _pendingFetches: new Map(),
+
     /**
      * Wait for tab to complete loading (event-based, no polling)
      * @param {number} tabId - Chrome tab ID
@@ -58,10 +62,30 @@ const ApiService = {
 
     /**
      * Fetch URL via content script to stay in first-party context
+     * ⚠️ SYNC WITH background.js: Any changes here MUST also be applied to
+     * fetchViaContentScript / waitForTabComplete in background.js.
+     * Reason: Service Workers cannot import modules from the content-script context.
      * @param {string} url - URL to fetch
      * @returns {Promise<Object|null>} - Response object or null
      */
     async fetchViaContentScript(url) {
+        const parsedUrl = new URL(url);
+        const targetOrigin = parsedUrl.origin;
+
+        // NEW #2 FIX: Reuse in-flight fetch for same origin (dedup pattern)
+        if (this._pendingFetches.has(targetOrigin)) {
+            console.log("[API dedup] Reusing in-flight fetch for", targetOrigin);
+            return this._pendingFetches.get(targetOrigin);
+        }
+
+        const promise = this._doFetchViaContentScript(url).finally(() => {
+            this._pendingFetches.delete(targetOrigin);
+        });
+        this._pendingFetches.set(targetOrigin, promise);
+        return promise;
+    },
+
+    async _doFetchViaContentScript(url) {
         const parsedUrl = new URL(url);
         const targetOrigin = parsedUrl.origin;
 

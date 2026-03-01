@@ -854,34 +854,39 @@ function setupEventListeners() {
 const isValidScheduleData = window.isValidScheduleData;
 
 // Listen for storage changes (when background updates cache)
-chrome.storage.onChanged.addListener(async (changes, area) => {
-  if (area !== 'local') return;
+// STAB #9 FIX: Guard against duplicate listener registration if popup script
+// is evaluated multiple times (e.g. in dashboard fullpage mode or hot-reload).
+if (!window._storageListenerAdded) {
+  window._storageListenerAdded = true;
+  chrome.storage.onChanged.addListener(async (changes, area) => {
+    if (area !== 'local') return;
 
-  // When transcript cache is updated by background, re-render GPA
-  if (changes.cache_transcript) {
-    const newValue = changes.cache_transcript.newValue;
-    if (newValue?.data?.rows && newValue.data.rows.length > 0) {
-      console.log("[Storage] Transcript cache updated, re-rendering GPA");
-      const excluded = await STORAGE.get("excluded_courses", []);
-      renderTranscript(newValue.data.rows, excluded);
+    // When transcript cache is updated by background, re-render GPA
+    if (changes.cache_transcript) {
+      const newValue = changes.cache_transcript.newValue;
+      if (newValue?.data?.rows && newValue.data.rows.length > 0) {
+        console.log("[Storage] Transcript cache updated, re-rendering GPA");
+        const excluded = await STORAGE.get("excluded_courses", []);
+        renderTranscript(newValue.data.rows, excluded);
+      }
     }
-  }
 
-  // When attendance cache is updated, re-render (only if valid data)
-  if (changes.cache_attendance) {
-    const newValue = changes.cache_attendance.newValue;
-    const entries = newValue?.data?.entries;
+    // When attendance cache is updated, re-render (only if valid data)
+    if (changes.cache_attendance) {
+      const newValue = changes.cache_attendance.newValue;
+      const entries = newValue?.data?.entries;
 
-    // Only re-render if new data is valid (prevents blank screen on login page redirect)
-    if (entries && isValidScheduleData(entries)) {
-      console.log("[Storage] Attendance cache updated with valid data, re-rendering");
-      renderAttendance(entries);
-      updateQuickAttendanceStats(entries);
-    } else if (entries && entries.length === 0) {
-      console.warn("[Storage] Ignoring empty attendance cache update (likely not logged in)");
+      // Only re-render if new data is valid (prevents blank screen on login page redirect)
+      if (entries && isValidScheduleData(entries)) {
+        console.log("[Storage] Attendance cache updated with valid data, re-rendering");
+        renderAttendance(entries);
+        updateQuickAttendanceStats(entries);
+      } else if (entries && entries.length === 0) {
+        console.warn("[Storage] Ignoring empty attendance cache update (likely not logged in)");
+      }
     }
-  }
-});
+  }); // end chrome.storage.onChanged.addListener
+} // end if (!window._storageListenerAdded)
 
 // Redundant TRANSCRIPT_READY/LOADING listener removed — storage.onChanged handles re-rendering.
 

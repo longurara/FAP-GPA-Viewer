@@ -23,6 +23,11 @@
   const $ = (sel) => document.querySelector(sel);
   const tbody = (id) => document.querySelector(id + " tbody");
 
+  function _esc(s) {
+    if (s == null) return "";
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+
   function setText(id, txt) {
     const el = $(id);
     if (el) el.textContent = txt;
@@ -36,7 +41,10 @@
             `<td>${(x ?? "")
               .toString()
               .replace(/&/g, "&amp;")
-              .replace(/</g, "&lt;")}</td>`
+              .replace(/</g, "&lt;")
+              .replace(/>/g, "&gt;")
+              .replace(/"/g, "&quot;")
+              .replace(/'/g, "&#39;")}</td>`
         )
         .join("");
       tbodyEl.appendChild(tr);
@@ -78,13 +86,12 @@
       }
 
       tr.innerHTML = `
-        <td>${r.code || ""}</td>
-        <td>${r.name || ""}</td>
+        <td>${_esc(r.code)}</td>
+        <td>${_esc(r.name)}</td>
         <td>${Number.isFinite(r.credit) ? r.credit : ""}</td>
-        <td class="${gradeClass}">${
-        Number.isFinite(r.grade) ? r.grade : ""
-      }</td>
-        <td>${r.status || ""}</td>
+        <td class="${gradeClass}">${Number.isFinite(r.grade) ? r.grade : ""
+        }</td>
+        <td>${_esc(r.status)}</td>
       `;
       tb.appendChild(tr);
     });
@@ -122,11 +129,11 @@
       else if (status.includes("absent")) statusClass = "status-absent";
 
       tr.innerHTML = `
-        <td>${e.date || ""}</td>
-        <td>${e.day || ""}</td>
-        <td>${e.slot || ""}</td>
-        <td>${e.course || ""}</td>
-        <td class="${statusClass}">${e.status || ""}</td>
+        <td>${_esc(e.date)}</td>
+        <td>${_esc(e.day)}</td>
+        <td>${_esc(e.slot)}</td>
+        <td>${_esc(e.course)}</td>
+        <td class="${_esc(statusClass)}">${_esc(e.status)}</td>
       `;
       tb.appendChild(tr);
     });
@@ -191,7 +198,7 @@
       setText("#extName", manifest.name || "FAP GPA Viewer – Dashboard");
       setText("#extVer", "v" + (manifest.version || ""));
       setText("#today", new Date().toLocaleString("vi-VN"));
-    } catch (e) {}
+    } catch (e) { }
 
     // Hỏi background lấy data
     try {

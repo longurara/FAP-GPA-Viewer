@@ -144,7 +144,7 @@ window.debounce = window.debounce || Utils.debounce;
 window.dayToVietnamese = window.dayToVietnamese || Utils.dayToVietnamese;
 
 // New centralized functions
-window.isValidScheduleData = Utils.isValidScheduleData;
-window.computeGPA = Utils.computeGPA;
-window.escapeHtml = Utils.escapeHtml;
+window.isValidScheduleData = Utils.isValidScheduleData.bind(Utils);
+window.computeGPA = Utils.computeGPA.bind(Utils);
+window.escapeHtml = Utils.escapeHtml.bind(Utils);
 

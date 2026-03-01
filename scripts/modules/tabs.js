@@ -8,11 +8,14 @@ const TabsService = {
     indicatorStartLeft: 0,
     _initialized: false,
     _cachedBtnPositions: null,
+    // STAB #1/#7 FIX: AbortController to cleanup document/window listeners
+    // Prevents mousemove, mouseup, resize from accumulating on re-init
+    _listenersAbort: null,
 
     /**
      * Initialize Liquid Glass Tabs with draggable indicator
      */
-    initLiquidGlassTabs() {
+    initLiquidGlassTabs(signal) {
         const indicator = document.querySelector(".tab-indicator");
         const tabsContainer = document.querySelector(".tabs");
         const buttons = document.querySelectorAll(".tabs button");
@@ -148,6 +151,7 @@ const TabsService = {
         });
 
         // rAF-throttled mousemove (prevents layout thrashing at 60Hz)
+        // STAB #1 FIX: Use signal from AbortController to allow cleanup
         let _rafId = null;
         document.addEventListener("mousemove", (e) => {
             if (!self.isDragging) return;
@@ -169,7 +173,7 @@ const TabsService = {
                     closestTab.classList.add("hover-preview");
                 }
             });
-        });
+        }, { signal });
 
         document.addEventListener("mouseup", () => {
             if (!self.isDragging) return;
@@ -204,9 +208,10 @@ const TabsService = {
                     inline: "center",
                 });
             }
-        });
+        }, { signal });
 
         // Update on resize (debounced)
+        // STAB #7 FIX: Also uses signal so resize listener is cleaned up
         let resizeTimeout;
         window.addEventListener("resize", () => {
             clearTimeout(resizeTimeout);
@@ -216,7 +221,9 @@ const TabsService = {
                     moveIndicator(activeBtn, true);
                 }
             }, 100);
-        });
+        }, { signal });
+
+        indicator.style.cursor = "grab";
 
         // Update on scroll
         tabsContainer.addEventListener("scroll", () => {
@@ -271,13 +278,17 @@ const TabsService = {
      * Initialize tabs module (guard against double init)
      */
     init() {
-        if (this._initialized) return;
-        this._initialized = true;
-        this.initLiquidGlassTabs();
+        // STAB #1/#7 FIX: Create AbortController and pass signal to document/window listeners
+        // Abort the previous set of listeners if re-initializing (e.g. hot-reload)
+        // NOTE: _initialized guard removed — it prevented the AbortController abort from
+        // ever running, causing listeners to accumulate on re-init.
+        if (this._listenersAbort) this._listenersAbort.abort();
+        this._listenersAbort = new AbortController();
+        this.initLiquidGlassTabs(this._listenersAbort.signal);
     },
 };
 
 // Expose globally
 window.TabsService = TabsService;
-window.initLiquidGlassTabs = () => TabsService.initLiquidGlassTabs();
+window.initLiquidGlassTabs = () => TabsService.init();
 window.switchTab = (tabId) => TabsService.switchTab(tabId);

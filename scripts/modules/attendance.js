@@ -158,9 +158,17 @@
 
         let status = "not yet";
         const htmlLower = cellHTML.toLowerCase();
-        if (htmlLower.includes("color=green") || htmlLower.includes("color: green") || /attended/i.test(cellText)) {
+        // BUG-06 FIX: Broaden color detection to catch hex colors (#008000, #00ff00),
+        // compact format (color:green without space), and common FAP color variants.
+        const isGreenHtml = htmlLower.includes("color=green") || htmlLower.includes("color: green") ||
+          htmlLower.includes("color:green") || /color[=:]\s*#0[0-9a-f]{5}/i.test(cellHTML) ||
+          /color[=:]\s*#00[89a-f][0-9a-f]{3}/i.test(cellHTML); // covers #008000, #009900 etc
+        const isRedHtml = htmlLower.includes("color=red") || htmlLower.includes("color: red") ||
+          htmlLower.includes("color:red") || /color[=:]\s*#[ef][0-9a-f]{5}/i.test(cellHTML) ||
+          /color[=:]\s*#[cd][0-9a-f]{1}0[0-9a-f]{3}/i.test(cellHTML);
+        if (isGreenHtml || /attended/i.test(cellText)) {
           status = "attended";
-        } else if (htmlLower.includes("color=red") || htmlLower.includes("color: red") || /absent|vắng/i.test(cellText)) {
+        } else if (isRedHtml || /absent|vắng/i.test(cellText)) {
           status = "absent";
         } else if (/not yet/i.test(cellText)) {
           status = "not yet";

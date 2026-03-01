@@ -41,10 +41,9 @@ const SettingsService = {
      */
     async loadPageStyleToggles() {
         try {
-            const data = await new Promise((resolve) => {
-                chrome.storage.local.get("page_styles", (result) => resolve(result));
-            });
-            const styles = data.page_styles || {};
+            // NEW #5 FIX: Use window.STORAGE wrapper instead of raw chrome.storage.local
+            // to benefit from in-memory cache and consistent error handling.
+            const styles = await window.STORAGE?.get("page_styles", {}) || {};
 
             this.PAGE_STYLE_KEYS.forEach((key) => {
                 const cb = document.getElementById("toggle-style-" + key);
@@ -70,13 +69,8 @@ const SettingsService = {
             }
         });
 
-        try {
-            await new Promise((resolve) => {
-                chrome.storage.local.set({ page_styles: styles }, resolve);
-            });
-        } catch (e) {
-            console.warn("[Settings] Failed to save page_styles:", e);
-        }
+        // NEW #5 FIX: Use window.STORAGE wrapper
+        await window.STORAGE?.set({ page_styles: styles });
     },
 
     /**
@@ -84,10 +78,8 @@ const SettingsService = {
      */
     async loadFeatureToggles() {
         try {
-            const data = await new Promise((resolve) => {
-                chrome.storage.local.get("feature_toggles", (result) => resolve(result));
-            });
-            const features = data.feature_toggles || {};
+            // NEW #5 FIX: Use window.STORAGE wrapper
+            const features = await window.STORAGE?.get("feature_toggles", {}) || {};
 
             this.FEATURE_KEYS.forEach((key) => {
                 const cb = document.getElementById("toggle-feature-" + key);
@@ -113,13 +105,8 @@ const SettingsService = {
             }
         });
 
-        try {
-            await new Promise((resolve) => {
-                chrome.storage.local.set({ feature_toggles: features }, resolve);
-            });
-        } catch (e) {
-            console.warn("[Settings] Failed to save feature_toggles:", e);
-        }
+        // NEW #5 FIX: Use window.STORAGE wrapper
+        await window.STORAGE?.set({ feature_toggles: features });
     },
 
     /**
@@ -154,20 +141,24 @@ const SettingsService = {
         }
     },
 
-    // ========== Credential Encoding ==========
+    // ========== Credential Encryption (AES-GCM) ==========
 
     /**
-     * Encode credentials for storage (Base64 obfuscation)
+     * Encrypt credentials for storage (AES-GCM via CredentialCrypto)
      */
-    _encodeCredential(str) {
+    async _encodeCredential(str) {
+        if (window.CredentialCrypto) return await window.CredentialCrypto.encrypt(str);
+        // Fallback if crypto module not loaded
         try { return btoa(unescape(encodeURIComponent(str))); }
         catch { return ""; }
     },
 
     /**
-     * Decode credentials from storage
+     * Decrypt credentials from storage (auto-migrates from Base64)
      */
-    _decodeCredential(str) {
+    async _decodeCredential(str) {
+        if (window.CredentialCrypto) return await window.CredentialCrypto.decrypt(str);
+        // Fallback
         try { return decodeURIComponent(escape(atob(str))); }
         catch { return ""; }
     },
@@ -187,11 +178,15 @@ const SettingsService = {
         }
 
         try {
+            const [encUser, encPass] = await Promise.all([
+                this._encodeCredential(username),
+                this._encodeCredential(password),
+            ]);
             await new Promise((resolve) => {
                 chrome.storage.local.set({
                     auto_login_enabled: document.getElementById("toggle-auto-login")?.checked ?? true,
-                    auto_login_username: this._encodeCredential(username),
-                    auto_login_password: this._encodeCredential(password),
+                    auto_login_username: encUser,
+                    auto_login_password: encPass,
                 }, resolve);
             });
             this._showAutoLoginStatus("✓ Đã lưu thông tin đăng nhập FeID", "saved");
@@ -223,7 +218,7 @@ const SettingsService = {
             if (startupToggle) startupToggle.checked = data.auto_login_on_startup === true;
 
             if (usernameInput && data.auto_login_username) {
-                usernameInput.value = this._decodeCredential(data.auto_login_username);
+                usernameInput.value = await this._decodeCredential(data.auto_login_username);
             }
 
             if (data.auto_login_username && data.auto_login_password) {
@@ -294,11 +289,15 @@ const SettingsService = {
         }
 
         try {
+            const [encUser, encPass] = await Promise.all([
+                this._encodeCredential(username),
+                this._encodeCredential(password),
+            ]);
             await new Promise((resolve) => {
                 chrome.storage.local.set({
                     auto_login_lms_enabled: document.getElementById("toggle-auto-login-lms")?.checked ?? true,
-                    auto_login_lms_username: this._encodeCredential(username),
-                    auto_login_lms_password: this._encodeCredential(password),
+                    auto_login_lms_username: encUser,
+                    auto_login_lms_password: encPass,
                 }, resolve);
             });
             this._showAutoLoginLmsStatus("✓ Đã lưu thông tin đăng nhập LMS", "saved");
@@ -329,7 +328,7 @@ const SettingsService = {
             if (startupToggle) startupToggle.checked = data.auto_login_lms_startup === true;
 
             if (usernameInput && data.auto_login_lms_username) {
-                usernameInput.value = this._decodeCredential(data.auto_login_lms_username);
+                usernameInput.value = await this._decodeCredential(data.auto_login_lms_username);
             }
 
             if (data.auto_login_lms_username && data.auto_login_lms_password) {

@@ -2,7 +2,9 @@
 // Exams Module - Exam Schedule Management
 // ===============================
 
-// escapeHtml is accessed as a bare global — resolves to window.escapeHtml set by utils.js
+// escapeHtml is accessed via safe local reference with fallback — resolves to window.escapeHtml set by utils.js.
+// If utils.js hasn't loaded yet, a ReferenceError would crash the entire module.
+const _examEsc = () => window.escapeHtml || ((s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'));
 
 const ExamService = {
     /**
@@ -144,30 +146,31 @@ const ExamService = {
             card.dataset.date = exam.date || "";
             card.dataset.diff = diff !== null ? diff : "";
 
+            const esc = _examEsc();
             card.innerHTML = `
                 <div class="exam-card-header">
                     <div class="exam-card-subject">
-                        <span class="exam-code-badge">${escapeHtml(exam.code)}</span>
-                        <span class="exam-name">${escapeHtml(exam.name)}</span>
+                        <span class="exam-code-badge">${esc(exam.code)}</span>
+                        <span class="exam-name">${esc(exam.name)}</span>
                     </div>
                     ${badgeHtml}
                 </div>
                 <div class="exam-card-meta">
                     <div class="exam-meta-item">
                         <span class="exam-meta-icon">📅</span>
-                        <span>${escapeHtml(exam.date)}</span>
+                        <span>${esc(exam.date)}</span>
                     </div>
                     <div class="exam-meta-item">
                         <span class="exam-meta-icon">⏰</span>
-                        <span>${escapeHtml(exam.time)}</span>
+                        <span>${esc(exam.time)}</span>
                     </div>
                     <div class="exam-meta-item">
                         <span class="exam-meta-icon">🏫</span>
-                        <span>Phòng ${escapeHtml(exam.room)}</span>
+                        <span>Phòng ${esc(exam.room)}</span>
                     </div>
                     <div class="exam-meta-item">
                         <span class="exam-meta-icon">📝</span>
-                        <span>${escapeHtml(exam.form)}</span>
+                        <span>${esc(exam.form)}</span>
                     </div>
                 </div>
             `;
@@ -200,18 +203,24 @@ const ExamService = {
             }
 
             // Time filter
+            // BUG-03 FIX: If diff===null (date unparseable) and a time filter is active,
+            // hide the card — we cannot determine its time position.
             let matchTime = true;
-            if (filterValue !== "ALL" && diff !== null) {
-                switch (filterValue) {
-                    case "THIS_WEEK":
-                        matchTime = diff >= 0 && diff <= 7;
-                        break;
-                    case "THIS_MONTH":
-                        matchTime = diff >= 0 && diff <= 30;
-                        break;
-                    case "UPCOMING":
-                        matchTime = diff >= 0;
-                        break;
+            if (filterValue !== "ALL") {
+                if (diff === null) {
+                    matchTime = false; // can't determine timing → hide when filtering
+                } else {
+                    switch (filterValue) {
+                        case "THIS_WEEK":
+                            matchTime = diff >= 0 && diff <= 7;
+                            break;
+                        case "THIS_MONTH":
+                            matchTime = diff >= 0 && diff <= 30;
+                            break;
+                        case "UPCOMING":
+                            matchTime = diff >= 0;
+                            break;
+                    }
                 }
             }
 

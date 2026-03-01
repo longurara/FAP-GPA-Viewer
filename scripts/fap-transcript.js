@@ -6,6 +6,12 @@
 (function () {
     'use strict';
 
+    // Security helper
+    function _esc(s) {
+        if (s == null) return '';
+        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
     // Check if we're on the right page
     if (!window.location.href.includes('StudentTranscript.aspx')) return;
 
@@ -328,7 +334,7 @@
 
             semesterCardsHtml += `
                 <div class="fap-semester-card ${gpaClass}">
-                    <div class="fap-semester-name">${sem.semester}</div>
+                    <div class="fap-semester-name">${_esc(sem.semester)}</div>
                     <div class="fap-semester-gpa-row">
                         <div class="fap-semester-gpa-item">
                             <span class="fap-semester-gpa-label">GPA (10)</span>

@@ -208,10 +208,21 @@ const ThemeService = {
             if (bgUrl.startsWith("linear-gradient")) {
                 body.style.background = bgUrl;
             } else {
-                body.style.backgroundImage = `url(${bgUrl})`;
-                body.style.backgroundSize = "cover";
-                body.style.backgroundPosition = "center";
-                body.style.backgroundRepeat = "no-repeat";
+                // STAB #2 FIX: Validate URL scheme before injecting into CSS to prevent
+                // CSS injection if storage is tampered or bgUrl contains special chars.
+                // Only allow data:image/ URLs (from FileReader) or same-extension URLs.
+                const isSafeDataUrl = bgUrl.startsWith("data:image/");
+                const isSafeExtUrl = bgUrl.startsWith("chrome-extension://");
+                if (!isSafeDataUrl && !isSafeExtUrl) {
+                    console.warn("[Theme] Blocked unsafe background URL:", bgUrl.slice(0, 50));
+                    body.style.backgroundImage = "";
+                } else {
+                    // Escape double quotes to prevent CSS property breakout
+                    body.style.backgroundImage = `url("${bgUrl.replace(/"/g, "%22")}")`;
+                    body.style.backgroundSize = "cover";
+                    body.style.backgroundPosition = "center";
+                    body.style.backgroundRepeat = "no-repeat";
+                }
             }
             body.style.backgroundAttachment = "fixed";
         } else {
@@ -234,7 +245,7 @@ const ThemeService = {
             if (bgUrl.startsWith("linear-gradient")) {
                 preview.style.background = bgUrl;
             } else {
-                preview.style.backgroundImage = `url(${bgUrl})`;
+                preview.style.backgroundImage = `url("${bgUrl.replace(/"/g, "%22")}")`;
             }
             preview.style.display = "block";
         } else {
@@ -257,12 +268,17 @@ const ThemeService = {
         </div>
         <div class="bg-preset-modal-content">
           <div class="preset-grid">
-            ${this.PRESET_BACKGROUNDS.map((preset, i) => `
-              <button class="preset-bg-btn" data-index="${i}" title="${preset.name}">
+            ${this.PRESET_BACKGROUNDS.map((preset, i) => {
+            // BUG-07 FIX: Escape preset.name before injecting into HTML attribute/content.
+            // preset.url is a CSS value (linear-gradient), safe for style attribute only.
+            const safeName = (window.escapeHtml || ((s) => String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;")))(preset.name);
+            return `
+              <button class="preset-bg-btn" data-index="${i}" title="${safeName}">
                 <div class="preset-bg-preview" style="background: ${preset.url};"></div>
-                <div class="preset-bg-name">${preset.name}</div>
+                <div class="preset-bg-name">${safeName}</div>
               </button>
-            `).join("")}
+            `;
+        }).join("")}
           </div>
         </div>
       </div>

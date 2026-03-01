@@ -70,7 +70,7 @@
 
     chrome.storage.local.get(
       ["auto_login_enabled", "auto_login_username", "auto_login_password"],
-      function (data) {
+      async function (data) {
         if (!data.auto_login_enabled) {
           console.log("[FeID Auto-Login] Disabled");
           return;
@@ -81,13 +81,18 @@
           return;
         }
 
-        // Decode Base64 credentials
+        // Decrypt credentials (AES-GCM or legacy Base64)
         let username, password;
         try {
-          username = decodeURIComponent(escape(atob(data.auto_login_username)));
-          password = decodeURIComponent(escape(atob(data.auto_login_password)));
+          if (window.CredentialCrypto) {
+            username = await window.CredentialCrypto.decrypt(data.auto_login_username);
+            password = await window.CredentialCrypto.decrypt(data.auto_login_password);
+          } else {
+            username = decodeURIComponent(escape(atob(data.auto_login_username)));
+            password = decodeURIComponent(escape(atob(data.auto_login_password)));
+          }
         } catch (e) {
-          console.error("[FeID Auto-Login] Failed to decode credentials:", e);
+          console.error("[FeID Auto-Login] Failed to decrypt credentials:", e);
           return;
         }
 
@@ -130,10 +135,16 @@
    * Fill username/password fields slowly and submit the form
    */
   async function _fillAndSubmit(username, password) {
-    // FeID login form field selectors
-    const usernameField = document.querySelector('input[name="Username"], input[id*="Username"], input[type="text"]');
-    const passwordField = document.querySelector('input[name="Password"], input[id*="Password"], input[type="password"]');
-    const loginButton = document.querySelector('input[value="login"], button[value="login"], input[type="submit"]');
+    // FeID login form field selectors — scoped to the form element to avoid
+    // BUG #8 FIX: matching unrelated inputs (search box, CAPTCHA, etc.) via
+    // the overly broad fallback `input[type="text"]` selector.
+    const loginForm = document.querySelector('form');
+    const usernameField = loginForm?.querySelector('input[name="Username"], input[id*="Username"]')
+      || document.querySelector('input[name="Username"], input[id*="Username"]');
+    const passwordField = loginForm?.querySelector('input[name="Password"], input[id*="Password"]')
+      || document.querySelector('input[name="Password"], input[id*="Password"]');
+    const loginButton = loginForm?.querySelector('input[value="login"], button[value="login"], input[type="submit"]')
+      || document.querySelector('input[value="login"], button[value="login"], input[type="submit"]');
 
     if (!usernameField || !passwordField) {
       console.warn("[FeID Auto-Login] Could not find login form fields");

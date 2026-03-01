@@ -19,17 +19,24 @@
 
         chrome.storage.local.get(
             ["auto_login_lms_enabled", "auto_login_lms_username", "auto_login_lms_password"],
-            function (data) {
+            async function (data) {
                 if (!data.auto_login_lms_enabled) return;
                 if (!data.auto_login_lms_username || !data.auto_login_lms_password) return;
 
                 let username, password;
                 try {
-                    username = decodeURIComponent(escape(atob(data.auto_login_lms_username)));
-                    password = decodeURIComponent(escape(atob(data.auto_login_lms_password)));
+                    if (window.CredentialCrypto) {
+                        username = await window.CredentialCrypto.decrypt(data.auto_login_lms_username);
+                        password = await window.CredentialCrypto.decrypt(data.auto_login_lms_password);
+                    } else {
+                        username = decodeURIComponent(escape(atob(data.auto_login_lms_username)));
+                        password = decodeURIComponent(escape(atob(data.auto_login_lms_password)));
+                    }
                 } catch (e) { return; }
                 if (!username || !password) return;
 
+                // BUG #12 FIX: Set session flag AFTER successful decrypt+validate,
+                // not before. If decrypt fails, flag should not be set so retry works.
                 sessionStorage.setItem("lms_auto_login_attempted", "true");
                 _submitLogin(username, password);
             }

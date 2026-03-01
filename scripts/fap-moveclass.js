@@ -95,9 +95,21 @@
             document.getElementById("ctl00_mainContent_lblSubject")?.textContent || "";
 
         // Load cached timetable
+        // BUG #1 FIX: Wrap JSON.parse in try/catch to handle corrupt localStorage data
         const cachedRaw = localStorage.getItem(subjectLabel);
-        const cached = cachedRaw ? JSON.parse(cachedRaw) : null;
-        if (cached && Date.now() < Number(localStorage.getItem("mc_expireAt"))) {
+        let cached = null;
+        if (cachedRaw) {
+            try {
+                cached = JSON.parse(cachedRaw);
+            } catch (e) {
+                console.warn('[MC] Corrupt timetable cache, clearing:', e);
+                localStorage.removeItem(subjectLabel);
+            }
+        }
+        // BUG #11 FIX: Use per-subject expireAt key to avoid conflicts between subjects
+        const expireAtKey = "mc_expireAt_" + subjectLabel;
+        const cacheValid = cached && Date.now() < Number(localStorage.getItem(expireAtKey));
+        if (cacheValid) {
             timetable = deserializeTimetable(cached);
             lecturerList = extractLecturers(timetable);
         }
@@ -114,8 +126,8 @@
         // Load subjects list for the dropdown
         loadSubjectsList();
 
-        // If no cache, fetch timetable
-        if (!cached || Date.now() >= Number(localStorage.getItem("mc_expireAt"))) {
+        // If no cache or stale, fetch timetable
+        if (!cacheValid) {
             await fetchAllClasses(formData, courseId, subjectLabel, container);
         }
     }
@@ -194,9 +206,9 @@
             renderAll(container, formData, currentId, subjectLabel);
         }
 
-        // Cache timetable
+        // Cache timetable (BUG #11 FIX: per-subject expireAt key)
         localStorage.setItem(subjectLabel, JSON.stringify(serializeTimetable(timetable)));
-        localStorage.setItem("mc_expireAt", String(Date.now() + CACHE_TTL_MS));
+        localStorage.setItem("mc_expireAt_" + subjectLabel, String(Date.now() + CACHE_TTL_MS));
 
         // Extract lecturers from timetable
         lecturerList = extractLecturers(timetable);
@@ -231,8 +243,12 @@
         const displayName = `${className} (${lecturer || "N/A"})\n${room}`;
 
         for (const part of parts) {
-            const dayStr = part.trim().slice(0, 3);
-            const slotStr = part.trim().length >= 12 ? part.trim().charAt(11) : "";
+            const trimmed = part.trim();
+            const dayStr = trimmed.slice(0, 3);
+            // BUG #4 FIX: Use regex instead of charAt(11) which was hard-coded
+            // and would silently fail for Slot 10+ or if format changes slightly.
+            const slotMatch = trimmed.match(/Slot\s*(\d+)/i);
+            const slotStr = slotMatch ? slotMatch[1] : "";
 
             if (DAYS.includes(dayStr) && SLOTS.includes(slotStr)) {
                 const dayMap = timetable.get(dayStr);
@@ -375,7 +391,12 @@
                         document.getElementById("ctl00_mainContent_lblSubject")
                             ?.textContent || "";
                     localStorage.removeItem(subjectLabel);
-                    const newId = getClassKeyMap().get(className.split(" ")[0]);
+                    // BUG #9 FIX: Use classKey (split by " (") to match the key format
+                    // stored in getClassKeyMap(). Previously split(" ")[0] only got
+                    // the first word, which doesn't match full class IDs like "SE1234"
+                    // when className is "SE1234.P21 (Mr. Smith)\nRoom".
+                    const classKey = className.split(" (")[0];
+                    const newId = getClassKeyMap().get(classKey);
                     if (newId) {
                         window.location.href =
                             MOVE_SUBJECT_URL + "?id=" + newId;
@@ -386,10 +407,12 @@
             }
         } catch (e) {
             showAlert("Lỗi khi chuyển lớp: " + e.message, "error");
+        } finally {
+            // BUG #7 FIX: Reset isLoading in finally so UI is always unblocked
+            // even if showAlert/catch throws an unexpected error.
+            isLoading.moving = false;
+            rerenderUI();
         }
-
-        isLoading.moving = false;
-        rerenderUI();
     }
 
     // ─── Load student list ──────────────────────────────────

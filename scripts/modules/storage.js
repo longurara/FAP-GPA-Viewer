@@ -5,6 +5,15 @@
 // In-memory cache to avoid redundant IPC calls for frequently read keys
 const _memCache = new Map();
 
+// STAB #6 FIX: Keys excluded from in-memory cache because their values can be very large
+// (e.g. background_image is a base64 data URL that can be 5-30MB).
+// Caching these would significantly inflate memory usage for every popup open.
+const _UNCACHED_KEYS = new Set([
+    'background_image',         // data:image/jpeg;base64,... (5-30MB)
+    'cache_transcript',         // nested object with all transcript rows
+    'cache_transcript_flat',    // flat array of rows
+]);
+
 const StorageService = {
     /**
      * Get value from chrome.storage.local (with in-memory cache)
@@ -13,7 +22,7 @@ const StorageService = {
      * @returns {Promise<*>}
      */
     async get(key, defaultValue) {
-        if (_memCache.has(key)) return _memCache.get(key);
+        if (!_UNCACHED_KEYS.has(key) && _memCache.has(key)) return _memCache.get(key);
         return new Promise((resolve) => {
             chrome.storage.local.get({ [key]: defaultValue }, (result) => {
                 if (chrome.runtime.lastError) {
@@ -23,7 +32,7 @@ const StorageService = {
                 }
                 // Guard: If set() was called while this async read was in-flight,
                 // the mem cache already has the newer value — don't overwrite it.
-                if (!_memCache.has(key)) {
+                if (!_UNCACHED_KEYS.has(key) && !_memCache.has(key)) {
                     _memCache.set(key, result[key]);
                 }
                 resolve(_memCache.has(key) ? _memCache.get(key) : result[key]);
@@ -55,6 +64,7 @@ const StorageService = {
                 }
                 // Update mem cache (only for keys not updated by set() during this read)
                 for (const k of keys) {
+                    if (_UNCACHED_KEYS.has(k)) continue; // skip large keys
                     if (!_memCache.has(k)) {
                         _memCache.set(k, result[k]);
                     } else {
@@ -73,9 +83,11 @@ const StorageService = {
      * @returns {Promise<void>}
      */
     async set(obj) {
-        // Update mem cache immediately
+        // Update mem cache immediately (skip large/uncached keys)
         for (const key of Object.keys(obj)) {
-            _memCache.set(key, obj[key]);
+            if (!_UNCACHED_KEYS.has(key)) {
+                _memCache.set(key, obj[key]);
+            }
         }
         return new Promise((resolve) => {
             chrome.storage.local.set(obj, () => {
@@ -141,8 +153,12 @@ try {
     chrome.storage.onChanged.addListener((changes, area) => {
         if (area !== 'local') return;
         for (const key of Object.keys(changes)) {
-            if (_memCache.has(key)) {
+            if (_UNCACHED_KEYS.has(key)) continue; // don't cache large keys from onChanged
+            // If newValue exists → update cache. If missing (key was removed) → delete from cache.
+            if (Object.prototype.hasOwnProperty.call(changes[key], 'newValue')) {
                 _memCache.set(key, changes[key].newValue);
+            } else {
+                _memCache.delete(key);
             }
         }
     });

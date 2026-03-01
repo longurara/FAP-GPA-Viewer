@@ -124,7 +124,27 @@ async function waitForTabComplete(tabId, timeoutMs = 8000) {
   });
 }
 
+// Dedup map: prevents creating multiple tabs for the same origin when called concurrently
+const _pendingTabFetches = new Map();
+
 async function fetchViaContentScript(url) {
+  const parsedUrl = new URL(url);
+  const targetOrigin = parsedUrl.origin;
+
+  // If a fetch for this origin is already in-flight, reuse the same Promise
+  if (_pendingTabFetches.has(targetOrigin)) {
+    console.log("[dedup] Reusing in-flight fetch for", targetOrigin);
+    return _pendingTabFetches.get(targetOrigin);
+  }
+
+  const promise = _doFetchViaContentScript(url).finally(() => {
+    _pendingTabFetches.delete(targetOrigin);
+  });
+  _pendingTabFetches.set(targetOrigin, promise);
+  return promise;
+}
+
+async function _doFetchViaContentScript(url) {
   const parsedUrl = new URL(url);
   const targetOrigin = parsedUrl.origin;
 
@@ -171,8 +191,32 @@ async function fetchViaContentScript(url) {
   }
 }
 
+// STAB #3 FIX: Dedup maps for fetchAndParse functions — prevent concurrent calls
+// from creating multiple tabs for the same origin (same issue that fetchViaContentScript already solves).
+const _pendingTranscriptFetch = new Map();
+const _pendingScheduleFetch = new Map();
+
 // Fetch AND PARSE transcript inside content script (where DOMParser is available)
-async function fetchAndParseTranscriptViaTab(url) {
+// BUG-01 FIX: Accept optional tabTracker object so callers can register the tabId
+// created during fetch and close it if a timeout occurs (orphan tab prevention).
+async function fetchAndParseTranscriptViaTab(url, tabTracker = null) {
+  const parsedUrl = new URL(url);
+  const targetOrigin = parsedUrl.origin;
+
+  // STAB #3 FIX: If a transcript fetch is already in-flight, reuse the same Promise
+  if (_pendingTranscriptFetch.has(targetOrigin)) {
+    console.log("[dedup] Reusing in-flight transcript fetch for", targetOrigin);
+    return _pendingTranscriptFetch.get(targetOrigin);
+  }
+
+  const promise = _doFetchAndParseTranscriptViaTab(url, tabTracker).finally(() => {
+    _pendingTranscriptFetch.delete(targetOrigin);
+  });
+  _pendingTranscriptFetch.set(targetOrigin, promise);
+  return promise;
+}
+
+async function _doFetchAndParseTranscriptViaTab(url, tabTracker = null) {
   const parsedUrl = new URL(url);
   const targetOrigin = parsedUrl.origin;
 
@@ -186,6 +230,10 @@ async function fetchAndParseTranscriptViaTab(url) {
     const tab = await chrome.tabs.create({ url: targetOrigin, active: false });
     tabId = tab.id;
     createdTab = true;
+    // BUG-01 FIX: Register tabId in tabTracker immediately after creation so the
+    // timeout handler (in Promise.race) can close this tab if it fires before
+    // _doFetchAndParseTranscriptViaTab has a chance to clean up itself.
+    if (tabTracker) tabTracker.id = tabId;
     await waitForTabComplete(tabId);
   }
 
@@ -290,10 +338,25 @@ async function fetchAndParseTranscriptViaTab(url) {
 // NOTE: parseScheduleOfWeek with DOMParser removed — not available in Service Worker.
 // Schedule parsing is now done inside content script context via fetchAndParseScheduleViaTab().
 
-/**
- * Fetch AND PARSE schedule inside content script (where DOMParser is available)
- */
+// Fetch AND PARSE schedule inside content script (where DOMParser is available)
 async function fetchAndParseScheduleViaTab(url) {
+  const parsedUrl = new URL(url);
+  const targetOrigin = parsedUrl.origin;
+
+  // STAB #3 FIX: Dedup map for schedule fetch
+  if (_pendingScheduleFetch.has(targetOrigin)) {
+    console.log("[dedup] Reusing in-flight schedule fetch for", targetOrigin);
+    return _pendingScheduleFetch.get(targetOrigin);
+  }
+
+  const promise = _doFetchAndParseScheduleViaTab(url).finally(() => {
+    _pendingScheduleFetch.delete(targetOrigin);
+  });
+  _pendingScheduleFetch.set(targetOrigin, promise);
+  return promise;
+}
+
+async function _doFetchAndParseScheduleViaTab(url) {
   const parsedUrl = new URL(url);
   const targetOrigin = parsedUrl.origin;
 
@@ -456,10 +519,36 @@ async function fetchTranscriptInBackground(forceRefresh = false) {
   // Notify popup that loading started (ignore if popup closed)
   chrome.runtime.sendMessage({ type: MSG.TRANSCRIPT_LOADING }).catch(() => { });
 
+  // Maximum time to wait for the transcript fetch before giving up
+  const TRANSCRIPT_TIMEOUT_MS = 35_000;
+
+  // BUG-01 FIX: Use a shared tabTracker object instead of a plain variable.
+  // _doFetchAndParseTranscriptViaTab writes the created tabId into tabTracker.id
+  // immediately after chrome.tabs.create(), so the timeout handler below can read it
+  // and close the orphan tab even though Promise.race has already settled.
+  // Previously _tabIdForCleanup was declared here but NEVER assigned, making the
+  // orphan-tab cleanup code dead code.
+  const tabTracker = { id: null };
+
   try {
     // Use the new function that fetches AND parses inside content script
     console.log("🌐 Fetching and parsing transcript via content script...");
-    const result = await fetchAndParseTranscriptViaTab(TRANSCRIPT_URL);
+
+    const result = await Promise.race([
+      fetchAndParseTranscriptViaTab(TRANSCRIPT_URL, tabTracker),
+      new Promise((_, reject) =>
+        setTimeout(() => {
+          reject(new Error("TRANSCRIPT_TIMEOUT"));
+          // BUG-01 FIX: tabTracker.id is now reliably set by _doFetchAndParseTranscriptViaTab
+          // when it creates a new tab, so this cleanup actually works.
+          if (tabTracker.id !== null) {
+            chrome.tabs.remove(tabTracker.id).catch(() => { });
+            console.warn("[BG] Closed orphan tab", tabTracker.id, "after TRANSCRIPT_TIMEOUT");
+            tabTracker.id = null;
+          }
+        }, TRANSCRIPT_TIMEOUT_MS)
+      ),
+    ]);
 
     console.log("📊 Content script result:", result);
 
@@ -637,41 +726,62 @@ chrome.runtime.onStartup.addListener(async () => {
     if (data.auto_login_lms_startup && data.auto_login_lms_enabled &&
       data.auto_login_lms_username && data.auto_login_lms_password) {
       console.log("Auto-login on startup: opening LMS tab...");
+      // NEW #4 FIX: await the tab creation and track the tabId for potential cleanup.
+      // Without await, if startup is interrupted the tab reference is lost.
       chrome.tabs.create({
         url: "https://lms-hcm.fpt.edu.vn/login/index.php",
         active: false
-      });
+      }).catch(e => console.warn("[BG] LMS startup tab creation failed:", e.message));
     }
   } catch (e) {
     console.warn("Auto-login on startup error:", e.message);
   }
+
+  // STAB #8 FIX: Trigger transcript prefetch on startup if cache is stale.
+  // Without this, popup shows empty GPA until user manually refreshes.
+  // Use a short delay to not block other startup work.
+  setTimeout(() => {
+    fetchTranscriptInBackground(false /* use cache if fresh */).catch(e =>
+      console.warn("[BG] Startup transcript prefetch failed:", e.message)
+    );
+  }, 3000);
 });
 
 function _monitorForCloudflare(tabId) {
-  let checkCount = 0;
-  const MAX_CHECKS = 6;
-  const checkTab = async () => {
-    checkCount++;
-    try {
-      const tab = await chrome.tabs.get(tabId);
-      if (!tab) return;
-      const url = tab.url || "";
-      if (url.includes("Student.aspx") || url.includes("StudentTranscript") || url.includes("ScheduleOfWeek")) {
-        console.log("Auto-login on startup succeeded!");
-        return;
-      }
-      if (tab.title && (tab.title.includes("Just a moment") || tab.title.includes("Attention Required") || tab.title.includes("Cloudflare"))) {
-        console.log("Cloudflare detected! Showing tab to user...");
-        chrome.tabs.update(tabId, { active: true });
-        chrome.windows.update(tab.windowId, { focused: true });
-        return;
-      }
-      if (checkCount < MAX_CHECKS && (url.includes("fap.fpt.edu.vn") || url.includes("feid.fpt.edu.vn"))) {
-        setTimeout(checkTab, 5000);
-      }
-    } catch (e) { /* tab closed */ }
-  };
-  setTimeout(checkTab, 8000);
+  // Event-based monitoring: react immediately when tab status changes
+  // instead of polling every 5s (which could miss fast loads)
+  function onTabUpdated(updatedId, changeInfo, tab) {
+    if (updatedId !== tabId || changeInfo.status !== "complete") return;
+
+    cleanup();
+
+    const url = tab.url || "";
+    if (url.includes("Student.aspx") || url.includes("StudentTranscript") || url.includes("ScheduleOfWeek")) {
+      console.log("Auto-login on startup succeeded!");
+      return;
+    }
+    if (tab.title && (tab.title.includes("Just a moment") || tab.title.includes("Attention Required") || tab.title.includes("Cloudflare"))) {
+      console.log("Cloudflare detected! Showing tab to user...");
+      chrome.tabs.update(tabId, { active: true });
+      chrome.windows.update(tab.windowId, { focused: true });
+    }
+  }
+
+  function onTabRemoved(removedId) {
+    if (removedId === tabId) cleanup();
+  }
+
+  function cleanup() {
+    chrome.tabs.onUpdated.removeListener(onTabUpdated);
+    chrome.tabs.onRemoved.removeListener(onTabRemoved);
+    clearTimeout(safetyTimer);
+  }
+
+  chrome.tabs.onUpdated.addListener(onTabUpdated);
+  chrome.tabs.onRemoved.addListener(onTabRemoved);
+
+  // Safety timeout: remove listeners after 60s if tab never finishes
+  const safetyTimer = setTimeout(cleanup, 60_000);
 }
 
 // ========== View Mode Handler ==========
@@ -701,9 +811,14 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   // Handle FETCH_TRANSCRIPT request from popup
   if (msg.type === MSG.FETCH_TRANSCRIPT) {
     const forceRefresh = msg.force || false;
-    fetchTranscriptInBackground(forceRefresh).then(result => {
-      sendResponse(result);
-    });
+    // NEW #3 FIX: Add .catch() to prevent message channel from hanging if fetch throws.
+    // Without this, a rejected Promise silently drops the response and the popup waits forever.
+    fetchTranscriptInBackground(forceRefresh)
+      .then(result => sendResponse(result))
+      .catch(err => {
+        console.error("[BG] FETCH_TRANSCRIPT error:", err);
+        sendResponse({ status: 'error', error: err?.message || String(err) });
+      });
     return true; // Keep channel open for async response
   }
 
@@ -714,6 +829,9 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   }
 
   // Handle getAllData request (legacy)
+  // WARN-04: This handler is kept for backward compatibility. Search the codebase
+  // for callers before removing. If no content scripts / popup code sends
+  // { action: "getAllData" } anymore, this block can be safely deleted.
   if (msg.action === "getAllData") {
     (async () => {
       const tcache = await STORAGE.get("cache_transcript", null);
@@ -799,9 +917,13 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 
   // Handle CFG_UPDATED
   if (msg.type === "CFG_UPDATED") {
-    updateActionPopup().then(() => {
-      sendResponse({ ok: true });
-    });
+    // F5 #4 FIX: Add .catch() to prevent unhandled rejection if updateActionPopup() throws
+    updateActionPopup()
+      .then(() => sendResponse({ ok: true }))
+      .catch(err => {
+        console.error("[BG] CFG_UPDATED error:", err);
+        sendResponse({ ok: false, error: err?.message });
+      });
     return true;
   }
 

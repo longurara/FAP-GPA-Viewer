@@ -160,11 +160,28 @@ const LoginService = {
             this.hideLoginBanner();
             await window.STORAGE?.set({ show_login_banner: false });
 
-            // Check login status after a delay to see if user logged in
-            setTimeout(async () => {
-                await this.checkLoginStatus();
-                await this.checkAndShowLoginBanner();
-            }, 3000);
+            // STAB #4 FIX: Track timeout IDs so they can be cancelled if popup closes
+            // before the callbacks fire (avoids "Extension context invalidated" error)
+            // Clear any pending timers from a previous Login Now click
+            this._loginCheckTimers?.forEach(clearTimeout);
+            // WARN-02 NOTE: These timers only fire when running in dashboard/fullpage mode.
+            // In standard popup mode, Chrome closes the popup as soon as the user
+            // clicks the FAP tab link, so these callbacks never execute.
+            // They are kept for the fullpage dashboard use case.
+            this._loginCheckTimers = [
+                setTimeout(async () => {
+                    try {
+                        await this.checkLoginStatus();
+                        await this.checkAndShowLoginBanner();
+                    } catch (e) { /* popup may have closed */ }
+                }, 5000),
+                setTimeout(async () => {
+                    try {
+                        await this.checkLoginStatus();
+                        await this.checkAndShowLoginBanner();
+                    } catch (e) { /* popup may have closed */ }
+                }, 10000),
+            ];
         } catch (error) {
             console.error("[Login] Error handling login:", error);
         }
@@ -175,6 +192,9 @@ const LoginService = {
      */
     async handleDismissBanner() {
         this.hideLoginBanner();
+        // STAB #4 FIX: Clear pending login check timers when banner is dismissed
+        this._loginCheckTimers?.forEach(clearTimeout);
+        this._loginCheckTimers = [];
         await window.STORAGE?.set({ show_login_banner: false });
     },
 

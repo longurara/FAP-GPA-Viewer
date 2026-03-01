@@ -16,8 +16,14 @@ const StatisticsService = {
         this._chartLoading = new Promise((resolve, reject) => {
             const s = document.createElement("script");
             s.src = chrome.runtime.getURL("assets/vendor/chart.min.js");
-            s.onload = () => { this._chartLoading = null; resolve(); };
-            s.onerror = () => { this._chartLoading = null; reject(new Error("Failed to load Chart.js")); };
+            s.onload = () => {
+                // BUG-05 FIX: resolve() first, then clear _chartLoading.
+                // Clearing before resolve() creates a window where a concurrent caller
+                // sees null and injects Chart.js a second time.
+                resolve();
+                this._chartLoading = null;
+            };
+            s.onerror = () => { s.remove(); this._chartLoading = null; reject(new Error("Failed to load Chart.js")); };
             document.head.appendChild(s);
         });
         return this._chartLoading;
@@ -42,8 +48,9 @@ const StatisticsService = {
             if (rows.length === 0) return;
 
             // Calculate statistics (already excludes courses above)
-            const grades = rows.map((r) => r.grade);
-            const avgGrade = grades.reduce((a, b) => a + b, 0) / grades.length;
+            // Use weighted GPA (credit-weighted) instead of simple average
+            // to match the actual GPA calculation in utils.js
+            const { gpa10: avgGrade } = window.computeGPA(rows, excludedCourses);
 
             const best = rows.reduce((max, r) => (r.grade > max.grade ? r : max), rows[0]);
             const worst = rows.reduce((min, r) => (r.grade < min.grade ? r : min), rows[0]);
@@ -58,7 +65,7 @@ const StatisticsService = {
                 if (el) el.textContent = v;
             });
 
-            setValue("#statAvgGrade", avgGrade.toFixed(2));
+            setValue("#statAvgGrade", Number.isFinite(avgGrade) ? avgGrade.toFixed(2) : "--");
             setValue("#statBestGrade", best.grade.toFixed(2));
             setValue("#statBestCourse", best.code || "--");
             setValue("#statWorstGrade", worst.grade.toFixed(2));

@@ -5,7 +5,9 @@ const LMS_CALENDAR_URL = 'https://lms-hcm.fpt.edu.vn/calendar/view.php?view=upco
 const LMS_CACHE_KEY = 'cache_lms_events';
 const LMS_CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 
-// escapeHtml is accessed as a bare global — resolves to window.escapeHtml set by utils.js
+// NEW #1 FIX: Use a local reference with fallback instead of calling escapeHtml as a bare global.
+// If utils.js hasn't loaded yet, a ReferenceError would crash the entire module.
+const _lmsEsc = () => window.escapeHtml || ((s) => String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"));
 
 
 // Parse LMS events from HTML
@@ -173,25 +175,37 @@ function renderLMSEvents(events, searchQuery = '') {
   }
 
   const html = filtered.map(event => {
+    const esc = _lmsEsc(); // NEW #1 FIX: resolved reference with fallback
     const badge = getCountdownBadge(event.timestamp);
     const badgeHtml = badge
-      ? `<span class="lms-badge lms-badge-${escapeHtml(badge.type)}">${escapeHtml(badge.text)}</span>`
+      ? `<span class="lms-badge lms-badge-${esc(badge.type)}">${esc(badge.text)}</span>`
       : '';
 
     // badge.type is always a hardcoded internal value ('urgent', 'soon', etc.)
     const variantClass = badge ? ` lms-event-card--${badge.type}` : '';
 
-    const safeTitle = escapeHtml(event.title);
-    const safeCourseName = escapeHtml(event.courseName || 'Course');
-    const safeDateText = escapeHtml(event.dateText);
-    const safeTimeText = event.timeText ? ', ' + escapeHtml(event.timeText) : '';
-    const safeActionText = escapeHtml(event.actionText || 'Xem chi tiet');
-    // Sanitize URL: only allow http/https
-    const safeActionUrl = (event.actionUrl && /^https?:\/\//i.test(event.actionUrl))
-      ? encodeURI(event.actionUrl) : '';
+    const safeTitle = esc(event.title);
+    const safeCourseName = esc(event.courseName || 'Course');
+    const safeDateText = esc(event.dateText);
+    const safeTimeText = event.timeText ? ', ' + esc(event.timeText) : '';
+    const safeActionText = esc(event.actionText || 'Xem chi tiet');
+    // WARN-05 FIX: Use URL constructor for proper validation instead of just encodeURI.
+    // encodeURI does not encode characters like ';', '(', ')' that can still be dangerous
+    // in attribute context. URL constructor throws on malformed URLs and validates the scheme.
+    let safeActionUrl = '';
+    if (event.actionUrl) {
+      try {
+        const parsedUrl = new URL(event.actionUrl);
+        if (parsedUrl.protocol === 'https:' || parsedUrl.protocol === 'http:') {
+          safeActionUrl = parsedUrl.href;
+        }
+      } catch (_) {
+        // Invalid URL — leave safeActionUrl empty
+      }
+    }
 
     return `
-      <div class="lms-event-card${variantClass}" data-event-id="${escapeHtml(event.id)}">
+      <div class="lms-event-card${variantClass}" data-event-id="${esc(event.id)}">
         <div class="lms-event-header">
           <div class="lms-event-title">${safeTitle}</div>
           ${badgeHtml}

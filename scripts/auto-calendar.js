@@ -88,7 +88,7 @@ class CalendarService {
       `PRODID:${this.prodId}`,
       "CALSCALE:GREGORIAN",
       "METHOD:PUBLISH",
-      `X-WR-CALNAME:${calendarName}`,
+      `X-WR-CALNAME:${this.escapeICSText(calendarName)}`,
       `X-WR-TIMEZONE:${this.timezone}`,
     ];
   }
@@ -374,7 +374,8 @@ class CalendarService {
       }
 
       modalTitle.textContent = title;
-      modalMessage.innerHTML = message;
+      // Use textContent to prevent XSS from error messages containing HTML
+      modalMessage.textContent = message;
 
       modalActions.innerHTML = "";
 

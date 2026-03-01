@@ -79,11 +79,11 @@
                         margin: 0 0 4px;
                         letter-spacing: -0.3px;
                     ">Chào mừng đến FPT FAP Dashboard</h2>
-                    <div style="
+                    <div id="fap-onboarding-version" style="
                         font-size: 12px;
                         color: #94a3b8;
                         font-weight: 500;
-                    ">Phiên bản ${version} — Giao diện mới hoàn toàn</div>
+                    "></div>
                 </div>
 
                 <!-- What's new -->
@@ -256,6 +256,11 @@
 
         overlay.appendChild(modal);
         document.body.appendChild(overlay);
+
+        // F5 #1 FIX: Set version text via textContent (not innerHTML interpolation)
+        // This is safer even though manifest.version is a controlled string.
+        var versionEl = document.getElementById("fap-onboarding-version");
+        if (versionEl) versionEl.textContent = "Phiên bản " + version + " — Giao diện mới hoàn toàn";
 
         // ===== Animate in =====
         requestAnimationFrame(function () {
